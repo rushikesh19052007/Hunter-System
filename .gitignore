@@ -27,3 +27,5 @@ hunter.env
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
