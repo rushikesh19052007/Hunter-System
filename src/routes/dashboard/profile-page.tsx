@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   User, Heart, Droplets, TrendingUp, Award, Star, Shield,
   Zap, Flame, Brain, Eye, Trophy, Target, ChevronRight,
-  Sparkles, Crown, Code, Dumbbell, BookOpen,
+  Sparkles, Crown, Code, Dumbbell, BookOpen, Plus, Lock,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
@@ -14,7 +14,8 @@ import {
   HP_BY_RANK,
   MP_BY_RANK,
 } from '@/lib/game-engine';
-import { ACHIEVEMENTS, getBadgeLabel } from '@/lib/achievements';
+import { ACHIEVEMENTS, HIDDEN_QUESTS, getBadgeLabel } from '@/lib/achievements';
+import { playSystemChime } from '@/lib/notifications';
 
 export const ProfilePage: React.FC = () => {
   const {
@@ -22,6 +23,7 @@ export const ProfilePage: React.FC = () => {
     unlockedAchievements,
     equipTitle,
     allocateSkillPoint,
+    allocateStatPoint,
   } = useHunter();
 
   const [activeSection, setActiveSection] = useState<'stats' | 'achievements' | 'titles' | 'skills'>('stats');
@@ -221,10 +223,26 @@ export const ProfilePage: React.FC = () => {
               return (
                 <div key={statKey} className="profile-stat-card" style={{ borderColor: `${statDef.color}30` }}>
                   <div className="pstat-header">
-                    {statIcons[statKey]}
-                    <span className="pstat-code" style={{ color: statDef.color }}>{statDef.code}</span>
-                    <span className="pstat-name">{statDef.name}</span>
-                    <span className="pstat-val" style={{ color: statDef.color }}>{value}</span>
+                    <div className="flex items-center gap-1.5">
+                      {statIcons[statKey]}
+                      <span className="pstat-code" style={{ color: statDef.color }}>{statDef.code}</span>
+                      <span className="pstat-name">{statDef.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="pstat-val" style={{ color: statDef.color }}>{value}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          allocateStatPoint(statKey, 1);
+                          playSystemChime('quest');
+                        }}
+                        className="btn-stat-plus-profile"
+                        title={`Allocate +1 ${statDef.code}`}
+                        aria-label={`Allocate +1 ${statDef.code}`}
+                      >
+                        +1
+                      </button>
+                    </div>
                   </div>
                   <p className="pstat-desc">{statDef.description}</p>
                   <div className="pstat-bar-track">
@@ -255,21 +273,63 @@ export const ProfilePage: React.FC = () => {
 
         {/* ACHIEVEMENTS */}
         {activeSection === 'achievements' && (
-          <div className="achievements-grid">
-            {ACHIEVEMENTS.map(ach => {
-              const isUnlocked = unlockedAchievements.includes(ach.id);
-              return (
-                <div key={ach.id} className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`}>
-                  <div className="ach-icon">{isUnlocked ? ach.icon : '🔒'}</div>
-                  <div className="ach-info">
-                    <div className="ach-name">{isUnlocked ? ach.name : '???'}</div>
-                    <div className="ach-desc">{isUnlocked ? ach.description : 'Unknown condition'}</div>
-                    <div className="ach-reward">+{ach.xp_reward} XP</div>
+          <div className="achievements-wrapper-section">
+            <div className="achievements-section-title">
+              <Trophy className="w-5 h-5 text-amber-400" />
+              <h3>STANDARDIZED HUNTER ACHIEVEMENTS</h3>
+            </div>
+            <div className="achievements-grid mb-8">
+              {ACHIEVEMENTS.map(ach => {
+                const isUnlocked = unlockedAchievements.includes(ach.id);
+                return (
+                  <div key={ach.id} className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                    <div className="ach-icon">{isUnlocked ? ach.icon : '🔒'}</div>
+                    <div className="ach-info">
+                      <div className="ach-name">{isUnlocked ? ach.name : '???'}</div>
+                      <div className="ach-desc">{isUnlocked ? ach.description : 'Undiscovered condition'}</div>
+                      <div className="ach-reward">+{ach.xp_reward} XP</div>
+                    </div>
+                    {isUnlocked && <div className="ach-unlocked-tag">UNLOCKED</div>}
                   </div>
-                  {isUnlocked && <div className="ach-unlocked-tag">UNLOCKED</div>}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {/* ARCHITECT'S SECRET ARCHIVES (HIDDEN QUESTS) */}
+            <div className="hidden-quests-block">
+              <div className="achievements-section-title">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                <h3>ARCHITECT'S SECRET ARCHIVES (HIDDEN QUESTS)</h3>
+                <span className="secret-badge">CLASSIFIED</span>
+              </div>
+              <p className="secret-subtitle">
+                Mysterious trials granted only upon attaining secret milestones in endurance, code, and daily perfection.
+              </p>
+              <div className="achievements-grid">
+                {HIDDEN_QUESTS.map(hq => {
+                  const isUnlocked = unlockedAchievements.includes(hq.id);
+                  return (
+                    <div key={hq.id} className={`achievement-card hidden-trial ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                      <div className="ach-icon">{isUnlocked ? '🔓' : <Lock className="w-5 h-5 text-purple-400" />}</div>
+                      <div className="ach-info">
+                        <div className="ach-name">{isUnlocked ? hq.name : '??? [CONCEALED TRIAL]'}</div>
+                        <div className="ach-desc">
+                          {isUnlocked ? hq.description : `Requirement: ${hq.unlock_condition}`}
+                        </div>
+                        <div className="ach-reward">
+                          +{hq.xp_reward} XP {hq.stat_xp_reward ? `• +${hq.stat_xp_reward} Stat XP` : ''}
+                        </div>
+                      </div>
+                      {isUnlocked ? (
+                        <div className="ach-unlocked-tag purple">REVEALED</div>
+                      ) : (
+                        <div className="ach-locked-tag">CLASSIFIED</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -372,7 +432,10 @@ export const ProfilePage: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => allocateSkillPoint(skill)}
+                      onClick={() => {
+                        allocateSkillPoint(skill);
+                        playSystemChime('level');
+                      }}
                       disabled={!canAllocate}
                       className={`btn-allocate-skill ${!canAllocate ? 'disabled' : ''}`}
                     >

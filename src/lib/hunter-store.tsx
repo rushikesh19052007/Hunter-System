@@ -22,7 +22,7 @@ import {
   migrateDifficulty,
   createDefaultProfile,
 } from './game-engine';
-import QUEST_LIBRARY from './quest-library';
+import QUEST_LIBRARY, { type LibraryQuest } from './quest-library';
 import { checkNewAchievements, type NewUnlock } from './achievements';
 import {
   generateDailyPool,
@@ -65,6 +65,8 @@ export interface HunterContextType {
   equipTitle: (title: string) => void;
   allocateSkillPoint: (skill: keyof Profile['skill_points']) => void;
   refreshDaily: () => void;
+  acceptLibraryQuest: (quest: LibraryQuest) => void;
+  deleteQuest: (questId: string) => void;
   // Legacy compatibility
   auth: { isAuthenticated: boolean; user: { id: string; email: string } | null };
 }
@@ -159,6 +161,83 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     localStorage.setItem(STORAGE_ACHIEVEMENTS_KEY, JSON.stringify(unlockedAchievements));
   }, [unlockedAchievements]);
+
+  // Debounced Supabase sync
+  useEffect(() => {
+    if (!profile || !profile.id) return;
+    const client = supabase;
+    if (!isSupabaseConfigured || !client) return;
+
+    const timer = setTimeout(() => {
+      Promise.resolve(
+        client.from('profiles').upsert({
+          id: profile.id,
+          hunter_id: profile.hunter_id,
+          display_name: profile.display_name,
+          total_xp: profile.total_xp,
+          current_level: profile.current_level,
+          stats: profile.stats,
+          clean_days: profile.clean_days,
+          current_rank: profile.current_rank,
+          affinity: profile.affinity,
+          hp: profile.hp,
+          mp: profile.mp,
+          max_hp: profile.max_hp,
+          max_mp: profile.max_mp,
+          physical_xp: profile.physical_xp,
+          mental_xp: profile.mental_xp,
+          quests_completed: profile.quests_completed,
+          physical_quests_completed: profile.physical_quests_completed,
+          mental_quests_completed: profile.mental_quests_completed,
+          coding_quests_completed: profile.coding_quests_completed,
+          streak: profile.streak,
+          physical_streak: profile.physical_streak,
+          mental_streak: profile.mental_streak,
+          perfect_day_streak: profile.perfect_day_streak,
+          longest_streak: profile.longest_streak,
+          titles: profile.titles,
+          equipped_title: profile.equipped_title,
+          badges: profile.badges,
+          profile_frame: profile.profile_frame,
+          skill_points: profile.skill_points,
+          available_skill_points: profile.available_skill_points,
+        })
+      ).catch((err: unknown) => {
+        console.warn('[Hunter Store] Supabase sync error:', err);
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [profile]);
+
+  // Rehydrate profile from Supabase if remote has higher XP
+  useEffect(() => {
+    const client = supabase;
+    if (!isSupabaseConfigured || !client) return;
+    client.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id;
+      if (!uid) return;
+      Promise.resolve(
+        client
+          .from('profiles')
+          .select('*')
+          .eq('id', uid)
+          .single()
+      )
+        .then(({ data, error }) => {
+          if (!error && data) {
+            const remoteProfile = migrateProfile(data as Record<string, unknown>);
+            setProfile(current => {
+              if (!current || (remoteProfile.total_xp > current.total_xp)) {
+                return remoteProfile;
+              }
+              return current;
+            });
+          }
+        })
+        .catch(() => {});
+    }).catch(() => {});
+  }, []);
 
   // Load daily state on mount
   useEffect(() => {
@@ -338,9 +417,26 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const statXpAmount = quest.stat_xp_reward || DIFFICULTY_STAT_XP[quest.difficulty] || 10;
     const statXpType = quest.stat_xp_type || getStatXpType(quest.category);
 
-    // Apply streak bonus
+    // Skill points perks
+    const sp = profile.skill_points || { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 };
+    let skillMultiplier = 1 + ((sp.discipline || 0) * 0.03); // +3% per discipline point
+    if (['physical', 'fitness', 'health'].includes(quest.category)) {
+      skillMultiplier += (sp.strength || 0) * 0.05; // +5% per strength point
+    }
+    if (['mental', 'knowledge', 'learning', 'coding', 'study'].includes(quest.category)) {
+      skillMultiplier += (sp.intelligence || 0) * 0.05; // +5% per intelligence point
+    }
+    if (quest.time_limit_hours || quest.deadline) {
+      skillMultiplier += (sp.agility || 0) * 0.05; // +5% per agility point
+    }
+    if (quest.repeatable === 'daily' || quest.quest_type === 'normal') {
+      skillMultiplier += (sp.focus || 0) * 0.03; // +3% per focus point
+    }
+
+    // Apply streak bonus with endurance perk
     const streakMultiplier = getStreakBonusMultiplier(profile.streak || 0);
-    const xpEarned = Math.round(baseXp * streakMultiplier);
+    const enduranceMultiplier = 1 + ((streakMultiplier - 1) * (1 + (sp.endurance || 0) * 0.05));
+    const xpEarned = Math.round(baseXp * enduranceMultiplier * skillMultiplier);
 
     // Mark quest complete
     setQuests(prev =>
@@ -722,6 +818,10 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const refreshDaily = () => {
     if (!profile) return;
+    // Reset repeatable daily quests so they can be re-cleared
+    setQuests(prev =>
+      prev.map(q => q.repeatable === 'daily' ? { ...q, progress: 0, completed: false } : q)
+    );
     const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
     if (bonusQuest) setActiveBonus(bonusQuest);
     if (dungeonBreak) {
@@ -734,6 +834,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         playSound: true,
       });
     }
+    scheduleNotification({
+      title: 'SYSTEM DIRECTIVES REFRESHED',
+      message: 'Daily quest directives and dynamic trials have been recalibrated.',
+      priority: 'normal',
+      category: 'system',
+    });
   };
 
   // ============================================================
@@ -910,6 +1016,55 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const isOnboarded = Boolean(profile && profile.display_name);
 
+  const acceptLibraryQuest = (lq: LibraryQuest) => {
+    if (!profile) return;
+    const exists = quests.find(q => q.name.toLowerCase() === lq.name.toLowerCase() && !q.completed);
+    if (exists) {
+      scheduleNotification({
+        title: 'QUEST ALREADY ACTIVE',
+        message: `"${lq.name}" is already on your active quest board.`,
+        priority: 'normal',
+        category: 'warning',
+      });
+      return;
+    }
+    const newQuest: Quest = {
+      id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      user_id: profile.id,
+      name: lq.name,
+      difficulty: lq.difficulty,
+      progress: 0,
+      target: lq.target,
+      stat: lq.stat,
+      category: lq.category,
+      stat_xp_type: getStatXpType(lq.category),
+      description: lq.description,
+      completed: false,
+      xp_reward: DIFFICULTY_XP[lq.difficulty] || 25,
+      stat_xp_reward: DIFFICULTY_STAT_XP[lq.difficulty] || 10,
+      repeatable: lq.repeatable,
+      quest_type: 'normal',
+    };
+    setQuests(prev => [newQuest, ...prev]);
+    scheduleNotification({
+      title: 'QUEST ACCEPTED FROM CODEX',
+      message: `"${lq.name}" inscribed to your active quest board.`,
+      priority: 'normal',
+      category: 'quest',
+      playSound: true,
+    });
+  };
+
+  const deleteQuest = (questId: string) => {
+    setQuests(prev => prev.filter(q => q.id !== questId));
+    scheduleNotification({
+      title: 'QUEST EXPUNGED',
+      message: 'The directive has been removed from your active board.',
+      priority: 'low',
+      category: 'system',
+    });
+  };
+
   const value = useMemo(
     () => ({
       profile,
@@ -934,6 +1089,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       equipTitle,
       allocateSkillPoint,
       refreshDaily,
+      acceptLibraryQuest,
+      deleteQuest,
     }),
     [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon]
   );

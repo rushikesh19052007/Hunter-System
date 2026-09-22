@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Zap, Flame, Brain, Eye, Award, CheckCircle, PlusCircle,
   RotateCcw, Sparkles, Clock, Target, ChevronRight, TrendingUp,
-  Sliders, Heart, Droplets, AlertTriangle, Star, Plus, X, BookOpen,
+  Sliders, Heart, Droplets, Star, Plus, X, BookOpen,
   Dumbbell, Code, GraduationCap, Lightbulb, Activity, Skull,
-  Gift, Trophy, ChevronDown, ChevronUp, Scroll,
+  Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
@@ -23,8 +23,8 @@ import {
   type DifficultyGrade,
   type Quest,
 } from '@/lib/game-engine';
-import { getNotificationLogs, scheduleNotification, playSystemChime } from '@/lib/notifications';
-import { ACHIEVEMENTS } from '@/lib/achievements';
+import { playSystemChime } from '@/lib/notifications';
+import { QuestCodexModal } from '@/components/quest-codex-modal';
 
 interface HunterHubProps {
   onReplayAwakening: () => void;
@@ -243,7 +243,14 @@ interface DungeonBannerProps {
 }
 
 const DungeonBanner: React.FC<DungeonBannerProps> = ({ dungeon, onComplete, onDismiss }) => {
-  const timeLeft = Math.max(0, dungeon.expires_at - Date.now());
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeLeft = Math.max(0, dungeon.expires_at - now);
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
   const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
 
@@ -291,7 +298,14 @@ interface BonusQuestCardProps {
 }
 
 const BonusQuestCard: React.FC<BonusQuestCardProps> = ({ quest, onComplete }) => {
-  const timeLeft = quest.expires_at ? Math.max(0, quest.expires_at - Date.now()) : 0;
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeLeft = quest.expires_at ? Math.max(0, quest.expires_at - now) : 0;
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
 
   return (
@@ -326,9 +340,17 @@ const BonusQuestCard: React.FC<BonusQuestCardProps> = ({ quest, onComplete }) =>
 const SystemLogPanel: React.FC = () => {
   const { profile } = useHunter();
   const [expanded, setExpanded] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'quests' | 'vitals' | 'milestones'>('all');
 
   const logs = profile?.system_log || [];
-  const displayLogs = expanded ? logs.slice(0, 15) : logs.slice(0, 5);
+  const filtered = logs.filter(l => {
+    if (filter === 'quests') return l.event_type === 'quest_complete' || l.event_type === 'bonus_quest';
+    if (filter === 'vitals') return l.event_type === 'hp_increase' || l.event_type === 'mp_increase';
+    if (filter === 'milestones') return ['level_up', 'rank_up', 'achievement', 'dungeon', 'streak'].includes(l.event_type);
+    return true;
+  });
+
+  const displayLogs = expanded ? filtered.slice(0, 20) : filtered.slice(0, 5);
 
   const getLogIcon = (type: string) => {
     switch (type) {
@@ -348,12 +370,28 @@ const SystemLogPanel: React.FC = () => {
   return (
     <div className="system-log-panel">
       <div className="log-panel-header">
-        <Scroll className="w-4 h-4 text-cyan-400" />
-        <span>SYSTEM LOG</span>
+        <div className="flex items-center gap-1.5">
+          <Scroll className="w-4 h-4 text-cyan-400" />
+          <span>SYSTEM LOG</span>
+        </div>
         <button type="button" onClick={() => setExpanded(!expanded)} className="log-expand-btn">
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
       </div>
+
+      <div className="log-filter-pills">
+        {(['all', 'quests', 'vitals', 'milestones'] as const).map(f => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={`log-pill-btn ${filter === f ? 'active' : ''}`}
+          >
+            {f.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
       <div className="log-entries">
         {displayLogs.length === 0 ? (
           <div className="log-empty">No system events recorded yet.</div>
@@ -393,12 +431,29 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
     completeDungeonBreak,
     dismissDungeonBreak,
     unlockedAchievements,
+    refreshDaily,
+    deleteQuest,
   } = useHunter();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [showQuestCreator, setShowQuestCreator] = useState(false);
-  const [showAchievements, setShowAchievements] = useState(false);
+  const [showCodex, setShowCodex] = useState(false);
   const [questFilter, setQuestFilter] = useState<'active' | 'all'>('active');
+  const [questSearch, setQuestSearch] = useState('');
+
+  // Filtered quests (must run before any early return)
+  const filteredQuests = useMemo(() => {
+    return quests.filter(q => {
+      const catMatch = activeCategory === 'all' || q.category === activeCategory;
+      const statusMatch = questFilter === 'all' || !q.completed;
+      const searchMatch =
+        !questSearch.trim() ||
+        q.name.toLowerCase().includes(questSearch.toLowerCase().trim()) ||
+        (q.description && q.description.toLowerCase().includes(questSearch.toLowerCase().trim())) ||
+        q.stat.toLowerCase().includes(questSearch.toLowerCase().trim());
+      return catMatch && statusMatch && searchMatch;
+    });
+  }, [quests, activeCategory, questFilter, questSearch]);
 
   if (!profile) return null;
 
@@ -415,15 +470,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
     INT: <Brain className="w-4 h-4 text-purple-400" />,
     PERC: <Eye className="w-4 h-4 text-amber-400" />,
   };
-
-  // Filtered quests
-  const filteredQuests = useMemo(() => {
-    return quests.filter(q => {
-      const catMatch = activeCategory === 'all' || q.category === activeCategory;
-      const statusMatch = questFilter === 'all' || !q.completed;
-      return catMatch && statusMatch;
-    });
-  }, [quests, activeCategory, questFilter]);
 
   const completedCount = quests.filter(q => q.completed).length;
   const activeCount = quests.filter(q => !q.completed).length;
@@ -639,6 +685,28 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             )}
           </AnimatePresence>
 
+          {/* Daily Cycle Status Card */}
+          <div className="daily-cycle-banner">
+            <div className="daily-cycle-info">
+              <Sparkles className="w-4 h-4 text-cyan-400 animate-spin-slow" />
+              <div>
+                <span className="daily-cycle-label">SYSTEM DAILY DIRECTIVE CYCLE</span>
+                <span className="daily-cycle-sub">
+                  Dynamic gates & daily quests recalibrate at 00:00 UTC // Streak active
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={refreshDaily}
+              className="btn-refresh-daily"
+              title="Recalibrate Daily Directives and check for Gates"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              <span>RECALIBRATE DIRECTIVES</span>
+            </button>
+          </div>
+
           {/* Quest Board Header */}
           <div className="quest-board-header">
             <div className="quest-header-title">
@@ -648,6 +716,26 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             </div>
 
             <div className="quest-board-controls">
+              <div className="quest-search-bar">
+                <Search className="w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search active trials..."
+                  value={questSearch}
+                  onChange={e => setQuestSearch(e.target.value)}
+                  className="quest-search-input"
+                />
+                {questSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setQuestSearch('')}
+                    className="quest-search-clear"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               <div className="quest-filter-pills">
                 <button
                   type="button"
@@ -663,12 +751,22 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
               <button
                 type="button"
+                onClick={() => setShowCodex(true)}
+                className="btn-browse-codex"
+                title="Browse all 135+ quests in the Quest Codex"
+              >
+                <BookOpen className="w-4 h-4 mr-1 text-cyan-400" />
+                <span>CODEX</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setShowQuestCreator(true)}
                 className="btn-create-quest"
                 title="Create Custom Quest"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                <span>CREATE QUEST</span>
+                <span>CREATE</span>
               </button>
             </div>
           </div>
@@ -745,7 +843,24 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
                     {/* Actions */}
                     <div className="quest-actions-row">
-                      <span className="stat-reward-hint">STAT: {quest.stat}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="stat-reward-hint">STAT: {quest.stat}</span>
+                        {quest.id.startsWith('custom-') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Expunge "${quest.name}" from your active quest board?`)) {
+                                deleteQuest(quest.id);
+                              }
+                            }}
+                            className="btn-quest-abandon"
+                            title="Expunge Custom Directive"
+                            aria-label="Expunge Custom Directive"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
 
                       {isDone ? (
                         <div className="cleared-pill">
@@ -807,6 +922,13 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             onClose={() => setShowQuestCreator(false)}
             rank={profile.current_rank}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Quest Codex Modal */}
+      <AnimatePresence>
+        {showCodex && (
+          <QuestCodexModal onClose={() => setShowCodex(false)} />
         )}
       </AnimatePresence>
     </div>

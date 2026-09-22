@@ -21,7 +21,10 @@ import {
   User,
   Sparkles,
   RotateCcw,
+  Settings,
 } from 'lucide-react';
+import { NotificationCenterModal } from '@/components/notification-center-modal';
+import { SystemSettingsModal } from '@/components/system-settings-modal';
 import './index.css';
 import './App.css';
 
@@ -102,6 +105,8 @@ const HunterAppContent: React.FC = () => {
     return isOnboarded ? 'dashboard' : 'onboarding';
   });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'leaderboard'>('dashboard');
+  const [showNotifCenter, setShowNotifCenter] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Keep route synced if profile changes
   useEffect(() => {
@@ -192,6 +197,32 @@ const HunterAppContent: React.FC = () => {
               <span className="hidden-mobile">AWAKENING</span>
             </button>
 
+            {/* Notification Center */}
+            <button
+              type="button"
+              id="btn-header-notifications"
+              onClick={() => setShowNotifCenter(true)}
+              className="btn-header-action"
+              title="System Transmissions Archive"
+              aria-label="Transmissions"
+            >
+              <Bell className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">LOGS</span>
+            </button>
+
+            {/* System Settings */}
+            <button
+              type="button"
+              id="btn-header-settings"
+              onClick={() => setShowSettings(true)}
+              className="btn-header-action"
+              title="System Control Panel & Audio"
+              aria-label="Settings"
+            >
+              <Settings className="w-4 h-4 text-slate-300" />
+              <span className="hidden-mobile">SETTINGS</span>
+            </button>
+
             {/* Logout Button */}
             <button
               type="button"
@@ -254,6 +285,23 @@ const HunterAppContent: React.FC = () => {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Notification Center Modal */}
+      <AnimatePresence>
+        {showNotifCenter && (
+          <NotificationCenterModal onClose={() => setShowNotifCenter(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* System Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <SystemSettingsModal
+            onClose={() => setShowSettings(false)}
+            onReplayAwakening={() => setCurrentRoute('onboarding')}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

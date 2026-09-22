@@ -794,6 +794,165 @@ export const QUEST_LIBRARY: LibraryQuest[] = [
     description: 'Intentionally do one thing that challenges your limits.',
     stat: 'STR', target: 1, unit: 'challenge', repeatable: 'always',
   },
+
+  // ============================================================
+  // SOLO LEVELING LEGENDARY DIRECTIVES (31 Quests from default-quests)
+  // ============================================================
+  {
+    id: 'legend-fit-1', name: 'Shadow Conditioning: 100 Push-ups', category: 'physical', difficulty: 'C',
+    description: 'Complete 100 proper form push-ups distributed throughout the day to forge upper body strength.',
+    stat: 'STR', target: 100, unit: 'reps', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-2', name: 'Grip of the Monarch: Hang & Grip Trial', category: 'physical', difficulty: 'D',
+    description: 'Hang from a pull-up bar or perform grip holds for a cumulative total of 3 minutes.',
+    stat: 'STR', target: 3, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-3', name: 'Shadow Sprint: 5km Endurance March', category: 'physical', difficulty: 'C',
+    description: 'Engage in a 5km run or brisk power-walk to elevate cardiovascular speed and stamina.',
+    stat: 'AGI', target: 5, unit: 'km', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-4', name: 'Iron Legs: 100 Deep Bodyweight Squats', category: 'physical', difficulty: 'D',
+    description: 'Perform 100 full-depth squats to cultivate foundation explosiveness and lower body power.',
+    stat: 'STR', target: 100, unit: 'reps', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-5', name: 'Core of Steel: 5-Minute Accumulation Plank', category: 'physical', difficulty: 'C',
+    description: 'Hold a forearm plank position for an accumulated duration of 5 minutes today.',
+    stat: 'VIT', target: 5, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-6', name: 'Quickstep Calisthenics: 200 Jumping Jacks', category: 'physical', difficulty: 'E',
+    description: 'Rapid explosive jumping jacks to stimulate sudden adrenaline and agility awakenings.',
+    stat: 'AGI', target: 200, unit: 'reps', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-7', name: 'High Intensity Mana Surge: 15m HIIT', category: 'physical', difficulty: 'B',
+    description: '15 continuous minutes of interval sprints, burpees, and mountain climbers at maximum threshold.',
+    stat: 'AGI', target: 15, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-fit-8', name: 'Elastic Recovery: Full Mobility & Stretch Flow', category: 'physical', difficulty: 'E',
+    description: 'Perform 20 minutes of targeted hip, hamstring, and thoracic spine mobility work.',
+    stat: 'AGI', target: 20, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-1', name: 'Grimoire Codex: 30-Minute Non-Fiction Deep Read', category: 'study', difficulty: 'D',
+    description: 'Absorb high-density knowledge from books on technology, philosophy, or human psychology without distraction.',
+    stat: 'INT', target: 30, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-2', name: 'Algorithm Gate: Solve 2 Algorithmic Puzzles', category: 'coding', difficulty: 'C',
+    description: 'Tackle two complex data structure or programming problems to sharpen logical acuity.',
+    stat: 'INT', target: 2, unit: 'problems', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-3', name: 'Linguistic Runes: 20 Minutes Language Practice', category: 'study', difficulty: 'D',
+    description: 'Practice vocabulary flashcards or foreign language grammar to expand neural plasticity.',
+    stat: 'INT', target: 20, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-4', name: 'Knowledge Synthesis: Write a 1-Page Summary', category: 'knowledge', difficulty: 'C',
+    description: 'Distill a complex topic or paper into a concise, actionable 1-page breakdown.',
+    stat: 'INT', target: 1, unit: 'summary', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-5', name: 'Technical Mastery: Build a Micro-Prototype', category: 'coding', difficulty: 'B',
+    description: 'Implement a working code prototype or script exploring a brand-new library or API.',
+    stat: 'INT', target: 1, unit: 'prototype', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-6', name: 'Tactical Archive: Audio Lecture Immersion', category: 'study', difficulty: 'D',
+    description: 'Listen intently to a 45-minute technical podcast or masterclass while taking mental timestamps.',
+    stat: 'INT', target: 45, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-7', name: 'Memory Palace: Memorize 5 Critical Concept Pillars', category: 'knowledge', difficulty: 'D',
+    description: 'Commit 5 core principles or architecture diagrams to long-term memory via spaced recall.',
+    stat: 'PERC', target: 5, unit: 'concepts', repeatable: 'daily',
+  },
+  {
+    id: 'legend-learn-8', name: 'Research Abyss: 60-Minute Deep Technical Investigation', category: 'study', difficulty: 'B',
+    description: 'Unpack the inner workings of an unfamiliar system, protocol, or framework from primary source docs.',
+    stat: 'INT', target: 60, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-1', name: 'Hydration Font: Drink 3 Liters of Water', category: 'health', difficulty: 'E',
+    description: 'Maintain cellular hydration and energy flow by finishing 3000ml of clean water throughout the day.',
+    stat: 'VIT', target: 3, unit: 'liters', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-2', name: 'Deep Regeneration: 8 Hours Sleep Chamber', category: 'health', difficulty: 'C',
+    description: 'Optimize recovery hormones and synaptic pruning with a minimum of 7.5 to 8 hours restorative sleep.',
+    stat: 'VIT', target: 8, unit: 'hours', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-3', name: 'Sugar Purge: Zero Added Refined Sugar', category: 'health', difficulty: 'C',
+    description: 'Resist processed sweets, sugary soda, and confections to stabilize blood glucose and dopamine.',
+    stat: 'VIT', target: 1, unit: 'day', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-4', name: 'Solar Awakening: 15-Minute Morning Sunlight', category: 'health', difficulty: 'E',
+    description: 'Expose eyes and skin to natural morning sunlight within 60 minutes of waking to anchor circadian clock.',
+    stat: 'VIT', target: 15, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-5', name: 'Dopamine Detox: 2 Hours Zero Social Media', category: 'health', difficulty: 'D',
+    description: 'Completely disconnect from short-form feeds and reels for a focused reset period.',
+    stat: 'PERC', target: 2, unit: 'hours', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-6', name: 'Cold Resistance: 2-Minute Frost Shower', category: 'health', difficulty: 'B',
+    description: 'Conclude your shower with 2 minutes of icy cold water to trigger norepinephrine and mental toughness.',
+    stat: 'VIT', target: 2, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-7', name: 'Clean Mana: Whole Foods Nutrient Feast', category: 'health', difficulty: 'D',
+    description: 'Eat only nutrient-dense single-ingredient foods with substantial dietary fiber and lean protein.',
+    stat: 'VIT', target: 3, unit: 'meals', repeatable: 'daily',
+  },
+  {
+    id: 'legend-hlth-8', name: 'Pranayama Stillness: 10-Minute Breathwork Meditation', category: 'health', difficulty: 'E',
+    description: 'Perform box breathing or physiological sighs to activate parasympathetic calm and mental stillness.',
+    stat: 'PERC', target: 10, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-1', name: 'S-Rank Focus Chamber: 90-Minute Deep Work Block', category: 'productivity', difficulty: 'B',
+    description: 'Eliminate all notifications and enter uninterrupted deep work on your most vital mission.',
+    stat: 'PERC', target: 90, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-2', name: 'Inbox Cleansing: Zero Inbox Annihilation', category: 'productivity', difficulty: 'D',
+    description: 'Triage, delegate, or archive all incoming communication backlogs down to absolute zero.',
+    stat: 'PERC', target: 1, unit: 'cleared', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-3', name: 'Sanctuary Order: 15-Minute Environment Declutter', category: 'productivity', difficulty: 'E',
+    description: 'Reset your physical desk and battle station to pristine condition to minimize visual distraction.',
+    stat: 'PERC', target: 15, unit: 'minutes', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-4', name: 'War Council: Evening Battle Plan for Tomorrow', category: 'productivity', difficulty: 'D',
+    description: 'Formulate the top 3 high-leverage priorities for tomorrow before entering sleep mode.',
+    stat: 'INT', target: 3, unit: 'objectives', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-5', name: 'The Frog Slayer: Eliminate Hardest Task First', category: 'productivity', difficulty: 'B',
+    description: 'Conquer the single most intimidating or postponed task before midday.',
+    stat: 'STR', target: 1, unit: 'boss task', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-6', name: 'Pomodoro Barrage: Complete 4 Full Cycles', category: 'productivity', difficulty: 'C',
+    description: 'Execute 4 consecutive 25-minute sprints with strict 5-minute restorative breaks.',
+    stat: 'PERC', target: 4, unit: 'cycles', repeatable: 'daily',
+  },
+  {
+    id: 'legend-prod-7', name: 'Hunter Journal: 10-Minute Reflection & Review', category: 'productivity', difficulty: 'D',
+    description: 'Document what you conquered, where mana was wasted, and recalibrate your internal compass.',
+    stat: 'PERC', target: 10, unit: 'minutes', repeatable: 'daily',
+  },
 ];
 
 export default QUEST_LIBRARY;
