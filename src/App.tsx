@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { HunterProvider, useHunter } from '@/lib/hunter-store';
+import { AuthProvider, AuthGate, useAuth } from '@/lib/auth';
 import { SystemAwakening } from '@/routes/onboarding/system-awakening';
 import { HunterHub } from '@/routes/dashboard/hunter-hub';
+import { ProfilePage } from '@/routes/dashboard/profile-page';
+import { Leaderboard } from '@/components/leaderboard';
 import {
   subscribeToNotifications,
   type HunterNotification,
 } from '@/lib/notifications';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, CheckCircle, Bell, X, ShieldAlert } from 'lucide-react';
+import {
+  ShieldAlert,
+  CheckCircle,
+  Bell,
+  X,
+  LayoutDashboard,
+  Trophy,
+  LogOut,
+  User,
+  Sparkles,
+  RotateCcw,
+} from 'lucide-react';
 import './index.css';
+import './App.css';
 
 // In-App Notification Toast Overlay
 const SystemNotificationOverlay: React.FC = () => {
@@ -79,13 +94,14 @@ const SystemNotificationOverlay: React.FC = () => {
   );
 };
 
-// Route Controller handling navigation between Onboarding and Hub
+// Route and Tab Controller
 const HunterAppContent: React.FC = () => {
-  const { isOnboarded } = useHunter();
+  const { isOnboarded, profile } = useHunter();
+  const { user, logout } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<'onboarding' | 'dashboard'>(() => {
-    // If user has already awakened, route to dashboard, else onboarding
     return isOnboarded ? 'dashboard' : 'onboarding';
   });
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'leaderboard'>('dashboard');
 
   // Keep route synced if profile changes
   useEffect(() => {
@@ -100,38 +116,157 @@ const HunterAppContent: React.FC = () => {
     <div className="hunter-system-app">
       <SystemNotificationOverlay />
 
-      <AnimatePresence mode="wait">
-        {currentRoute === 'onboarding' ? (
-          <motion.div
-            key="onboarding-route"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <SystemAwakening onComplete={() => setCurrentRoute('dashboard')} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="dashboard-route"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <HunterHub onReplayAwakening={() => setCurrentRoute('onboarding')} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Top Application Header when user has awakened */}
+      {currentRoute === 'dashboard' && (
+        <header className="app-main-header">
+          <div className="app-header-left">
+            <div className="app-brand">
+              <Sparkles className="w-5 h-5 text-cyan-400 animate-spin-slow" />
+              <span className="brand-text">HUNTER SYSTEM</span>
+              {profile?.current_rank && (
+                <span className="header-rank-tag">{profile.current_rank}</span>
+              )}
+            </div>
+
+            {/* Navigation Tabs */}
+            <nav className="header-nav-tabs" aria-label="Main Navigation">
+              <button
+                type="button"
+                id="nav-tab-dashboard"
+                onClick={() => setActiveTab('dashboard')}
+                className={`header-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                aria-current={activeTab === 'dashboard' ? 'page' : undefined}
+              >
+                <LayoutDashboard className="w-4 h-4 mr-1.5" />
+                <span>DASHBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-profile"
+                onClick={() => setActiveTab('profile')}
+                className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+                aria-current={activeTab === 'profile' ? 'page' : undefined}
+              >
+                <User className="w-4 h-4 mr-1.5 text-purple-400" />
+                <span>PROFILE</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-leaderboard"
+                onClick={() => setActiveTab('leaderboard')}
+                className={`header-tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
+                aria-current={activeTab === 'leaderboard' ? 'page' : undefined}
+              >
+                <Trophy className="w-4 h-4 mr-1.5 text-amber-400" />
+                <span>LEADERBOARD</span>
+              </button>
+            </nav>
+          </div>
+
+          <div className="app-header-right">
+            {/* User identification */}
+            <div className="header-user-meta">
+              <div className="user-avatar-circle">
+                <User className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div className="user-text-info">
+                <span className="user-display-name">
+                  {profile?.display_name || user?.name || user?.email || 'Hunter'}
+                </span>
+                <span className="user-id-sub">
+                  {profile?.hunter_id || 'ID: PENDING'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              id="btn-header-reawakening"
+              onClick={() => setCurrentRoute('onboarding')}
+              className="btn-header-action"
+              title="Re-run Awakening Sequence"
+            >
+              <RotateCcw className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">AWAKENING</span>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              type="button"
+              id="btn-logout"
+              onClick={logout}
+              className="btn-header-action logout"
+              title="Log Out Session"
+              aria-label="Log Out"
+            >
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <span className="hidden-mobile">LOGOUT</span>
+            </button>
+          </div>
+        </header>
+      )}
+
+      {/* Main View Transition */}
+      <main className="app-main-body">
+        <AnimatePresence mode="wait">
+          {currentRoute === 'onboarding' ? (
+            <motion.div
+              key="onboarding-route"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SystemAwakening onComplete={() => setCurrentRoute('dashboard')} />
+            </motion.div>
+          ) : activeTab === 'dashboard' ? (
+            <motion.div
+              key="dashboard-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <HunterHub onReplayAwakening={() => setCurrentRoute('onboarding')} />
+            </motion.div>
+          ) : activeTab === 'profile' ? (
+            <motion.div
+              key="profile-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProfilePage />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="leaderboard-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Leaderboard />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
     </div>
   );
 };
 
 function App() {
   return (
-    <HunterProvider>
-      <HunterAppContent />
-    </HunterProvider>
+    <AuthProvider>
+      <AuthGate>
+        <HunterProvider>
+          <HunterAppContent />
+        </HunterProvider>
+      </AuthGate>
+    </AuthProvider>
   );
 }
 

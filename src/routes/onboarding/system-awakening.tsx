@@ -16,7 +16,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
-import { HUNTER_STATS, type HunterStat } from '@/lib/game-engine';
+import { HUNTER_STATS, type HunterStat, generateHunterId, type Profile } from '@/lib/game-engine';
 import { playSystemChime } from '@/lib/notifications';
 import { trackEvent, AnalyticsEvent } from '@/lib/analytics';
 
@@ -25,7 +25,7 @@ interface SystemAwakeningProps {
 }
 
 export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) => {
-  const { saveAwakenedProfile } = useHunter();
+  const { saveAwakenedProfile, profile } = useHunter();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [hunterName, setHunterName] = useState<string>('');
@@ -33,6 +33,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
   const [nameError, setNameError] = useState<string>('');
   const [isAwakeningSubmitting, setIsAwakeningSubmitting] = useState<boolean>(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(90);
+  const [awakenedProfile, setAwakenedProfile] = useState<Profile | null>(null);
 
   // 90-Second Awakening countdown timer
   useEffect(() => {
@@ -87,10 +88,12 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
     playSystemChime('level');
 
     try {
-      await saveAwakenedProfile(hunterName, selectedStat);
+      const saved = await saveAwakenedProfile(hunterName, selectedStat);
+      setAwakenedProfile(saved);
       trackEvent(AnalyticsEvent.AWAKENING_COMPLETED, {
         name: hunterName,
         stat: selectedStat,
+        hunterId: saved.hunter_id,
       });
 
       // Trigger Confetti Celebration
@@ -493,7 +496,9 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                   </div>
                   <div className="license-info">
                     <div className="license-name">{hunterName}</div>
-                    <div className="license-id">ID: HUNTER-001-{selectedStat}</div>
+                    <div className="license-id">
+                      ID: {awakenedProfile?.hunter_id || profile?.hunter_id || generateHunterId(hunterName, selectedStat)}
+                    </div>
                     <div className="license-details">
                       <span>LEVEL: 1</span>
                       <span>AFFINITY: {selectedStat}</span>
