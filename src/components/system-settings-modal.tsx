@@ -99,7 +99,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
             <Settings className="w-5 h-5 text-cyan-400" />
             <div>
               <h3>SYSTEM CONTROL PANEL</h3>
-              <p className="modal-subtitle">Audio harmonics, quiet hours, telemetry, and data configuration.</p>
+              <p className="modal-subtitle">Audio harmonics, quiet hours, activity logs, and data configuration.</p>
             </div>
           </div>
           <button
@@ -129,7 +129,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
             className={`settings-tab-btn ${activeTab === 'telemetry' ? 'active' : ''}`}
           >
             <Activity className="w-4 h-4 mr-1.5" />
-            <span>SYSTEM TELEMETRY</span>
+            <span>ACTIVITY LOG</span>
           </button>
           <button
             type="button"
@@ -278,14 +278,14 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
             </div>
           )}
 
-          {/* TELEMETRY */}
+          {/* ACTIVITY LOG */}
           {activeTab === 'telemetry' && (
             <div className="telemetry-view">
               <div className="telemetry-header">
                 <div>
-                  <h4 className="telemetry-title">NEURAL SYSTEM TELEMETRY BUFFER</h4>
+                  <h4 className="telemetry-title">LOCAL ACTIVITY LOG & EVENTS BUFFER</h4>
                   <p className="text-xs text-muted">
-                    Last 100 system state events recorded in local storage.
+                    Last 100 system state events. All events are stored strictly on your local device only. Nothing is transmitted externally.
                   </p>
                 </div>
                 <span className="telemetry-count">{analytics.length} Events</span>
@@ -311,7 +311,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
                 ))}
 
                 {analytics.length === 0 && (
-                  <div className="text-center py-8 text-muted">No telemetry events recorded yet.</div>
+                  <div className="text-center py-8 text-muted">No activity events recorded yet.</div>
                 )}
               </div>
             </div>

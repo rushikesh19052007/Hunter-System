@@ -33,6 +33,54 @@
   color-scheme: dark;
 }
 
+body.light-mode {
+  --bg-core: #f1f5f9;
+  --bg-surface: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-card-hover: rgba(241, 245, 249, 0.98);
+
+  --cyan-primary: #0284c7;
+  --cyan-glow: rgba(2, 132, 199, 0.25);
+  --blue-system: #1d4ed8;
+  --purple-monarch: #7e22ce;
+  --purple-glow: rgba(126, 34, 206, 0.25);
+  --amber-quest: #d97706;
+  --emerald-restored: #059669;
+  --rose-danger: #e11d48;
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-highlight: #020617;
+
+  --border-subtle: rgba(14, 165, 233, 0.25);
+  --border-active: rgba(2, 132, 199, 0.8);
+  --border-purple: rgba(126, 34, 206, 0.4);
+
+  color-scheme: light;
+}
+
+body.light-mode .app-header {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom-color: rgba(14, 165, 233, 0.25);
+}
+
+body.light-mode .status-window-card,
+body.light-mode .quest-item-card,
+body.light-mode .daily-cycle-banner,
+body.light-mode .quest-board-header,
+body.light-mode .leaderboard-container,
+body.light-mode .global-stat-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+body.light-mode .leaderboard-title {
+  color: #0f172a;
+}
+
+body.light-mode .global-stat-value {
+  color: #0f172a;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -47,6 +95,7 @@ html, body {
   overflow-x: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Base App Wrapper */
@@ -1843,6 +1892,155 @@ html, body {
   transition: all 0.2s;
 }
 .btn-dungeon-dismiss:hover { color: #f87171; border-color: rgba(239,68,68,0.4); }
+
+/* ---- Monarch Boss Quest Banner ---- */
+.boss-quest-banner {
+  position: sticky;
+  top: 0;
+  z-index: 55;
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(185, 28, 28, 0.35) 100%);
+  border: 1.5px solid rgba(168, 85, 247, 0.6);
+  border-radius: 12px;
+  padding: 1.15rem 1.4rem;
+  margin: 0.75rem;
+  box-shadow: 0 0 35px rgba(168, 85, 247, 0.3), 0 0 15px rgba(220, 38, 38, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+}
+.boss-banner-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}
+.boss-badge-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.boss-tag {
+  font-family: var(--font-tech);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #c084fc;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.boss-name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+}
+.boss-sub-title {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  font-style: italic;
+  margin-left: 0.5rem;
+}
+.boss-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-family: var(--font-tech);
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+}
+.boss-challenge-text {
+  font-size: 0.85rem;
+  color: #f1f5f9;
+  font-family: var(--font-body);
+  line-height: 1.5;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  border-left: 4px solid #a855f7;
+}
+.boss-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.boss-rewards-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-tech);
+}
+.rewards-caption {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+.boss-reward-pill {
+  background: rgba(147, 51, 234, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #e9d5ff;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.boss-reward-pill.gold {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fde68a;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+.boss-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.btn-boss-claim {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 1.25rem;
+  background: linear-gradient(135deg, #9333ea, #7e22ce);
+  color: #ffffff;
+  border: 1px solid rgba(192, 132, 252, 0.5);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-family: var(--font-tech);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 15px rgba(147, 51, 234, 0.4);
+}
+.btn-boss-claim:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.6);
+  border-color: #c084fc;
+}
+.btn-boss-dismiss {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.85rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-family: var(--font-tech);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-boss-dismiss:hover {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
 
 /* ---- Bonus Quest Card ---- */
 .bonus-quest-card {

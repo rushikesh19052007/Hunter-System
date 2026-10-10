@@ -31,6 +31,15 @@ export const DIFFICULTY_STAT_XP: Record<DifficultyGrade, number> = {
   S: 180,
 };
 
+export const DIFFICULTY_STAT_POINTS: Record<DifficultyGrade, number> = {
+  E: 1,
+  D: 2,
+  C: 3,
+  B: 4,
+  A: 5,
+  S: 8,
+};
+
 export const DIFFICULTY_LABEL: Record<DifficultyGrade, string> = {
   E: 'E-Class',
   D: 'D-Class',
@@ -228,6 +237,9 @@ export type Profile = {
 
   // System log (v2)
   system_log: SystemLogEntry[];
+  
+  // Stat points (v3)
+  available_stat_points?: number;
 };
 
 export interface SystemLogEntry {
@@ -523,6 +535,7 @@ export function createDefaultProfile(id: string, name: string, affinity: string)
     profile_frame: '',
     skill_points: { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 },
     available_skill_points: 0,
+    available_stat_points: 0,
 
     system_log: [{
       id: 'log-init',
@@ -574,6 +587,7 @@ export function migrateProfile(old: Partial<Profile> & Record<string, unknown>):
     profile_frame: (old.profile_frame as string) || '',
     skill_points: (old.skill_points as SkillPoints) || { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 },
     available_skill_points: (old.available_skill_points as number) || 0,
+    available_stat_points: (old.available_stat_points as number) || 0,
 
     system_log: (old.system_log as SystemLogEntry[]) || [],
   };

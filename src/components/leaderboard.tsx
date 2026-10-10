@@ -11,6 +11,7 @@ import {
   Search,
   RotateCw,
   User,
+  Users,
   Sparkles,
   ChevronUp,
 } from 'lucide-react';
@@ -24,6 +25,13 @@ import {
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export type SortFilter = 'xp' | 'level' | 'clean_days';
+
+export interface GlobalRegistryStats {
+  totalHunters: number;
+  activeHunters: number;
+  avgLevel: number;
+  dominantAffinity: string;
+}
 
 // Legendary seed hunters to ensure 100 ranks are populated if database is fresh
 const SEED_HUNTERS: Profile[] = [
@@ -94,6 +102,70 @@ export const Leaderboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hunters, setHunters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [registryStats, setRegistryStats] = useState<GlobalRegistryStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState<boolean>(true);
+
+  // Fetch aggregate global stats from Supabase profiles table
+  useEffect(() => {
+    let isMounted = true;
+    const fetchGlobalAggregates = async () => {
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, total_xp, current_level, affinity');
+          if (!error && data && data.length > 0) {
+            const total = data.length;
+            const active = data.filter((d: { total_xp?: number }) => (d.total_xp || 0) > 0).length;
+            const sumLvl = data.reduce((acc: number, d: { current_level?: number }) => acc + (d.current_level || 1), 0);
+            const avgLvl = Math.max(1, Math.round(sumLvl / total));
+
+            const tally: Record<string, number> = {};
+            data.forEach((d: { affinity?: string }) => {
+              const aff = d.affinity || 'AGI';
+              tally[aff] = (tally[aff] || 0) + 1;
+            });
+            let topAff = 'AGI';
+            let maxCount = 0;
+            for (const [aff, count] of Object.entries(tally)) {
+              if (count > maxCount) {
+                maxCount = count;
+                topAff = aff;
+              }
+            }
+
+            if (isMounted) {
+              setRegistryStats({
+                totalHunters: total,
+                activeHunters: active,
+                avgLevel: avgLvl,
+                dominantAffinity: topAff,
+              });
+              setStatsLoading(false);
+            }
+            return;
+          }
+        } catch (err) {
+          console.warn('[Leaderboard] Aggregates fetch error:', err);
+        }
+      }
+
+      if (isMounted) {
+        setRegistryStats({
+          totalHunters: 100,
+          activeHunters: 98,
+          avgLevel: 42,
+          dominantAffinity: profile?.affinity || 'AGI',
+        });
+        setStatsLoading(false);
+      }
+    };
+
+    fetchGlobalAggregates();
+    return () => {
+      isMounted = false;
+    };
+  }, [profile?.affinity]);
 
   // Fetch top 100 hunters from Supabase profiles table or use realistic seeded roster
   const fetchLeaderboard = async () => {
@@ -104,7 +176,7 @@ export const Leaderboard: React.FC = () => {
       try {
         const orderColumn = filter === 'xp' ? 'total_xp' : filter === 'level' ? 'current_level' : 'clean_days';
         const { data, error } = await supabase
-          .from('profiles')
+          .from('leaderboard_view')
           .select('*')
           .order(orderColumn, { ascending: false })
           .limit(100);
@@ -127,10 +199,7 @@ export const Leaderboard: React.FC = () => {
       }
     }
 
-    // If fetched is empty, use seed pool
-    if (fetchedHunters.length === 0) {
-      fetchedHunters = generateTop100Hunters();
-    }
+    // If fetched is empty and no supabase, just show the user
 
     // Merge or replace current user profile into the pool so user is always present
     if (profile) {
@@ -168,12 +237,14 @@ export const Leaderboard: React.FC = () => {
       return (b.clean_days || 0) - (a.clean_days || 0);
     });
 
+    const realHunters = list.filter(h => !h.id.startsWith('legend-') && !h.id.startsWith('gen-hunter-'));
+
     if (!searchQuery.trim()) {
-      return list.slice(0, 100);
+      return realHunters.slice(0, 100);
     }
 
     const q = searchQuery.toLowerCase().trim();
-    return list.filter(
+    return realHunters.filter(
       (h) =>
         h.display_name.toLowerCase().includes(q) ||
         h.hunter_id?.toLowerCase().includes(q) ||
@@ -243,6 +314,57 @@ export const Leaderboard: React.FC = () => {
           <p className="leaderboard-subtitle">
             Live worldwide standings certified by the Hunter Association Archives. Top 100 Awakened.
           </p>
+        </div>
+
+        {/* Global Registry Aggregate Stats Widget */}
+        <div className="global-stats-bar">
+          <div className="global-stat-card">
+            <div className="global-stat-icon-wrapper text-cyan-400">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="global-stat-details">
+              <span className="global-stat-label">REGISTERED HUNTERS</span>
+              <span className="global-stat-value">
+                {statsLoading ? '...' : (registryStats?.totalHunters || 100).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="global-stat-card">
+            <div className="global-stat-icon-wrapper text-emerald-400">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div className="global-stat-details">
+              <span className="global-stat-label">ACTIVE COMBATANTS</span>
+              <span className="global-stat-value">
+                {statsLoading ? '...' : (registryStats?.activeHunters || 98).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="global-stat-card">
+            <div className="global-stat-icon-wrapper text-amber-400">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="global-stat-details">
+              <span className="global-stat-label">AVG POWER LEVEL</span>
+              <span className="global-stat-value">
+                {statsLoading ? '...' : `LVL ${registryStats?.avgLevel || 42}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="global-stat-card">
+            <div className="global-stat-icon-wrapper text-purple-400">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div className="global-stat-details">
+              <span className="global-stat-label">DOMINANT AFFINITY</span>
+              <span className="global-stat-value">
+                {statsLoading ? '...' : (registryStats?.dominantAffinity || 'AGI')}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Current User Standing Banner */}
@@ -418,9 +540,29 @@ export const Leaderboard: React.FC = () => {
             );
           })}
 
-          {sortedHunters.length === 0 && (
+          {sortedHunters.length === 0 && !loading && (
             <div className="empty-leaderboard">
-              <p>No Hunters matching search query.</p>
+              {searchQuery.trim() ? (
+                <>
+                  <Shield className="w-10 h-10 text-slate-600 mb-3" />
+                  <p className="font-bold text-slate-300">No Hunters Found</p>
+                  <p className="text-sm text-slate-500 mt-1">No hunters match "{searchQuery}". Try a different name or ID.</p>
+                </>
+              ) : (
+                <>
+                  <Trophy className="w-10 h-10 text-amber-600/40 mb-3" />
+                  <p className="font-bold text-slate-300">No Registered Hunters Yet</p>
+                  <p className="text-sm text-slate-500 mt-1 max-w-sm text-center">
+                    You are among the first Awakened. Complete quests to stake your claim on the global registry.
+                  </p>
+                  {profile && (
+                    <div className="mt-4 bg-slate-800/60 border border-cyan-500/30 rounded-lg px-4 py-3 text-sm text-cyan-300 flex items-center gap-2">
+                      <ChevronUp className="w-4 h-4 text-cyan-400" />
+                      <span><strong>[YOU]</strong> {profile.display_name} — Rank #{1} by default</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

@@ -4,6 +4,8 @@ import { AuthProvider, AuthGate, useAuth } from '@/lib/auth';
 import { SystemAwakening } from '@/routes/onboarding/system-awakening';
 import { HunterHub } from '@/routes/dashboard/hunter-hub';
 import { ProfilePage } from '@/routes/dashboard/profile-page';
+import { StatAllocationPage } from '@/routes/dashboard/stat-allocation-page';
+import { AccountSettingsPage } from '@/routes/dashboard/account-settings-page';
 import { Leaderboard } from '@/components/leaderboard';
 import {
   subscribeToNotifications,
@@ -22,6 +24,8 @@ import {
   Sparkles,
   RotateCcw,
   Settings,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { NotificationCenterModal } from '@/components/notification-center-modal';
 import { SystemSettingsModal } from '@/components/system-settings-modal';
@@ -104,9 +108,33 @@ const HunterAppContent: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<'onboarding' | 'dashboard'>(() => {
     return isOnboarded ? 'dashboard' : 'onboarding';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'leaderboard'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'profile' | 'leaderboard' | 'settings'>('dashboard');
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('hunter_theme');
+      return saved === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  // Apply theme class to document body
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+    try {
+      localStorage.setItem('hunter_theme', theme);
+    } catch {}
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   // Keep route synced if profile changes
   useEffect(() => {
@@ -148,6 +176,17 @@ const HunterAppContent: React.FC = () => {
 
               <button
                 type="button"
+                id="nav-tab-stats"
+                onClick={() => setActiveTab('stats')}
+                className={`header-tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+                aria-current={activeTab === 'stats' ? 'page' : undefined}
+              >
+                <Sparkles className="w-4 h-4 mr-1.5 text-cyan-400" />
+                <span>STATS</span>
+              </button>
+
+              <button
+                type="button"
                 id="nav-tab-profile"
                 onClick={() => setActiveTab('profile')}
                 className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
@@ -166,6 +205,17 @@ const HunterAppContent: React.FC = () => {
               >
                 <Trophy className="w-4 h-4 mr-1.5 text-amber-400" />
                 <span>LEADERBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-settings"
+                onClick={() => setActiveTab('settings')}
+                className={`header-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                aria-current={activeTab === 'settings' ? 'page' : undefined}
+              >
+                <Settings className="w-4 h-4 mr-1.5 text-slate-400" />
+                <span>SETTINGS</span>
               </button>
             </nav>
           </div>
@@ -223,6 +273,23 @@ const HunterAppContent: React.FC = () => {
               <span className="hidden-mobile">SETTINGS</span>
             </button>
 
+            {/* Theme Toggle (Light / Dark) */}
+            <button
+              type="button"
+              id="btn-header-theme"
+              onClick={toggleTheme}
+              className="btn-header-action"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-cyan-500" />
+              )}
+              <span className="hidden-mobile">{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
+            </button>
+
             {/* Logout Button */}
             <button
               type="button"
@@ -262,6 +329,16 @@ const HunterAppContent: React.FC = () => {
             >
               <HunterHub onReplayAwakening={() => setCurrentRoute('onboarding')} />
             </motion.div>
+          ) : activeTab === 'stats' ? (
+            <motion.div
+              key="stats-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <StatAllocationPage />
+            </motion.div>
           ) : activeTab === 'profile' ? (
             <motion.div
               key="profile-tab"
@@ -272,7 +349,7 @@ const HunterAppContent: React.FC = () => {
             >
               <ProfilePage />
             </motion.div>
-          ) : (
+          ) : activeTab === 'leaderboard' ? (
             <motion.div
               key="leaderboard-tab"
               initial={{ opacity: 0 }}
@@ -281,6 +358,16 @@ const HunterAppContent: React.FC = () => {
               transition={{ duration: 0.3 }}
             >
               <Leaderboard />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="settings-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <AccountSettingsPage />
             </motion.div>
           )}
         </AnimatePresence>

@@ -7,6 +7,7 @@ import {
   type StatXpType,
   DIFFICULTY_XP,
   DIFFICULTY_STAT_XP,
+  DIFFICULTY_STAT_POINTS,
   calculateLevel,
   calculateRank,
   calculateMaxHp,
@@ -30,8 +31,11 @@ import {
   completeDungeonBreak as markDungeonComplete,
   dismissDungeonBreak as markDungeonDismissed,
   completeBonusQuestInState,
+  completeBossQuestInState,
+  dismissBossQuestInState,
   calculateStreakUpdate,
   type DungeonBreak,
+  type BossQuest,
 } from './daily-system';
 import { scheduleNotification } from './notifications';
 import { trackEvent, AnalyticsEvent } from './analytics';
@@ -49,6 +53,7 @@ export interface HunterContextType {
   unlockedAchievements: string[];
   activeBonus: Quest | null;
   activeDungeon: DungeonBreak | null;
+  activeBossQuest: BossQuest | null;
 
   // Actions
   saveAwakenedProfile: (name: string, primaryStat: string) => Promise<Profile>;
@@ -62,6 +67,8 @@ export interface HunterContextType {
   completeBonusQuest: () => void;
   completeDungeonBreak: () => void;
   dismissDungeonBreak: () => void;
+  completeBossQuest: () => void;
+  dismissBossQuest: () => void;
   equipTitle: (title: string) => void;
   allocateSkillPoint: (skill: keyof Profile['skill_points']) => void;
   refreshDaily: () => void;
@@ -134,6 +141,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
   const [activeBonus, setActiveBonus] = useState<Quest | null>(null);
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
+  const [activeBossQuest, setActiveBossQuest] = useState<BossQuest | null>(null);
 
   // Legacy auth state
   const [auth] = useState(() => {
@@ -235,8 +243,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
           }
         })
-        .catch(() => {});
-    }).catch(() => {});
+        .catch(() => { });
+    }).catch(() => { });
   }, []);
 
   // Load daily state on mount
@@ -249,15 +257,28 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (dailyState.dungeonBreak && !dailyState.dungeonBreak.completed && !dailyState.dungeonBreak.dismissed) {
         setActiveDungeon(dailyState.dungeonBreak);
       }
+      if (dailyState.bossQuest && !dailyState.bossQuest.completed && !dailyState.bossQuest.dismissed) {
+        setActiveBossQuest(dailyState.bossQuest);
+      }
     } else if (profile) {
       // Generate fresh daily pool
-      const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
+      const { bonusQuest, dungeonBreak, bossQuest } = generateDailyPool(profile, profile.id);
       if (bonusQuest) setActiveBonus(bonusQuest);
       if (dungeonBreak) {
         setActiveDungeon(dungeonBreak);
         scheduleNotification({
           title: '⚠️ DUNGEON BREAK DETECTED',
           message: `An unstable gate has appeared. ${dungeonBreak.challenge.slice(0, 60)}...`,
+          priority: 'urgent',
+          category: 'warning',
+          playSound: true,
+        });
+      }
+      if (bossQuest) {
+        setActiveBossQuest(bossQuest);
+        scheduleNotification({
+          title: '👑 MONARCH BOSS ENCOUNTER',
+          message: `Boss: ${bossQuest.boss_name} — ${bossQuest.challenge.slice(0, 60)}...`,
           priority: 'urgent',
           category: 'warning',
           playSound: true,
@@ -282,12 +303,6 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const rankChanged = newRank !== prevRank;
 
     const updatedStats = { ...profile.stats };
-    if (levelDiff > 0) {
-      Object.keys(updatedStats).forEach(key => { updatedStats[key] += levelDiff * 2; });
-      if (primaryAffinity && updatedStats[primaryAffinity] !== undefined) {
-        updatedStats[primaryAffinity] += levelDiff;
-      }
-    }
 
     // Rank-based HP/MP base
     const rankHpBase = HP_BY_RANK[newRank] || 100;
@@ -446,15 +461,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Update stat for quest
     let updatedProfile: Profile = { ...profile };
 
-    if (quest.stat && updatedProfile.stats[quest.stat] !== undefined) {
-      updatedProfile = {
-        ...updatedProfile,
-        stats: {
-          ...updatedProfile.stats,
-          [quest.stat]: (updatedProfile.stats[quest.stat] || 10) + 1,
-        },
-      };
-    }
+    const statPointsEarned = DIFFICULTY_STAT_POINTS[quest.difficulty] || 1;
+    updatedProfile.available_stat_points = (updatedProfile.available_stat_points || 0) + statPointsEarned;
 
     // Quest type counters
     const isPhysical = ['physical', 'fitness', 'health'].includes(quest.category);
@@ -599,12 +607,6 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const rankChanged = newRank !== prevRank;
 
     const updatedStats = { ...currentProfile.stats };
-    if (levelDiff > 0) {
-      Object.keys(updatedStats).forEach(key => { updatedStats[key] += levelDiff * 2; });
-      if (primaryAffinity && updatedStats[primaryAffinity] !== undefined) {
-        updatedStats[primaryAffinity] += levelDiff;
-      }
-    }
 
     const newMaxHp = Math.max(HP_BY_RANK[newRank] || 100, calculateMaxHp(currentProfile.physical_xp, newRank));
     const newMaxMp = Math.max(MP_BY_RANK[newRank] || 100, calculateMaxMp(currentProfile.mental_xp, newRank));
@@ -813,6 +815,65 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // ============================================================
+  // BOSS QUEST
+  // ============================================================
+
+  const completeBossQuest = () => {
+    if (!activeBossQuest || !profile) return;
+
+    completeBossQuestInState();
+    setActiveBossQuest(null);
+
+    const xpEarned = activeBossQuest.xp_reward;
+    const statXpEarned = activeBossQuest.stat_xp_reward;
+
+    // Add special boss conqueror title & badge
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newBadges = [...(prev.badges || [])];
+      if (!newBadges.includes('monarch_slayer')) newBadges.push('monarch_slayer');
+
+      const newTitles = [...(prev.titles || [])];
+      if (!newTitles.includes('Monarch Slayer')) newTitles.push('Monarch Slayer');
+
+      const { updatedProfile } = addStatXp('both', Math.floor(statXpEarned / 2), prev);
+
+      const logEntry = {
+        id: `log-${Date.now()}-boss`,
+        timestamp: Date.now(),
+        event_type: 'achievement' as const,
+        message: `👑 BOSS SLAIN: ${activeBossQuest.boss_name}! +${xpEarned} XP earned`,
+        xp: xpEarned,
+        stat_xp: statXpEarned,
+      };
+      return {
+        ...updatedProfile,
+        badges: newBadges,
+        titles: newTitles,
+        system_log: [logEntry, ...(updatedProfile.system_log || [])].slice(0, 20),
+      };
+    });
+
+    setTimeout(() => addXp(xpEarned, `Boss Slain: ${activeBossQuest.boss_name}`), 100);
+    setTimeout(() => {
+      if (profile) checkAndUnlockAchievements(profile, quests);
+    }, 200);
+
+    scheduleNotification({
+      title: '👑 MONARCH BOSS SLAIN',
+      message: `${activeBossQuest.boss_name} has been defeated! +${xpEarned} XP, +${statXpEarned} Stat XP. Title "Monarch Slayer" unlocked!`,
+      priority: 'urgent',
+      category: 'system',
+      playSound: true,
+    });
+  };
+
+  const dismissBossQuest = () => {
+    dismissBossQuestInState();
+    setActiveBossQuest(null);
+  };
+
+  // ============================================================
   // REFRESH DAILY POOL
   // ============================================================
 
@@ -822,13 +883,23 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setQuests(prev =>
       prev.map(q => q.repeatable === 'daily' ? { ...q, progress: 0, completed: false } : q)
     );
-    const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
+    const { bonusQuest, dungeonBreak, bossQuest } = generateDailyPool(profile, profile.id);
     if (bonusQuest) setActiveBonus(bonusQuest);
     if (dungeonBreak) {
       setActiveDungeon(dungeonBreak);
       scheduleNotification({
         title: '⚠️ DUNGEON BREAK DETECTED',
         message: `An unstable gate has appeared. ${dungeonBreak.challenge.slice(0, 60)}...`,
+        priority: 'urgent',
+        category: 'warning',
+        playSound: true,
+      });
+    }
+    if (bossQuest) {
+      setActiveBossQuest(bossQuest);
+      scheduleNotification({
+        title: '👑 MONARCH BOSS ENCOUNTER',
+        message: `Boss: ${bossQuest.boss_name} — ${bossQuest.challenge.slice(0, 60)}...`,
         priority: 'urgent',
         category: 'warning',
         playSound: true,
@@ -944,8 +1015,16 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ============================================================
 
   const allocateStatPoint = (stat: string, points: number = 1) => {
-    if (!profile || profile.stats[stat] === undefined) return;
-    setProfile({ ...profile, stats: { ...profile.stats, [stat]: profile.stats[stat] + points } });
+    setProfile(prev => {
+      if (!prev || prev.stats[stat] === undefined || (prev.available_stat_points || 0) < points) {
+        return prev;
+      }
+      return {
+        ...prev,
+        stats: { ...prev.stats, [stat]: prev.stats[stat] + points },
+        available_stat_points: (prev.available_stat_points || 0) - points,
+      };
+    });
     trackEvent(AnalyticsEvent.STAT_SELECTED, { stat, pointsAdded: points });
   };
 
@@ -1011,6 +1090,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setUnlockedAchievements([]);
     setActiveBonus(null);
     setActiveDungeon(null);
+    setActiveBossQuest(null);
     trackEvent(AnalyticsEvent.HUNTER_RESET);
   };
 
@@ -1075,6 +1155,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unlockedAchievements,
       activeBonus,
       activeDungeon,
+      activeBossQuest,
       saveAwakenedProfile,
       completeQuest,
       incrementProgress,
@@ -1086,13 +1167,15 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       completeBonusQuest,
       completeDungeonBreak,
       dismissDungeonBreak,
+      completeBossQuest,
+      dismissBossQuest,
       equipTitle,
       allocateSkillPoint,
       refreshDaily,
       acceptLibraryQuest,
       deleteQuest,
     }),
-    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon]
+    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon, activeBossQuest]
   );
 
   return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;

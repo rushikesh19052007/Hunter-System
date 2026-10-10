@@ -11,12 +11,29 @@ interface DailyState {
   dailyQuestIds: string[];
   bonusQuest: Quest | null;
   dungeonBreak: DungeonBreak | null;
+  bossQuest: BossQuest | null;
   lastDungeonDate: string | null;
+  lastBossDate: string | null;
 }
 
 export interface DungeonBreak {
   id: string;
   rank: string;
+  challenge: string;
+  time_limit_hours: number;
+  xp_reward: number;
+  stat_xp_reward: number;
+  created_at: number;
+  expires_at: number;
+  completed: boolean;
+  dismissed: boolean;
+}
+
+export interface BossQuest {
+  id: string;
+  boss_name: string;
+  boss_title: string;
+  rank: 'A-Rank' | 'S-Rank';
   challenge: string;
   time_limit_hours: number;
   xp_reward: number;
@@ -115,17 +132,71 @@ const BONUS_QUEST_TEMPLATES: Record<string, Array<{ name: string; desc: string; 
 };
 
 // ============================================================
+// BOSS QUEST CHALLENGES (A-Rank & S-Rank Monarch Trials)
+// ============================================================
+
+const BOSS_CHALLENGES: Record<'A-Rank' | 'S-Rank', Array<{ name: string; title: string; challenge: string; xp: number; statXp: number }>> = {
+  'A-Rank': [
+    {
+      name: 'IGRIS THE BLOOD-RED COMMANDER',
+      title: 'Knight of the Absolute Monarch',
+      challenge: 'Defeat 300 push-ups, 150 pull-ups, and complete a 10km run within 24 hours.',
+      xp: 2500,
+      statXp: 900,
+    },
+    {
+      name: 'BARUKA OF THE FROZEN FOREST',
+      title: 'Monarch of White Fangs Chieftain',
+      challenge: 'Solve 5 algorithmic challenges (Medium/Hard) and study 4 uninterrupted deep work hours.',
+      xp: 2600,
+      statXp: 950,
+    },
+    {
+      name: 'KARGALGAN THE HIGH ORC ARCHMAGE',
+      title: 'Supreme Chieftain of Curses',
+      challenge: 'Execute a 90-minute extreme cardio circuit and review 50 pages of core engineering documentation.',
+      xp: 2400,
+      statXp: 850,
+    },
+  ],
+  'S-Rank': [
+    {
+      name: 'BERU THE ANT MONARCH',
+      title: 'Royal King of the Swarm',
+      challenge: 'ROYAL MONARCH CLASH: 400 push-ups, 200 squats, 15km marathon run, and 6 hours of deliberate practice.',
+      xp: 4500,
+      statXp: 1500,
+    },
+    {
+      name: 'KAMISH THE WRATHFUL DRAGON',
+      title: 'Humanity\'s Greatest Calamity',
+      challenge: 'DRAGON SOUL TRIAL: Solve 3 LeetCode Hard problems from scratch and finish a 2-hour iron strength session.',
+      xp: 5000,
+      statXp: 1800,
+    },
+    {
+      name: 'BELLION THE GRAND MARSHAL',
+      title: 'Commander of the Shadow Army',
+      challenge: 'ABSOLUTE SHADOW RULER TRIAL: 500 push-ups, 100 dips, and 8 hours of uninterrupted deep work mastery.',
+      xp: 5500,
+      statXp: 2000,
+    },
+  ],
+};
+
+// ============================================================
 // DAILY QUEST GENERATION
 // ============================================================
 
 /**
  * Generate a daily quest pool for a hunter based on their rank.
- * Pool: 3 normal + 1 physical + 1 mental + 1 discipline + maybe bonus + maybe dungeon break.
+ * Pool: 3 normal + 1 physical + 1 mental + 1 discipline + maybe bonus + maybe dungeon break + maybe boss quest.
  */
 export function generateDailyPool(profile: Profile, userId: string): {
   dailyQuests: Quest[];
   bonusQuest: Quest | null;
   dungeonBreak: DungeonBreak | null;
+  bossQuest: BossQuest | null;
 } {
   const today = getTodayString();
   const existingState = loadDailyState();
@@ -136,6 +207,7 @@ export function generateDailyPool(profile: Profile, userId: string): {
       dailyQuests: [], // returned as empty — hub will use stored questIds
       bonusQuest: existingState.bonusQuest,
       dungeonBreak: existingState.dungeonBreak,
+      bossQuest: existingState.bossQuest || null,
     };
   }
 
@@ -239,17 +311,46 @@ export function generateDailyPool(profile: Profile, userId: string): {
     };
   }
 
+  // Boss Quest (Rare Monarch Trial, 25% chance for A-Rank and S-Rank)
+  let bossQuest: BossQuest | null = null;
+  const isEligibleForBoss = profile.current_rank === 'A-Rank' || profile.current_rank === 'S-Rank';
+  const bossChance = Math.random();
+
+  if (isEligibleForBoss && bossChance < 0.25) {
+    const rankKey = profile.current_rank as 'A-Rank' | 'S-Rank';
+    const templates = BOSS_CHALLENGES[rankKey] || BOSS_CHALLENGES['A-Rank'];
+    const chosen = templates[Math.floor(Math.random() * templates.length)];
+    const now = Date.now();
+
+    bossQuest = {
+      id: `boss-${today}-${Math.random().toString(36).slice(2, 7)}`,
+      boss_name: chosen.name,
+      boss_title: chosen.title,
+      rank: rankKey,
+      challenge: chosen.challenge,
+      time_limit_hours: 24,
+      xp_reward: chosen.xp,
+      stat_xp_reward: chosen.statXp,
+      created_at: now,
+      expires_at: now + 24 * 60 * 60 * 1000,
+      completed: false,
+      dismissed: false,
+    };
+  }
+
   const newState: DailyState = {
     date: today,
     dailyQuestIds: dailyQuests.map(q => q.id),
     bonusQuest,
     dungeonBreak,
+    bossQuest,
     lastDungeonDate: dungeonBreak ? today : (existingState?.lastDungeonDate || null),
+    lastBossDate: bossQuest ? today : (existingState?.lastBossDate || null),
   };
 
   saveDailyState(newState);
 
-  return { dailyQuests, bonusQuest, dungeonBreak };
+  return { dailyQuests, bonusQuest, dungeonBreak, bossQuest };
 }
 
 /** Load today's daily state from storage */
@@ -280,6 +381,22 @@ export function completeBonusQuestInState(): void {
   const state = loadDailyState();
   if (!state?.bonusQuest) return;
   state.bonusQuest.completed = true;
+  saveDailyState(state);
+}
+
+/** Mark boss quest as completed */
+export function completeBossQuestInState(): void {
+  const state = loadDailyState();
+  if (!state?.bossQuest) return;
+  state.bossQuest.completed = true;
+  saveDailyState(state);
+}
+
+/** Dismiss boss quest */
+export function dismissBossQuestInState(): void {
+  const state = loadDailyState();
+  if (!state?.bossQuest) return;
+  state.bossQuest.dismissed = true;
   saveDailyState(state);
 }
 
