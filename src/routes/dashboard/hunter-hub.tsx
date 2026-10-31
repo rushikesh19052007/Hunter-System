@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Shield, Zap, Flame, Brain, Eye, Award, CheckCircle, PlusCircle,
+  Shield, Zap, Flame, Brain, Eye, Award, CheckCircle,
   RotateCcw, Sparkles, Clock, Target, ChevronRight, TrendingUp,
   Sliders, Heart, Droplets, Star, Plus, X, BookOpen,
   Dumbbell, Code, GraduationCap, Lightbulb, Activity, Skull,
-  Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2, Crown,
+  Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
@@ -290,78 +290,6 @@ const DungeonBanner: React.FC<DungeonBannerProps> = ({ dungeon, onComplete, onDi
   );
 };
 
-// ============================================================
-// MONARCH BOSS QUEST BANNER
-// ============================================================
-
-interface BossQuestCardProps {
-  boss: NonNullable<ReturnType<typeof useHunter>['activeBossQuest']>;
-  onComplete: () => void;
-  onDismiss: () => void;
-}
-
-const BossQuestCard: React.FC<BossQuestCardProps> = ({ boss, onComplete, onDismiss }) => {
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const timeLeft = Math.max(0, boss.expires_at - now);
-  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-  const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-
-  return (
-    <motion.div
-      className="boss-quest-banner"
-      initial={{ opacity: 0, scale: 0.98, y: -15 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -15 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="boss-banner-header">
-        <div className="boss-badge-title">
-          <Crown className="w-6 h-6 text-amber-400 animate-bounce" />
-          <div>
-            <span className="boss-tag">⚠️ MONARCH BOSS TRIAL // {boss.rank}</span>
-            <div className="flex items-center gap-2">
-              <h3 className="boss-name">{boss.boss_name}</h3>
-              <span className="boss-sub-title">〔{boss.boss_title}〕</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="boss-timer-badge">
-          <Clock className="w-3.5 h-3.5 text-rose-400" />
-          <span>{hoursLeft}h {minsLeft}m remaining</span>
-        </div>
-      </div>
-
-      <p className="boss-challenge-text">{boss.challenge}</p>
-
-      <div className="boss-footer-row">
-        <div className="boss-rewards-wrap">
-          <span className="rewards-caption">CONQUEST BOUNTY:</span>
-          <span className="boss-reward-pill">+{boss.xp_reward.toLocaleString()} XP</span>
-          <span className="boss-reward-pill">+{boss.stat_xp_reward} Stat XP</span>
-          <span className="boss-reward-pill gold">👑 "Monarch Slayer" Title & Badge</span>
-        </div>
-
-        <div className="boss-btn-group">
-          <button type="button" onClick={onComplete} className="btn-boss-claim">
-            <CheckCircle className="w-4 h-4 mr-1.5" />
-            <span>CLAIM VICTORY</span>
-          </button>
-          <button type="button" onClick={onDismiss} className="btn-boss-dismiss">
-            <X className="w-4 h-4 mr-1" />
-            <span>Retreat</span>
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
 
 // ============================================================
 // BONUS QUEST CARD
@@ -502,12 +430,9 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
     resetHunter,
     activeBonus,
     activeDungeon,
-    activeBossQuest,
     completeBonusQuest,
     completeDungeonBreak,
     dismissDungeonBreak,
-    completeBossQuest,
-    dismissBossQuest,
     unlockedAchievements,
     refreshDaily,
     deleteQuest,
@@ -572,16 +497,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
         )}
       </AnimatePresence>
 
-      {/* Monarch Boss Quest Banner */}
-      <AnimatePresence>
-        {activeBossQuest && (
-          <BossQuestCard
-            boss={activeBossQuest}
-            onComplete={completeBossQuest}
-            onDismiss={dismissBossQuest}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Main Grid */}
       <div className="hub-layout-grid">
@@ -759,21 +674,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
             <HiddenQuestsWidget />
 
-            {/* Footer */}
-            <div className="status-footer">
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm('Initiate System Reboot? This will reset your profile.')) {
-                    resetHunter();
-                    onReplayAwakening();
-                  }
-                }}
-                className="btn-reboot"
-              >
-                SYSTEM REBOOT / FULL RESET
-              </button>
-            </div>
+
           </div>
         </aside>
 
@@ -970,6 +871,17 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                         </div>
                       ) : (
                         <div className="action-buttons-group">
+                          {quest.target > 1 && quest.progress < quest.target && (
+                            <button
+                              type="button"
+                              onClick={() => incrementProgress(quest.id, 1)}
+                              className="btn-advance-progress"
+                              title="Advance progress by 1"
+                            >
+                              <span>+1</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setGuideQuest(quest)}

@@ -1,10 +1,20 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import {
+  doc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp,
+  type Unsubscribe,
+} from 'firebase/firestore';
+import { firestore } from './firebase';
+import { useAuth } from './auth';
 import {
   type Profile,
   type Quest,
   type DifficultyGrade,
   type QuestCategory,
   type StatXpType,
+  type HunterStat,
   DIFFICULTY_XP,
   DIFFICULTY_STAT_XP,
   DIFFICULTY_STAT_POINTS,
@@ -19,8 +29,6 @@ import {
   getStreakBonusMultiplier,
   RANK_TITLES,
   PROFILE_FRAMES,
-  migrateProfile,
-  migrateDifficulty,
   createDefaultProfile,
 } from './game-engine';
 import QUEST_LIBRARY, { type LibraryQuest } from './quest-library';
@@ -31,15 +39,16 @@ import {
   completeDungeonBreak as markDungeonComplete,
   dismissDungeonBreak as markDungeonDismissed,
   completeBonusQuestInState,
-  completeBossQuestInState,
-  dismissBossQuestInState,
   calculateStreakUpdate,
   type DungeonBreak,
-  type BossQuest,
 } from './daily-system';
-import { scheduleNotification } from './notifications';
-import { trackEvent, AnalyticsEvent } from './analytics';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { audioService } from './audio-service';
+import {
+  serializeProfileForFirestore,
+  deserializeProfileFromFirestore,
+  serializeQuestForFirestore,
+  deserializeQuestFromFirestore,
+} from './firestore-converter';
 
 // ============================================================
 // CONTEXT TYPE
@@ -48,12 +57,19 @@ import { supabase, isSupabaseConfigured } from './supabase';
 export interface HunterContextType {
   profile: Profile | null;
   quests: Quest[];
+  dailyQuests: Quest[];
   isOnboarded: boolean;
+  isLoading: boolean;
   primaryAffinity: string | null;
   unlockedAchievements: string[];
   activeBonus: Quest | null;
   activeDungeon: DungeonBreak | null;
-  activeBossQuest: BossQuest | null;
+
+  // Level Up Modal State (1:1 with Flutter HunterProvider)
+  showLevelUpModal: boolean;
+  leveledUpTo: number;
+  newRankAchieved: string;
+  dismissLevelUpModal: () => void;
 
   // Actions
   saveAwakenedProfile: (name: string, primaryStat: string) => Promise<Profile>;
@@ -62,96 +78,72 @@ export interface HunterContextType {
   addXp: (amount: number, source?: string) => void;
   allocateStatPoint: (stat: string, points?: number) => void;
   updateProfile: (updates: Partial<Profile>) => void;
-  resetHunter: () => void;
+  resetHunter: () => Promise<void>;
   addCustomQuest: (quest: Omit<Quest, 'id' | 'user_id' | 'progress' | 'completed'>) => void;
   completeBonusQuest: () => void;
   completeDungeonBreak: () => void;
   dismissDungeonBreak: () => void;
-  completeBossQuest: () => void;
-  dismissBossQuest: () => void;
   equipTitle: (title: string) => void;
   allocateSkillPoint: (skill: keyof Profile['skill_points']) => void;
   refreshDaily: () => void;
   acceptLibraryQuest: (quest: LibraryQuest) => void;
   deleteQuest: (questId: string) => void;
-  // Legacy compatibility
-  auth: { isAuthenticated: boolean; user: { id: string; email: string } | null };
 }
 
 const HunterContext = createContext<HunterContextType | undefined>(undefined);
 
-// ============================================================
-// STORAGE KEYS
-// ============================================================
-
+// Local Storage Keys
 const STORAGE_PROFILE_KEY = 'hunter_system_profile';
 const STORAGE_QUESTS_KEY = 'hunter_system_quests';
-const STORAGE_AUTH_KEY = 'hunter_system_auth';
-const STORAGE_AFFINITY_KEY = 'hunter_system_affinity';
 const STORAGE_ACHIEVEMENTS_KEY = 'hunter_system_achievements';
 
 // ============================================================
-// MIGRATION HELPERS
-// ============================================================
-
-function loadAndMigrateProfile(): Profile | null {
-  try {
-    const saved = localStorage.getItem(STORAGE_PROFILE_KEY);
-    if (!saved) return null;
-    const parsed = JSON.parse(saved);
-    // Migrate old profile format to v2
-    return migrateProfile(parsed);
-  } catch {
-    return null;
-  }
-}
-
-function loadAndMigrateQuests(): Quest[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_QUESTS_KEY);
-    if (!saved) return [];
-    const parsed: Quest[] = JSON.parse(saved);
-    // Migrate numeric difficulty to letter grades
-    return parsed.map(q => ({
-      ...q,
-      difficulty: migrateDifficulty(q.difficulty as unknown as number | string),
-      category: (q.category || 'physical') as QuestCategory,
-      stat_xp_type: q.stat_xp_type || getStatXpType((q.category || 'physical') as QuestCategory),
-    }));
-  } catch {
-    return [];
-  }
-}
-
-// ============================================================
-// PROVIDER
+// PROVIDER IMPLEMENTATION
 // ============================================================
 
 export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profile, setProfile] = useState<Profile | null>(loadAndMigrateProfile);
-  const [quests, setQuests] = useState<Quest[]>(loadAndMigrateQuests);
-  const [primaryAffinity, setPrimaryAffinity] = useState<string | null>(() => {
-    try { return localStorage.getItem(STORAGE_AFFINITY_KEY) || null; } catch { return null; }
+  const { user } = useAuth();
+
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_PROFILE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
+
+  const [quests, setQuests] = useState<Quest[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_QUESTS_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [dailyQuests, setDailyQuests] = useState<Quest[]>([]);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_ACHIEVEMENTS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+      return saved ? JSON.parse(saved) : ['first_blood'];
+    } catch {
+      return ['first_blood'];
+    }
   });
+
   const [activeBonus, setActiveBonus] = useState<Quest | null>(null);
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
-  const [activeBossQuest, setActiveBossQuest] = useState<BossQuest | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Legacy auth state
-  const [auth] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_AUTH_KEY);
-      return saved ? JSON.parse(saved) : { isAuthenticated: false, user: null };
-    } catch { return { isAuthenticated: false, user: null }; }
-  });
+  // Level Up Modal State
+  const [showLevelUpModal, setShowLevelUpModal] = useState<boolean>(false);
+  const [leveledUpTo, setLeveledUpTo] = useState<number>(1);
+  const [newRankAchieved, setNewRankAchieved] = useState<string>('');
 
-  // Sync to localStorage
+  const isSavingRef = useRef<boolean>(false);
+
+  // Sync to localStorage as offline fallback cache
   useEffect(() => {
     if (profile) localStorage.setItem(STORAGE_PROFILE_KEY, JSON.stringify(profile));
     else localStorage.removeItem(STORAGE_PROFILE_KEY);
@@ -162,92 +154,10 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [quests]);
 
   useEffect(() => {
-    if (primaryAffinity) localStorage.setItem(STORAGE_AFFINITY_KEY, primaryAffinity);
-    else localStorage.removeItem(STORAGE_AFFINITY_KEY);
-  }, [primaryAffinity]);
-
-  useEffect(() => {
     localStorage.setItem(STORAGE_ACHIEVEMENTS_KEY, JSON.stringify(unlockedAchievements));
   }, [unlockedAchievements]);
 
-  // Debounced Supabase sync
-  useEffect(() => {
-    if (!profile || !profile.id) return;
-    const client = supabase;
-    if (!isSupabaseConfigured || !client) return;
-
-    const timer = setTimeout(() => {
-      Promise.resolve(
-        client.from('profiles').upsert({
-          id: profile.id,
-          hunter_id: profile.hunter_id,
-          display_name: profile.display_name,
-          total_xp: profile.total_xp,
-          current_level: profile.current_level,
-          stats: profile.stats,
-          clean_days: profile.clean_days,
-          current_rank: profile.current_rank,
-          affinity: profile.affinity,
-          hp: profile.hp,
-          mp: profile.mp,
-          max_hp: profile.max_hp,
-          max_mp: profile.max_mp,
-          physical_xp: profile.physical_xp,
-          mental_xp: profile.mental_xp,
-          quests_completed: profile.quests_completed,
-          physical_quests_completed: profile.physical_quests_completed,
-          mental_quests_completed: profile.mental_quests_completed,
-          coding_quests_completed: profile.coding_quests_completed,
-          streak: profile.streak,
-          physical_streak: profile.physical_streak,
-          mental_streak: profile.mental_streak,
-          perfect_day_streak: profile.perfect_day_streak,
-          longest_streak: profile.longest_streak,
-          titles: profile.titles,
-          equipped_title: profile.equipped_title,
-          badges: profile.badges,
-          profile_frame: profile.profile_frame,
-          skill_points: profile.skill_points,
-          available_skill_points: profile.available_skill_points,
-        })
-      ).catch((err: unknown) => {
-        console.warn('[Hunter Store] Supabase sync error:', err);
-      });
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [profile]);
-
-  // Rehydrate profile from Supabase if remote has higher XP
-  useEffect(() => {
-    const client = supabase;
-    if (!isSupabaseConfigured || !client) return;
-    client.auth.getSession().then(({ data: { session } }) => {
-      const uid = session?.user?.id;
-      if (!uid) return;
-      Promise.resolve(
-        client
-          .from('profiles')
-          .select('*')
-          .eq('id', uid)
-          .single()
-      )
-        .then(({ data, error }) => {
-          if (!error && data) {
-            const remoteProfile = migrateProfile(data as Record<string, unknown>);
-            setProfile(current => {
-              if (!current || (remoteProfile.total_xp > current.total_xp)) {
-                return remoteProfile;
-              }
-              return current;
-            });
-          }
-        })
-        .catch(() => { });
-    }).catch(() => { });
-  }, []);
-
-  // Load daily state on mount
+  // Load daily cycle state on mount
   useEffect(() => {
     const dailyState = loadTodayDailyState();
     if (dailyState) {
@@ -257,503 +167,344 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (dailyState.dungeonBreak && !dailyState.dungeonBreak.completed && !dailyState.dungeonBreak.dismissed) {
         setActiveDungeon(dailyState.dungeonBreak);
       }
-      if (dailyState.bossQuest && !dailyState.bossQuest.completed && !dailyState.bossQuest.dismissed) {
-        setActiveBossQuest(dailyState.bossQuest);
-      }
     } else if (profile) {
-      // Generate fresh daily pool
-      const { bonusQuest, dungeonBreak, bossQuest } = generateDailyPool(profile, profile.id);
+      const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
       if (bonusQuest) setActiveBonus(bonusQuest);
-      if (dungeonBreak) {
-        setActiveDungeon(dungeonBreak);
-        scheduleNotification({
-          title: '⚠️ DUNGEON BREAK DETECTED',
-          message: `An unstable gate has appeared. ${dungeonBreak.challenge.slice(0, 60)}...`,
-          priority: 'urgent',
-          category: 'warning',
-          playSound: true,
-        });
-      }
-      if (bossQuest) {
-        setActiveBossQuest(bossQuest);
-        scheduleNotification({
-          title: '👑 MONARCH BOSS ENCOUNTER',
-          message: `Boss: ${bossQuest.boss_name} — ${bossQuest.challenge.slice(0, 60)}...`,
-          priority: 'urgent',
-          category: 'warning',
-          playSound: true,
-        });
-      }
+      if (dungeonBreak) setActiveDungeon(dungeonBreak);
     }
-  }, []);
+  }, [profile?.id]);
 
   // ============================================================
-  // ADD XP (with level-up, rank-up, HP/MP scaling)
+  // REAL-TIME FIRESTORE LISTENER (Cross-Platform Synchronization)
+  // ============================================================
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const hunterDocRef = doc(firestore, 'hunters', user.id);
+
+    const unsubscribe: Unsubscribe = onSnapshot(
+      hunterDocRef,
+      (snapshot) => {
+        setIsLoading(false);
+        if (snapshot.exists()) {
+          const rawData = snapshot.data();
+          const remoteProfile = deserializeProfileFromFirestore(rawData);
+
+          // Update local profile state
+          setProfile(remoteProfile);
+
+          // If activeQuests are present in the Firestore document, deserialize and sync
+          if (Array.isArray(rawData.activeQuests) && rawData.activeQuests.length > 0) {
+            const remoteQuests: Quest[] = rawData.activeQuests.map((q: Record<string, unknown>) =>
+              deserializeQuestFromFirestore(q, user.id)
+            );
+            setQuests(remoteQuests);
+          }
+
+          if (Array.isArray(rawData.badges)) {
+            setUnlockedAchievements(rawData.badges);
+          }
+        } else {
+          // No profile in cloud yet: check if we should initialize default from auth info
+          const preferredAffinity = localStorage.getItem('hunter_preferred_affinity') || 'AGI';
+          const defaultProf = createDefaultProfile(
+            user.id,
+            user.name || user.email?.split('@')[0] || 'Awakened Hunter',
+            preferredAffinity
+          );
+
+          // Initial starter quests matching Flutter
+          const starterQuests: Quest[] = [
+            {
+              id: `starter-1_${Date.now()}`,
+              user_id: user.id,
+              name: '20 Push-ups',
+              description: 'Standard push-ups with proper form',
+              difficulty: 'E',
+              category: 'physical',
+              stat: 'STR',
+              progress: 0,
+              target: 20,
+              completed: false,
+              xp_reward: 15,
+              stat_xp_reward: 10,
+              stat_xp_type: 'physical',
+              repeatable: 'daily',
+            },
+            {
+              id: `starter-2_${Date.now()}`,
+              user_id: user.id,
+              name: '30s Plank',
+              description: 'Core stabilization hold',
+              difficulty: 'E',
+              category: 'physical',
+              stat: 'VIT',
+              progress: 0,
+              target: 30,
+              completed: false,
+              xp_reward: 15,
+              stat_xp_reward: 10,
+              stat_xp_type: 'physical',
+              repeatable: 'daily',
+            },
+            {
+              id: `starter-3_${Date.now()}`,
+              user_id: user.id,
+              name: 'LeetCode Problem',
+              description: 'Solve 1 algorithmic or coding problem',
+              difficulty: 'D',
+              category: 'coding',
+              stat: 'INT',
+              progress: 0,
+              target: 1,
+              completed: false,
+              xp_reward: 35,
+              stat_xp_reward: 20,
+              stat_xp_type: 'mental',
+              repeatable: 'daily',
+            },
+            {
+              id: `starter-4_${Date.now()}`,
+              user_id: user.id,
+              name: '20 Pages Deep Reading',
+              description: 'Continuous technical or personal development reading',
+              difficulty: 'E',
+              category: 'study',
+              stat: 'PERC',
+              progress: 0,
+              target: 20,
+              completed: false,
+              xp_reward: 15,
+              stat_xp_reward: 10,
+              stat_xp_type: 'mental',
+              repeatable: 'daily',
+            },
+          ];
+
+          setProfile(defaultProf);
+          setQuests(starterQuests);
+
+          // Sync to Firestore
+          syncToFirestore(defaultProf, starterQuests);
+        }
+      },
+      (error) => {
+        console.warn('[Hunter Store] Firestore snapshot listener notice:', error);
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user?.id]);
+
+  // Synchronizes profile and quests to Cloud Firestore with merge
+  const syncToFirestore = async (profToSync: Profile, questsToSync: Quest[]) => {
+    if (!profToSync.id || isSavingRef.current) return;
+    isSavingRef.current = true;
+
+    try {
+      const hunterDocRef = doc(firestore, 'hunters', profToSync.id);
+      const serializedProfile = serializeProfileForFirestore(profToSync);
+      const serializedQuests = questsToSync.map(serializeQuestForFirestore);
+
+      // Save user document
+      await setDoc(
+        hunterDocRef,
+        {
+          ...serializedProfile,
+          activeQuests: serializedQuests,
+        },
+        { merge: true }
+      );
+
+      // Update public leaderboard entry
+      const leaderboardDocRef = doc(firestore, 'leaderboard', profToSync.id);
+      await setDoc(
+        leaderboardDocRef,
+        {
+          id: profToSync.id,
+          hunterId: profToSync.hunter_id,
+          displayName: profToSync.display_name,
+          level: profToSync.current_level,
+          rank: profToSync.current_rank,
+          totalXp: profToSync.total_xp,
+          affinity: profToSync.affinity,
+          equippedTitle: profToSync.equipped_title,
+          questsCompleted: profToSync.quests_completed,
+          streak: profToSync.streak,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn('[Hunter Store] Firestore write notice (offline or permission):', err);
+    } finally {
+      isSavingRef.current = false;
+    }
+  };
+
+  const dismissLevelUpModal = () => {
+    setShowLevelUpModal(false);
+  };
+
+  // ============================================================
+  // QUEST ACTIONS
   // ============================================================
 
-  const addXpLegacy = (amount: number, source: string = 'General') => {
+  const completeQuest = (questId: string) => {
+    const quest = quests.find((q) => q.id === questId);
+    if (!quest || quest.completed) return;
     if (!profile) return;
 
-    const prevLevel = profile.current_level;
-    const prevRank = profile.current_rank;
-    const newTotalXp = profile.total_xp + amount;
-    const newLevel = calculateLevel(newTotalXp);
-    const newRank = calculateRank(newLevel);
-    const levelDiff = newLevel - prevLevel;
-    const rankChanged = newRank !== prevRank;
+    const baseXp = quest.xp_reward || (DIFFICULTY_XP[quest.difficulty] ?? 25);
+    const statXpAmount = quest.stat_xp_reward || (DIFFICULTY_STAT_XP[quest.difficulty] ?? 10);
+    const statXpType = quest.stat_xp_type || getStatXpType(quest.category);
 
-    const updatedStats = { ...profile.stats };
+    // Apply streak multiplier
+    const streakMultiplier = getStreakBonusMultiplier(profile.streak || 0);
+    const xpEarned = Math.round(baseXp * streakMultiplier);
 
-    // Rank-based HP/MP base
-    const rankHpBase = HP_BY_RANK[newRank] || 100;
-    const rankMpBase = MP_BY_RANK[newRank] || 100;
+    // Mark quest completed
+    const updatedQuests = quests.map((q) =>
+      q.id === questId ? { ...q, progress: q.target, completed: true } : q
+    );
+    setQuests(updatedQuests);
 
-    // Recalculate max HP/MP with current physical/mental XP
-    const newMaxHp = Math.max(rankHpBase, calculateMaxHp(profile.physical_xp, newRank));
-    const newMaxMp = Math.max(rankMpBase, calculateMaxMp(profile.mental_xp, newRank));
+    // Update stats and profile
+    const currentStatVal = profile.stats[quest.stat] ?? 10;
+    const updatedStats = {
+      ...profile.stats,
+      [quest.stat]: currentStatVal + 1,
+    };
 
-    // New titles on rank up
-    const newTitles = [...(profile.titles || [])];
-    let newFrame = profile.profile_frame;
-    let newSkillPoints = profile.available_skill_points || 0;
+    const isPhysical = ['physical', 'fitness', 'health'].includes(quest.category);
+    const isMental = ['mental', 'knowledge', 'learning', 'coding', 'study'].includes(quest.category);
+    const isCoding = quest.category === 'coding';
 
-    if (rankChanged) {
-      const rankTitles = RANK_TITLES[newRank] || [];
-      rankTitles.forEach(t => { if (!newTitles.includes(t)) newTitles.push(t); });
-      const frame = PROFILE_FRAMES[newRank];
-      if (frame) newFrame = frame;
-      newSkillPoints += 5; // +5 skill points on rank promotion
-    }
+    const newPhysicalXp = isPhysical ? profile.physical_xp + statXpAmount : profile.physical_xp;
+    const newMentalXp = isMental ? profile.mental_xp + statXpAmount : profile.mental_xp;
+
+    const newMaxHp = calculateMaxHp(newPhysicalXp, profile.current_rank);
+    const newMaxMp = calculateMaxMp(newMentalXp, profile.current_rank);
+
+    // Streak update
+    const streakUpdate = calculateStreakUpdate(profile, true, isPhysical, isMental);
 
     const logEntry = {
       id: `log-${Date.now()}`,
       timestamp: Date.now(),
       event_type: 'quest_complete' as const,
-      message: `+${amount} XP from ${source}`,
-      xp: amount,
-    };
-
-    const updatedProfile: Profile = {
-      ...profile,
-      total_xp: newTotalXp,
-      current_level: newLevel,
-      current_rank: newRank,
-      stats: updatedStats,
-      max_hp: newMaxHp,
-      max_mp: newMaxMp,
-      hp: Math.min(profile.hp, newMaxHp),
-      mp: Math.min(profile.mp, newMaxMp),
-      titles: newTitles,
-      profile_frame: newFrame,
-      available_skill_points: newSkillPoints,
-      system_log: [logEntry, ...(profile.system_log || [])].slice(0, 20),
-    };
-
-    setProfile(updatedProfile);
-
-    trackEvent(AnalyticsEvent.QUEST_PROGRESS, { xpGained: amount, source, totalXp: newTotalXp, level: newLevel });
-
-    if (newLevel > prevLevel) {
-      trackEvent(AnalyticsEvent.LEVEL_UP, { previousLevel: prevLevel, newLevel });
-      scheduleNotification({
-        title: `LEVEL UP: LEVEL ${newLevel}!`,
-        message: `Your spiritual density has expanded. All attributes boosted by +${levelDiff * 2}.`,
-        priority: 'high',
-        category: 'level_up',
-        playSound: true,
-      });
-    }
-
-    if (rankChanged) {
-      trackEvent(AnalyticsEvent.RANK_PROMOTION, { previousRank: prevRank, newRank });
-      scheduleNotification({
-        title: `⬆️ RANK PROMOTION: ${newRank.toUpperCase()}!`,
-        message: `"RANK PROMOTION COMPLETE. Your existence has been acknowledged by the system." You are now ${newRank}. +5 Skill Points granted.`,
-        priority: 'urgent',
-        category: 'rank_up',
-        playSound: true,
-      });
-    }
-
-    return updatedProfile;
-  };
-
-  // ============================================================
-  // ADD STAT XP (Physical / Mental) with HP/MP threshold checking
-  // ============================================================
-
-  const addStatXp = (
-    statXpType: StatXpType,
-    amount: number,
-    currentProfile: Profile
-  ): { updatedProfile: Profile; hpIncreased: boolean; mpIncreased: boolean } => {
-    let hpIncreased = false;
-    let mpIncreased = false;
-
-    const prevPhysXp = currentProfile.physical_xp;
-    const prevMentXp = currentProfile.mental_xp;
-
-    const newPhysXp = statXpType === 'physical' || statXpType === 'both'
-      ? prevPhysXp + amount
-      : prevPhysXp;
-    const newMentXp = statXpType === 'mental' || statXpType === 'both'
-      ? prevMentXp + amount
-      : prevMentXp;
-
-    const newMaxHp = calculateMaxHp(newPhysXp, currentProfile.current_rank);
-    const newMaxMp = calculateMaxMp(newMentXp, currentProfile.current_rank);
-
-    if (newMaxHp > currentProfile.max_hp) hpIncreased = true;
-    if (newMaxMp > currentProfile.max_mp) mpIncreased = true;
-
-    const updatedProfile: Profile = {
-      ...currentProfile,
-      physical_xp: newPhysXp,
-      mental_xp: newMentXp,
-      max_hp: newMaxHp,
-      max_mp: newMaxMp,
-      hp: Math.min(currentProfile.hp, newMaxHp),
-      mp: Math.min(currentProfile.mp, newMaxMp),
-    };
-
-    return { updatedProfile, hpIncreased, mpIncreased };
-  };
-
-  // ============================================================
-  // COMPLETE QUEST
-  // ============================================================
-
-  const completeQuest = (questId: string) => {
-    const quest = quests.find(q => q.id === questId);
-    if (!quest || quest.completed) return;
-    if (!profile) return;
-
-    const baseXp = quest.xp_reward || DIFFICULTY_XP[quest.difficulty] || 25;
-    const statXpAmount = quest.stat_xp_reward || DIFFICULTY_STAT_XP[quest.difficulty] || 10;
-    const statXpType = quest.stat_xp_type || getStatXpType(quest.category);
-
-    // Skill points perks
-    const sp = profile.skill_points || { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 };
-    let skillMultiplier = 1 + ((sp.discipline || 0) * 0.03); // +3% per discipline point
-    if (['physical', 'fitness', 'health'].includes(quest.category)) {
-      skillMultiplier += (sp.strength || 0) * 0.05; // +5% per strength point
-    }
-    if (['mental', 'knowledge', 'learning', 'coding', 'study'].includes(quest.category)) {
-      skillMultiplier += (sp.intelligence || 0) * 0.05; // +5% per intelligence point
-    }
-    if (quest.time_limit_hours || quest.deadline) {
-      skillMultiplier += (sp.agility || 0) * 0.05; // +5% per agility point
-    }
-    if (quest.repeatable === 'daily' || quest.quest_type === 'normal') {
-      skillMultiplier += (sp.focus || 0) * 0.03; // +3% per focus point
-    }
-
-    // Apply streak bonus with endurance perk
-    const streakMultiplier = getStreakBonusMultiplier(profile.streak || 0);
-    const enduranceMultiplier = 1 + ((streakMultiplier - 1) * (1 + (sp.endurance || 0) * 0.05));
-    const xpEarned = Math.round(baseXp * enduranceMultiplier * skillMultiplier);
-
-    // Mark quest complete
-    setQuests(prev =>
-      prev.map(q => q.id === questId ? { ...q, progress: q.target, completed: true } : q)
-    );
-
-    // Update stat for quest
-    let updatedProfile: Profile = { ...profile };
-
-    const statPointsEarned = DIFFICULTY_STAT_POINTS[quest.difficulty] || 1;
-    updatedProfile.available_stat_points = (updatedProfile.available_stat_points || 0) + statPointsEarned;
-
-    // Quest type counters
-    const isPhysical = ['physical', 'fitness', 'health'].includes(quest.category);
-    const isMental = ['mental', 'knowledge', 'learning', 'coding', 'study'].includes(quest.category);
-    const isCoding = quest.category === 'coding';
-
-    updatedProfile = {
-      ...updatedProfile,
-      quests_completed: (updatedProfile.quests_completed || 0) + 1,
-      physical_quests_completed: isPhysical
-        ? (updatedProfile.physical_quests_completed || 0) + 1
-        : updatedProfile.physical_quests_completed || 0,
-      mental_quests_completed: isMental
-        ? (updatedProfile.mental_quests_completed || 0) + 1
-        : updatedProfile.mental_quests_completed || 0,
-      coding_quests_completed: isCoding
-        ? (updatedProfile.coding_quests_completed || 0) + 1
-        : updatedProfile.coding_quests_completed || 0,
-    };
-
-    // Add stat XP and check HP/MP thresholds
-    const { updatedProfile: afterStatXp, hpIncreased, mpIncreased } = addStatXp(
-      statXpType,
-      statXpAmount,
-      updatedProfile
-    );
-    updatedProfile = afterStatXp;
-
-    // Build system log entries
-    const newLogEntries = [];
-    newLogEntries.push({
-      id: `log-${Date.now()}-qc`,
-      timestamp: Date.now(),
-      event_type: 'quest_complete' as const,
-      message: `Quest cleared: "${quest.name}"`,
+      message: `Completed: ${quest.name} (+${xpEarned} XP)`,
       xp: xpEarned,
-    });
-
-    if (statXpType !== 'none') {
-      newLogEntries.push({
-        id: `log-${Date.now()}-sx`,
-        timestamp: Date.now() + 1,
-        event_type: statXpType === 'physical' ? 'hp_increase' as const : 'mp_increase' as const,
-        message: `+${statXpAmount} ${statXpType === 'physical' ? 'Physical' : 'Mental'} XP earned`,
-        stat_xp: statXpAmount,
-      });
-    }
-
-    if (hpIncreased) {
-      newLogEntries.push({
-        id: `log-${Date.now()}-hp`,
-        timestamp: Date.now() + 2,
-        event_type: 'hp_increase' as const,
-        message: `Physical Capacity Improved. Max HP: ${profile.max_hp} → ${updatedProfile.max_hp}`,
-      });
-      scheduleNotification({
-        title: 'HP INCREASED',
-        message: `Physical capacity improved. Max HP: ${profile.max_hp} → ${updatedProfile.max_hp}`,
-        priority: 'normal',
-        category: 'system',
-      });
-    }
-
-    if (mpIncreased) {
-      newLogEntries.push({
-        id: `log-${Date.now()}-mp`,
-        timestamp: Date.now() + 3,
-        event_type: 'mp_increase' as const,
-        message: `Mental Capacity Improved. Max MP: ${profile.max_mp} → ${updatedProfile.max_mp}`,
-      });
-      scheduleNotification({
-        title: 'MP INCREASED',
-        message: `Mental capacity improved. Max MP: ${profile.max_mp} → ${updatedProfile.max_mp}`,
-        priority: 'normal',
-        category: 'system',
-      });
-    }
-
-    // Streak update
-    const streakUpdate = calculateStreakUpdate(
-      updatedProfile,
-      true,
-      isPhysical,
-      isMental
-    );
-
-    const prevStreak = updatedProfile.streak || 0;
-    updatedProfile = { ...updatedProfile, ...streakUpdate };
-
-    if ((updatedProfile.streak || 0) > prevStreak && updatedProfile.streak !== undefined) {
-      if ([7, 14, 30, 60, 100].includes(updatedProfile.streak)) {
-        newLogEntries.push({
-          id: `log-${Date.now()}-str`,
-          timestamp: Date.now() + 4,
-          event_type: 'streak' as const,
-          message: `🔥 Streak milestone: ${updatedProfile.streak} days!`,
-        });
-      }
-    }
-
-    updatedProfile = {
-      ...updatedProfile,
-      system_log: [...newLogEntries, ...(updatedProfile.system_log || [])].slice(0, 20),
     };
 
-    setProfile(updatedProfile);
-
-    // Now add XP
-    const finalProfile = addXpToProfile(updatedProfile, xpEarned, `Quest: ${quest.name}`);
-
-    // Check achievements on updated profile
-    if (finalProfile) {
-      checkAndUnlockAchievements(finalProfile, quests);
-    }
-
-    trackEvent(AnalyticsEvent.QUEST_COMPLETED, {
-      questId,
-      name: quest.name,
-      difficulty: quest.difficulty,
-      xpEarned,
-      statXpType,
-      statXpAmount,
-    });
-
-    scheduleNotification({
-      title: 'QUEST CLEARED',
-      message: `[${quest.name}] +${xpEarned} XP${statXpType !== 'none' ? ` +${statXpAmount} ${statXpType === 'physical' ? 'Physical' : 'Mental'} XP` : ''}`,
-      priority: 'normal',
-      category: 'quest',
-      playSound: true,
-    });
-  };
-
-  // Internal: add XP directly to a profile object
-  const addXpToProfile = (currentProfile: Profile, amount: number, source: string): Profile | null => {
-    const prevLevel = currentProfile.current_level;
-    const prevRank = currentProfile.current_rank;
-    const newTotalXp = currentProfile.total_xp + amount;
-    const newLevel = calculateLevel(newTotalXp);
-    const newRank = calculateRank(newLevel);
-    const levelDiff = newLevel - prevLevel;
-    const rankChanged = newRank !== prevRank;
-
-    const updatedStats = { ...currentProfile.stats };
-
-    const newMaxHp = Math.max(HP_BY_RANK[newRank] || 100, calculateMaxHp(currentProfile.physical_xp, newRank));
-    const newMaxMp = Math.max(MP_BY_RANK[newRank] || 100, calculateMaxMp(currentProfile.mental_xp, newRank));
-
-    const newTitles = [...(currentProfile.titles || [])];
-    let newFrame = currentProfile.profile_frame;
-    let newSkillPoints = currentProfile.available_skill_points || 0;
-
-    if (rankChanged) {
-      const rankTitles = RANK_TITLES[newRank] || [];
-      rankTitles.forEach(t => { if (!newTitles.includes(t)) newTitles.push(t); });
-      const frame = PROFILE_FRAMES[newRank];
-      if (frame) newFrame = frame;
-      newSkillPoints += 5;
-
-      trackEvent(AnalyticsEvent.RANK_PROMOTION, { previousRank: prevRank, newRank });
-      scheduleNotification({
-        title: `⬆️ RANK PROMOTION: ${newRank.toUpperCase()}!`,
-        message: `"RANK PROMOTION COMPLETE. Your existence has been acknowledged by the system." You are now ${newRank}. +5 Skill Points granted.`,
-        priority: 'urgent',
-        category: 'rank_up',
-        playSound: true,
-      });
-    }
-
-    if (newLevel > prevLevel) {
-      trackEvent(AnalyticsEvent.LEVEL_UP, { previousLevel: prevLevel, newLevel });
-      scheduleNotification({
-        title: `LEVEL UP: LEVEL ${newLevel}!`,
-        message: `Attributes boosted by +${levelDiff * 2}. Total XP: ${newTotalXp.toLocaleString()}`,
-        priority: 'high',
-        category: 'level_up',
-        playSound: true,
-      });
-    }
-
-    const updatedProfile: Profile = {
-      ...currentProfile,
-      total_xp: newTotalXp,
-      current_level: newLevel,
-      current_rank: newRank,
+    let updatedProfile: Profile = {
+      ...profile,
       stats: updatedStats,
+      quests_completed: (profile.quests_completed || 0) + 1,
+      physical_quests_completed: isPhysical
+        ? (profile.physical_quests_completed || 0) + 1
+        : profile.physical_quests_completed || 0,
+      mental_quests_completed: isMental
+        ? (profile.mental_quests_completed || 0) + 1
+        : profile.mental_quests_completed || 0,
+      coding_quests_completed: isCoding
+        ? (profile.coding_quests_completed || 0) + 1
+        : profile.coding_quests_completed || 0,
+      physical_xp: newPhysicalXp,
+      mental_xp: newMentalXp,
       max_hp: newMaxHp,
       max_mp: newMaxMp,
-      hp: Math.min(currentProfile.hp, newMaxHp),
-      mp: Math.min(currentProfile.mp, newMaxMp),
-      titles: newTitles,
-      profile_frame: newFrame,
-      available_skill_points: newSkillPoints,
+      hp: Math.min(newMaxHp, profile.hp + 20),
+      mp: Math.min(newMaxMp, profile.mp + 15),
+      ...streakUpdate,
+      system_log: [logEntry, ...(profile.system_log || [])].slice(0, 25),
     };
 
-    setProfile(updatedProfile);
-    return updatedProfile;
+    // Add XP and check for level-ups
+    const finalProfile = applyXpToProfile(updatedProfile, xpEarned, quest.name);
+    setProfile(finalProfile);
+
+    // Sound effect
+    audioService.playSuccess();
+
+    // Check achievements
+    checkAchievements(finalProfile, updatedQuests);
+
+    // Write to Firestore
+    syncToFirestore(finalProfile, updatedQuests);
   };
 
-  // ============================================================
-  // ACHIEVEMENT CHECKS
-  // ============================================================
+  const incrementProgress = (questId: string, amount: number = 1) => {
+    const quest = quests.find((q) => q.id === questId);
+    if (!quest || quest.completed) return;
 
-  const checkAndUnlockAchievements = (currentProfile: Profile, currentQuests: Quest[]) => {
-    const newUnlocks = checkNewAchievements(currentProfile, currentQuests, unlockedAchievements);
-    if (newUnlocks.length === 0) return;
+    const newProgress = Math.min(quest.target, (quest.progress || 0) + amount);
+    audioService.playClick();
 
-    const newIds = newUnlocks.map(u => u.id);
-    setUnlockedAchievements(prev => [...prev, ...newIds]);
-
-    // Apply rewards and notify
-    newUnlocks.forEach((unlock: NewUnlock) => {
-      scheduleNotification({
-        title: `${unlock.icon} ACHIEVEMENT UNLOCKED`,
-        message: `"${unlock.name}" — ${unlock.description} +${unlock.xp_reward} XP`,
-        priority: 'high',
-        category: 'system',
-        playSound: true,
-      });
-
-      // Add XP for achievement
-      setProfile(prev => {
-        if (!prev) return prev;
-        const newTitles = [...(prev.titles || [])];
-        if (unlock.title_unlock && !newTitles.includes(unlock.title_unlock)) {
-          newTitles.push(unlock.title_unlock);
-        }
-        const newBadges = [...(prev.badges || [])];
-        if (unlock.badge_id && !newBadges.includes(unlock.badge_id)) {
-          newBadges.push(unlock.badge_id);
-        }
-        const logEntry = {
-          id: `log-${Date.now()}-ach`,
-          timestamp: Date.now(),
-          event_type: 'achievement' as const,
-          message: `${unlock.icon} Achievement: "${unlock.name}" unlocked! +${unlock.xp_reward} XP`,
-          xp: unlock.xp_reward,
-        };
-        return {
-          ...prev,
-          total_xp: prev.total_xp + unlock.xp_reward,
-          current_level: calculateLevel(prev.total_xp + unlock.xp_reward),
-          current_rank: calculateRank(calculateLevel(prev.total_xp + unlock.xp_reward)),
-          titles: newTitles,
-          badges: newBadges,
-          system_log: [logEntry, ...(prev.system_log || [])].slice(0, 20),
-        };
-      });
-    });
+    if (newProgress >= quest.target) {
+      completeQuest(questId);
+    } else {
+      const updatedQuests = quests.map((q) =>
+        q.id === questId ? { ...q, progress: newProgress } : q
+      );
+      setQuests(updatedQuests);
+      if (profile) syncToFirestore(profile, updatedQuests);
+    }
   };
 
-  // ============================================================
-  // COMPLETE BONUS QUEST
-  // ============================================================
+  const acceptLibraryQuest = (libQuest: LibraryQuest) => {
+    if (!user) return;
+    const newQuest: Quest = {
+      id: `${libQuest.id}_${Date.now()}`,
+      user_id: user.id,
+      name: libQuest.name,
+      description: libQuest.description,
+      difficulty: libQuest.difficulty,
+      category: libQuest.category,
+      stat: libQuest.stat,
+      progress: 0,
+      target: libQuest.target,
+      completed: false,
+      xp_reward: DIFFICULTY_XP[libQuest.difficulty] || 20,
+      stat_xp_reward: DIFFICULTY_STAT_XP[libQuest.difficulty] || 10,
+      stat_xp_type: getStatXpType(libQuest.category),
+      repeatable: 'daily',
+    };
 
-  const completeBonusQuest = () => {
-    if (!activeBonus || !profile) return;
+    const updatedQuests = [...quests, newQuest];
+    setQuests(updatedQuests);
+    audioService.playClick();
+    if (profile) syncToFirestore(profile, updatedQuests);
+  };
 
-    const xpEarned = activeBonus.xp_reward || 200;
-    const statXpEarned = activeBonus.stat_xp_reward || 50;
-    const statXpType = activeBonus.stat_xp_type || 'none';
+  const addCustomQuest = (questData: Omit<Quest, 'id' | 'user_id' | 'progress' | 'completed'>) => {
+    if (!user) return;
+    const newQuest: Quest = {
+      ...questData,
+      id: `custom_${Date.now()}`,
+      user_id: user.id,
+      progress: 0,
+      completed: false,
+    };
 
-    completeBonusQuestInState();
-    setActiveBonus(null);
+    const updatedQuests = [...quests, newQuest];
+    setQuests(updatedQuests);
+    audioService.playClick();
+    if (profile) syncToFirestore(profile, updatedQuests);
+  };
 
-    setProfile(prev => {
-      if (!prev) return prev;
-      const { updatedProfile } = addStatXp(statXpType, statXpEarned, prev);
-      const logEntry = {
-        id: `log-${Date.now()}-bq`,
-        timestamp: Date.now(),
-        event_type: 'bonus_quest' as const,
-        message: `🌟 Bonus Quest cleared: "${activeBonus.name}" +${xpEarned} XP`,
-        xp: xpEarned,
-        stat_xp: statXpEarned,
-      };
-      return {
-        ...updatedProfile,
-        system_log: [logEntry, ...(updatedProfile.system_log || [])].slice(0, 20),
-      };
-    });
-
-    setTimeout(() => addXp(xpEarned, `Bonus Quest: ${activeBonus.name}`), 50);
-
-    scheduleNotification({
-      title: '🌟 BONUS QUEST COMPLETE',
-      message: `"${activeBonus.name}" cleared! +${xpEarned} XP, +${statXpEarned} Stat XP`,
-      priority: 'high',
-      category: 'quest',
-      playSound: true,
-    });
+  const deleteQuest = (questId: string) => {
+    const updatedQuests = quests.filter((q) => q.id !== questId);
+    setQuests(updatedQuests);
+    audioService.playClick();
+    if (profile) syncToFirestore(profile, updatedQuests);
   };
 
   // ============================================================
@@ -762,427 +513,272 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const completeDungeonBreak = () => {
     if (!activeDungeon || !profile) return;
-
     markDungeonComplete();
-    setActiveDungeon(null);
 
     const xpEarned = activeDungeon.xp_reward;
-    const statXpEarned = activeDungeon.stat_xp_reward;
+    const statBoost = 2; // +2 to all attributes
 
-    // Add special dungeon badge
-    setProfile(prev => {
-      if (!prev) return prev;
-      const newBadges = [...(prev.badges || [])];
-      if (!newBadges.includes('dungeon_survivor')) newBadges.push('dungeon_survivor');
-
-      const { updatedProfile } = addStatXp('both', Math.floor(statXpEarned / 2), prev);
-
-      const logEntry = {
-        id: `log-${Date.now()}-db`,
-        timestamp: Date.now(),
-        event_type: 'dungeon' as const,
-        message: `💀 DUNGEON BREAK cleared! +${xpEarned} XP earned`,
-        xp: xpEarned,
-        stat_xp: statXpEarned,
-      };
-      return {
-        ...updatedProfile,
-        badges: newBadges,
-        system_log: [logEntry, ...(updatedProfile.system_log || [])].slice(0, 20),
-      };
+    const updatedStats = { ...profile.stats };
+    Object.keys(updatedStats).forEach((key) => {
+      updatedStats[key] = (updatedStats[key] || 10) + statBoost;
     });
 
-    // Also update quests to mark any dungeon quest complete
-    setQuests(prev => prev.map(q => q.is_dungeon ? { ...q, completed: true } : q));
+    const logEntry = {
+      id: `dungeon-${Date.now()}`,
+      timestamp: Date.now(),
+      event_type: 'dungeon' as const,
+      message: `DUNGEON CONQUERED: ${activeDungeon.challenge} (+${xpEarned} XP)`,
+      xp: xpEarned,
+    };
 
-    setTimeout(() => addXp(xpEarned, 'Dungeon Break'), 100);
-    setTimeout(() => {
-      if (profile) checkAndUnlockAchievements(profile, quests);
-    }, 200);
+    const updatedProfile: Profile = {
+      ...profile,
+      stats: updatedStats,
+      system_log: [logEntry, ...(profile.system_log || [])].slice(0, 25),
+    };
 
-    scheduleNotification({
-      title: '💀 DUNGEON BREAK CLEARED',
-      message: `The gate has been closed. +${xpEarned} XP, +${statXpEarned} Stat XP. Badge "Dungeon Survivor" earned!`,
-      priority: 'urgent',
-      category: 'system',
-      playSound: true,
-    });
+    setActiveDungeon(null);
+    audioService.playLevelUp();
+
+    const finalProfile = applyXpToProfile(updatedProfile, xpEarned, 'Dungeon Break');
+    setProfile(finalProfile);
+    checkAchievements(finalProfile, quests);
+    syncToFirestore(finalProfile, quests);
   };
 
   const dismissDungeonBreak = () => {
-    markDungeonDismissed();
-    setActiveDungeon(null);
+    if (activeDungeon) {
+      markDungeonDismissed();
+      setActiveDungeon(null);
+      audioService.playClick();
+    }
+  };
+
+  const completeBonusQuest = () => {
+    if (!activeBonus || !profile) return;
+    completeBonusQuestInState();
+
+    const xpEarned = activeBonus.xp_reward || 150;
+    setActiveBonus(null);
+    audioService.playSuccess();
+
+    const finalProfile = applyXpToProfile(profile, xpEarned, `Bonus: ${activeBonus.name}`);
+    setProfile(finalProfile);
+    syncToFirestore(finalProfile, quests);
   };
 
   // ============================================================
-  // BOSS QUEST
+  // ATTRIBUTE & SKILL ALLOCATION
   // ============================================================
 
-  const completeBossQuest = () => {
-    if (!activeBossQuest || !profile) return;
-
-    completeBossQuestInState();
-    setActiveBossQuest(null);
-
-    const xpEarned = activeBossQuest.xp_reward;
-    const statXpEarned = activeBossQuest.stat_xp_reward;
-
-    // Add special boss conqueror title & badge
-    setProfile(prev => {
-      if (!prev) return prev;
-      const newBadges = [...(prev.badges || [])];
-      if (!newBadges.includes('monarch_slayer')) newBadges.push('monarch_slayer');
-
-      const newTitles = [...(prev.titles || [])];
-      if (!newTitles.includes('Monarch Slayer')) newTitles.push('Monarch Slayer');
-
-      const { updatedProfile } = addStatXp('both', Math.floor(statXpEarned / 2), prev);
-
-      const logEntry = {
-        id: `log-${Date.now()}-boss`,
-        timestamp: Date.now(),
-        event_type: 'achievement' as const,
-        message: `👑 BOSS SLAIN: ${activeBossQuest.boss_name}! +${xpEarned} XP earned`,
-        xp: xpEarned,
-        stat_xp: statXpEarned,
-      };
-      return {
-        ...updatedProfile,
-        badges: newBadges,
-        titles: newTitles,
-        system_log: [logEntry, ...(updatedProfile.system_log || [])].slice(0, 20),
-      };
-    });
-
-    setTimeout(() => addXp(xpEarned, `Boss Slain: ${activeBossQuest.boss_name}`), 100);
-    setTimeout(() => {
-      if (profile) checkAndUnlockAchievements(profile, quests);
-    }, 200);
-
-    scheduleNotification({
-      title: '👑 MONARCH BOSS SLAIN',
-      message: `${activeBossQuest.boss_name} has been defeated! +${xpEarned} XP, +${statXpEarned} Stat XP. Title "Monarch Slayer" unlocked!`,
-      priority: 'urgent',
-      category: 'system',
-      playSound: true,
-    });
-  };
-
-  const dismissBossQuest = () => {
-    dismissBossQuestInState();
-    setActiveBossQuest(null);
-  };
-
-  // ============================================================
-  // REFRESH DAILY POOL
-  // ============================================================
-
-  const refreshDaily = () => {
+  const allocateStatPoint = (statKey: string) => {
     if (!profile) return;
-    // Reset repeatable daily quests so they can be re-cleared
-    setQuests(prev =>
-      prev.map(q => q.repeatable === 'daily' ? { ...q, progress: 0, completed: false } : q)
-    );
-    const { bonusQuest, dungeonBreak, bossQuest } = generateDailyPool(profile, profile.id);
-    if (bonusQuest) setActiveBonus(bonusQuest);
-    if (dungeonBreak) {
-      setActiveDungeon(dungeonBreak);
-      scheduleNotification({
-        title: '⚠️ DUNGEON BREAK DETECTED',
-        message: `An unstable gate has appeared. ${dungeonBreak.challenge.slice(0, 60)}...`,
-        priority: 'urgent',
-        category: 'warning',
-        playSound: true,
-      });
-    }
-    if (bossQuest) {
-      setActiveBossQuest(bossQuest);
-      scheduleNotification({
-        title: '👑 MONARCH BOSS ENCOUNTER',
-        message: `Boss: ${bossQuest.boss_name} — ${bossQuest.challenge.slice(0, 60)}...`,
-        priority: 'urgent',
-        category: 'warning',
-        playSound: true,
-      });
-    }
-    scheduleNotification({
-      title: 'SYSTEM DIRECTIVES REFRESHED',
-      message: 'Daily quest directives and dynamic trials have been recalibrated.',
-      priority: 'normal',
-      category: 'system',
-    });
-  };
+    if ((profile.available_skill_points || 0) <= 0) return;
 
-  // ============================================================
-  // INCREMENT PROGRESS
-  // ============================================================
-
-  const incrementProgress = (questId: string, amount: number = 1) => {
-    setQuests(prev =>
-      prev.map(q => {
-        if (q.id !== questId || q.completed) return q;
-        const newProgress = Math.min(q.target, q.progress + amount);
-        const isDone = newProgress >= q.target;
-        return { ...q, progress: newProgress, completed: isDone };
-      })
-    );
-
-    const quest = quests.find(q => q.id === questId);
-    if (quest && quest.progress + amount >= quest.target && !quest.completed) {
-      completeQuest(questId);
-    }
-  };
-
-  // ============================================================
-  // SAVE AWAKENED PROFILE
-  // ============================================================
-
-  const saveAwakenedProfile = async (name: string, stat: string): Promise<Profile> => {
-    const userUid = 'hunter-' + Math.random().toString(36).substring(2, 9);
-    const newProfile = createDefaultProfile(userUid, name.trim() || 'Awakened Hunter', stat);
-
-    // Create initial quests from library (first 12 from varied categories)
-    const initialQuestIds = ['phys-001', 'phys-003', 'phys-006', 'code-001', 'study-001',
-      'know-001', 'prod-001', 'disc-001', 'hlth-001', 'hlth-004', 'phys-009', 'study-002'];
-    const initialQuests: Quest[] = QUEST_LIBRARY
-      .filter(lq => initialQuestIds.includes(lq.id))
-      .map(lq => ({
-        id: `quest-${lq.id}`,
-        user_id: userUid,
-        name: lq.name,
-        difficulty: lq.difficulty,
-        progress: 0,
-        target: lq.target,
-        stat: lq.stat,
-        category: lq.category,
-        stat_xp_type: getStatXpType(lq.category),
-        description: lq.description,
-        completed: false,
-        xp_reward: DIFFICULTY_XP[lq.difficulty] || 15,
-        stat_xp_reward: DIFFICULTY_STAT_XP[lq.difficulty] || 10,
-        repeatable: lq.repeatable,
-      }));
-
-    setProfile(newProfile);
-    setQuests(initialQuests);
-    setPrimaryAffinity(stat);
-    setUnlockedAchievements([]);
-
-    // Supabase sync
-    if (isSupabaseConfigured && supabase) {
-      Promise.resolve(
-        supabase.from('profiles').upsert({
-          id: userUid,
-          hunter_id: newProfile.hunter_id,
-          display_name: newProfile.display_name,
-          total_xp: newProfile.total_xp,
-          current_level: newProfile.current_level,
-          stats: newProfile.stats,
-          clean_days: newProfile.clean_days,
-          current_rank: newProfile.current_rank,
-          affinity: stat,
-          hp: newProfile.hp,
-          mp: newProfile.mp,
-          max_hp: newProfile.max_hp,
-          max_mp: newProfile.max_mp,
-          physical_xp: 0,
-          mental_xp: 0,
-        })
-      ).catch((err: unknown) => console.warn('[Hunter Store] Supabase error:', err));
-    }
-
-    trackEvent(AnalyticsEvent.SYSTEM_AWAKENED, {
-      hunterUid: userUid,
-      hunterId: newProfile.hunter_id,
-      name: newProfile.display_name,
-      affinity: stat,
-      level: 1,
-    });
-
-    await scheduleNotification({
-      title: 'SYSTEM AWAKENING VERIFIED',
-      message: `Welcome, Hunter ${newProfile.display_name} [${newProfile.hunter_id}]. Rank E assigned. The System watches.`,
-      priority: 'urgent',
-      category: 'system',
-      playSound: true,
-    });
-
-    return newProfile;
-  };
-
-  // ============================================================
-  // MISC ACTIONS
-  // ============================================================
-
-  const allocateStatPoint = (stat: string, points: number = 1) => {
-    setProfile(prev => {
-      if (!prev || prev.stats[stat] === undefined || (prev.available_stat_points || 0) < points) {
-        return prev;
-      }
-      return {
-        ...prev,
-        stats: { ...prev.stats, [stat]: prev.stats[stat] + points },
-        available_stat_points: (prev.available_stat_points || 0) - points,
-      };
-    });
-    trackEvent(AnalyticsEvent.STAT_SELECTED, { stat, pointsAdded: points });
-  };
-
-  const updateProfile = (updates: Partial<Profile>) => {
-    if (!profile) return;
-    setProfile({ ...profile, ...updates });
-  };
-
-  const addCustomQuest = (questData: Omit<Quest, 'id' | 'user_id' | 'progress' | 'completed'>) => {
-    if (!profile) return;
-    const newQuest: Quest = {
-      ...questData,
-      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      user_id: profile.id,
-      progress: 0,
-      completed: false,
-      stat_xp_type: questData.stat_xp_type || getStatXpType(questData.category),
+    const currentVal = profile.stats[statKey] || 10;
+    const updatedProfile: Profile = {
+      ...profile,
+      available_skill_points: profile.available_skill_points - 1,
+      stats: {
+        ...profile.stats,
+        [statKey]: currentVal + 1,
+      },
     };
-    setQuests(prev => [newQuest, ...prev]);
-    scheduleNotification({
-      title: 'CUSTOM QUEST REGISTERED',
-      message: `"${questData.name}" has been added to your quest board.`,
-      priority: 'normal',
-      category: 'quest',
-    });
+
+    setProfile(updatedProfile);
+    audioService.playClick();
+    checkAchievements(updatedProfile, quests);
+    syncToFirestore(updatedProfile, quests);
+  };
+
+  const allocateSkillPoint = (skillKey: keyof Profile['skill_points']) => {
+    if (!profile) return;
+    if ((profile.available_skill_points || 0) <= 0) return;
+
+    const currentVal = profile.skill_points[skillKey] || 0;
+    const updatedProfile: Profile = {
+      ...profile,
+      available_skill_points: profile.available_skill_points - 1,
+      skill_points: {
+        ...profile.skill_points,
+        [skillKey]: currentVal + 1,
+      },
+    };
+
+    setProfile(updatedProfile);
+    audioService.playClick();
+    syncToFirestore(updatedProfile, quests);
   };
 
   const equipTitle = (title: string) => {
     if (!profile) return;
-    if (!profile.titles.includes(title)) return;
-    setProfile({ ...profile, equipped_title: title });
+    const updatedProfile: Profile = {
+      ...profile,
+      equipped_title: title,
+    };
+    setProfile(updatedProfile);
+    audioService.playClick();
+    syncToFirestore(updatedProfile, quests);
   };
 
-  const allocateSkillPoint = (skill: keyof Profile['skill_points']) => {
-    if (!profile || (profile.available_skill_points || 0) <= 0) return;
-    setProfile({
-      ...profile,
-      available_skill_points: (profile.available_skill_points || 0) - 1,
-      skill_points: {
-        ...profile.skill_points,
-        [skill]: (profile.skill_points[skill] || 0) + 1,
-      },
-    });
-  };
+  // ============================================================
+  // XP & LEVEL PROGRESSION ENGINE
+  // ============================================================
 
   const addXp = (amount: number, source: string = 'General') => {
     if (!profile) return;
-    addXpToProfile(profile, amount, source);
+    const finalProfile = applyXpToProfile(profile, amount, source);
+    setProfile(finalProfile);
+    syncToFirestore(finalProfile, quests);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  void addXpLegacy; // legacy — kept for reference
+  const applyXpToProfile = (current: Profile, amount: number, source: string): Profile => {
+    const prevLevel = current.current_level;
+    const prevRank = current.current_rank;
+    const newTotalXp = current.total_xp + amount;
+    const newLevel = calculateLevel(newTotalXp);
+    const newRank = calculateRank(newLevel);
+    const levelsGained = newLevel - prevLevel;
+    const rankChanged = newRank !== prevRank;
 
-  const resetHunter = () => {
-    localStorage.removeItem(STORAGE_PROFILE_KEY);
-    localStorage.removeItem(STORAGE_QUESTS_KEY);
-    localStorage.removeItem(STORAGE_AUTH_KEY);
-    localStorage.removeItem(STORAGE_AFFINITY_KEY);
-    localStorage.removeItem(STORAGE_ACHIEVEMENTS_KEY);
-    setProfile(null);
-    setQuests([]);
-    setPrimaryAffinity(null);
-    setUnlockedAchievements([]);
-    setActiveBonus(null);
-    setActiveDungeon(null);
-    setActiveBossQuest(null);
-    trackEvent(AnalyticsEvent.HUNTER_RESET);
-  };
+    let updatedSP = current.available_skill_points || 0;
+    const updatedTitles = [...(current.titles || [])];
 
-  const isOnboarded = Boolean(profile && profile.display_name);
-
-  const acceptLibraryQuest = (lq: LibraryQuest) => {
-    if (!profile) return;
-    const exists = quests.find(q => q.name.toLowerCase() === lq.name.toLowerCase() && !q.completed);
-    if (exists) {
-      scheduleNotification({
-        title: 'QUEST ALREADY ACTIVE',
-        message: `"${lq.name}" is already on your active quest board.`,
-        priority: 'normal',
-        category: 'warning',
-      });
-      return;
+    if (levelsGained > 0) {
+      updatedSP += levelsGained * 3;
+      setLeveledUpTo(newLevel);
+      setNewRankAchieved(rankChanged ? newRank : '');
+      setShowLevelUpModal(true);
+      audioService.playLevelUp();
     }
-    const newQuest: Quest = {
-      id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      user_id: profile.id,
-      name: lq.name,
-      difficulty: lq.difficulty,
-      progress: 0,
-      target: lq.target,
-      stat: lq.stat,
-      category: lq.category,
-      stat_xp_type: getStatXpType(lq.category),
-      description: lq.description,
-      completed: false,
-      xp_reward: DIFFICULTY_XP[lq.difficulty] || 25,
-      stat_xp_reward: DIFFICULTY_STAT_XP[lq.difficulty] || 10,
-      repeatable: lq.repeatable,
-      quest_type: 'normal',
+
+    if (rankChanged) {
+      const titlesForRank = RANK_TITLES[newRank] || [];
+      titlesForRank.forEach((t) => {
+        if (!updatedTitles.includes(t)) updatedTitles.push(t);
+      });
+    }
+
+    return {
+      ...current,
+      total_xp: newTotalXp,
+      current_level: newLevel,
+      current_rank: newRank,
+      available_skill_points: updatedSP,
+      titles: updatedTitles,
+      max_hp: calculateMaxHp(current.physical_xp, newRank),
+      max_mp: calculateMaxMp(current.mental_xp, newRank),
     };
-    setQuests(prev => [newQuest, ...prev]);
-    scheduleNotification({
-      title: 'QUEST ACCEPTED FROM CODEX',
-      message: `"${lq.name}" inscribed to your active quest board.`,
-      priority: 'normal',
-      category: 'quest',
-      playSound: true,
-    });
   };
 
-  const deleteQuest = (questId: string) => {
-    setQuests(prev => prev.filter(q => q.id !== questId));
-    scheduleNotification({
-      title: 'QUEST EXPUNGED',
-      message: 'The directive has been removed from your active board.',
-      priority: 'low',
-      category: 'system',
+  const checkAchievements = (currentProf: Profile, currentQuests: Quest[]) => {
+    const newUnlocks = checkNewAchievements(currentProf, currentQuests, unlockedAchievements);
+    if (newUnlocks.length === 0) return;
+
+    const newIds = newUnlocks.map((u) => u.id);
+    const allUnlocked = [...unlockedAchievements, ...newIds];
+    setUnlockedAchievements(allUnlocked);
+
+    let updatedProf = { ...currentProf };
+    newUnlocks.forEach((unlock: NewUnlock) => {
+      if (unlock.title_unlock && !updatedProf.titles.includes(unlock.title_unlock)) {
+        updatedProf.titles = [...updatedProf.titles, unlock.title_unlock];
+      }
+      if (unlock.badge_id && !updatedProf.badges.includes(unlock.badge_id)) {
+        updatedProf.badges = [...updatedProf.badges, unlock.badge_id];
+      }
+      updatedProf = applyXpToProfile(updatedProf, unlock.xp_reward, `Achievement: ${unlock.name}`);
     });
+
+    setProfile(updatedProf);
+    syncToFirestore(updatedProf, currentQuests);
   };
 
-  const value = useMemo(
-    () => ({
-      profile,
-      quests,
-      auth,
-      isOnboarded,
-      primaryAffinity,
-      unlockedAchievements,
-      activeBonus,
-      activeDungeon,
-      activeBossQuest,
-      saveAwakenedProfile,
-      completeQuest,
-      incrementProgress,
-      addXp,
-      allocateStatPoint,
-      updateProfile,
-      resetHunter,
-      addCustomQuest,
-      completeBonusQuest,
-      completeDungeonBreak,
-      dismissDungeonBreak,
-      completeBossQuest,
-      dismissBossQuest,
-      equipTitle,
-      allocateSkillPoint,
-      refreshDaily,
-      acceptLibraryQuest,
-      deleteQuest,
-    }),
-    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon, activeBossQuest]
+  const saveAwakenedProfile = async (name: string, primaryStat: string): Promise<Profile> => {
+    const uid = user?.id || `hunter_${Date.now()}`;
+    const newProfile = createDefaultProfile(uid, name, primaryStat);
+    setProfile(newProfile);
+    audioService.playAwakening();
+    await syncToFirestore(newProfile, quests);
+    return newProfile;
+  };
+
+  const updateProfile = (updates: Partial<Profile>) => {
+    if (!profile) return;
+    const updated = { ...profile, ...updates };
+    setProfile(updated);
+    syncToFirestore(updated, quests);
+  };
+
+  const refreshDaily = () => {
+    if (!profile) return;
+    const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
+    if (bonusQuest) setActiveBonus(bonusQuest);
+    if (dungeonBreak) setActiveDungeon(dungeonBreak);
+    audioService.playClick();
+  };
+
+  const resetHunter = async () => {
+    audioService.playClick();
+    if (user) {
+      try {
+        const hunterDocRef = doc(firestore, 'hunters', user.id);
+        const defaultProf = createDefaultProfile(user.id, user.name || 'Awakened Hunter', 'AGI');
+        setProfile(defaultProf);
+        setQuests([]);
+        setUnlockedAchievements(['first_blood']);
+        await syncToFirestore(defaultProf, []);
+      } catch {}
+    } else {
+      localStorage.clear();
+      setProfile(null);
+      setQuests([]);
+    }
+  };
+
+  return (
+    <HunterContext.Provider
+      value={{
+        profile,
+        quests,
+        dailyQuests,
+        isOnboarded: profile !== null,
+        isLoading,
+        primaryAffinity: profile?.affinity || null,
+        unlockedAchievements,
+        activeBonus,
+        activeDungeon,
+        showLevelUpModal,
+        leveledUpTo,
+        newRankAchieved,
+        dismissLevelUpModal,
+        saveAwakenedProfile,
+        completeQuest,
+        incrementProgress,
+        addXp,
+        allocateStatPoint,
+        updateProfile,
+        resetHunter,
+        addCustomQuest,
+        completeBonusQuest,
+        completeDungeonBreak,
+        dismissDungeonBreak,
+        equipTitle,
+        allocateSkillPoint,
+        refreshDaily,
+        acceptLibraryQuest,
+        deleteQuest,
+      }}
+    >
+      {children}
+    </HunterContext.Provider>
   );
-
-  return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;
 };
 
 export const useHunter = (): HunterContextType => {
   const context = useContext(HunterContext);
-  if (!context) throw new Error('useHunter must be used within a HunterProvider');
+  if (!context) {
+    throw new Error('useHunter must be used within a HunterProvider');
+  }
   return context;
 };

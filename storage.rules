@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Hunter profile avatars and assets
+    match /hunters/{userId}/{allPaths=**} {
+      // Allow read for authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow upload only by the owner with size limit (5MB) and valid image MIME
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Deny all other uploads by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

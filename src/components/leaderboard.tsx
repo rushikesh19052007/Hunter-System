@@ -13,8 +13,9 @@ import {
   User,
   Users,
   Sparkles,
-  ChevronUp,
 } from 'lucide-react';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
 import { useHunter } from '@/lib/hunter-store';
 import {
   type Profile,
@@ -22,7 +23,7 @@ import {
   generateHunterId,
   migrateProfile,
 } from '@/lib/game-engine';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { audioService } from '@/lib/audio-service';
 
 export type SortFilter = 'xp' | 'level' | 'clean_days';
 
@@ -33,177 +34,233 @@ export interface GlobalRegistryStats {
   dominantAffinity: string;
 }
 
-// Legendary seed hunters to ensure 100 ranks are populated if database is fresh
-const SEED_HUNTERS: Profile[] = [
-  migrateProfile({ id: 'legend-1', hunter_id: 'HUNTER-THOMAS-STR', display_name: 'Thomas Andre', total_xp: 98500, current_level: 98, stats: { STR: 180, AGI: 140, VIT: 195, INT: 110, PERC: 130 }, clean_days: 720, current_rank: 'S-Rank', affinity: 'STR' }),
-  migrateProfile({ id: 'legend-2', hunter_id: 'HUNTER-LIUZHI-AGI', display_name: 'Liu Zhigang', total_xp: 94200, current_level: 95, stats: { STR: 165, AGI: 190, VIT: 155, INT: 120, PERC: 160 }, clean_days: 640, current_rank: 'S-Rank', affinity: 'AGI' }),
-  migrateProfile({ id: 'legend-3', hunter_id: 'HUNTER-CHAHAE-AGI', display_name: 'Cha Hae-In', total_xp: 76000, current_level: 82, stats: { STR: 135, AGI: 175, VIT: 120, INT: 105, PERC: 160 }, clean_days: 480, current_rank: 'A-Rank', affinity: 'AGI' }),
-  migrateProfile({ id: 'legend-4', hunter_id: 'HUNTER-CHOIJN-INT', display_name: 'Choi Jong-In', total_xp: 72500, current_level: 80, stats: { STR: 95, AGI: 110, VIT: 100, INT: 185, PERC: 140 }, clean_days: 410, current_rank: 'A-Rank', affinity: 'INT' }),
-  migrateProfile({ id: 'legend-5', hunter_id: 'HUNTER-BAEKYN-STR', display_name: 'Baek Yoonho', total_xp: 68400, current_level: 78, stats: { STR: 170, AGI: 130, VIT: 150, INT: 85, PERC: 120 }, clean_days: 365, current_rank: 'A-Rank', affinity: 'STR' }),
-  migrateProfile({ id: 'legend-6', hunter_id: 'HUNTER-MINBYN-VIT', display_name: 'Min Byung-Gyu', total_xp: 59000, current_level: 72, stats: { STR: 80, AGI: 95, VIT: 165, INT: 150, PERC: 130 }, clean_days: 310, current_rank: 'B-Rank', affinity: 'VIT' }),
-  migrateProfile({ id: 'legend-7', hunter_id: 'HUNTER-WOOJIN-PERC', display_name: 'Woo Jin-Chul', total_xp: 54200, current_level: 68, stats: { STR: 120, AGI: 135, VIT: 125, INT: 115, PERC: 170 }, clean_days: 280, current_rank: 'B-Rank', affinity: 'PERC' }),
-  migrateProfile({ id: 'legend-8', hunter_id: 'HUNTER-GOHGUN-VIT', display_name: 'Go Gun-Hee', total_xp: 49800, current_level: 65, stats: { STR: 130, AGI: 110, VIT: 140, INT: 145, PERC: 155 }, clean_days: 850, current_rank: 'B-Rank', affinity: 'VIT' }),
-  migrateProfile({ id: 'legend-9', hunter_id: 'HUNTER-YOOJIN-VIT', display_name: 'Yoo Jinho', total_xp: 22000, current_level: 38, stats: { STR: 65, AGI: 60, VIT: 95, INT: 80, PERC: 75 }, clean_days: 120, current_rank: 'C-Rank', affinity: 'VIT' }),
-  migrateProfile({ id: 'legend-10', hunter_id: 'HUNTER-LEEMIN-INT', display_name: 'Lee Joohee', total_xp: 14500, current_level: 28, stats: { STR: 40, AGI: 55, VIT: 65, INT: 90, PERC: 80 }, clean_days: 90, current_rank: 'D-Rank', affinity: 'INT' }),
+// Built-in Solo Leveling Top Hunters (matching Flutter's FirebaseService fallback)
+const DEMO_LEADERBOARD_HUNTERS: Profile[] = [
+  migrateProfile({
+    id: 'lb-1',
+    hunter_id: 'HUNTER-MONARCH-S',
+    display_name: 'Sung Jin-Woo',
+    current_level: 142,
+    current_rank: 'S-Rank',
+    total_xp: 589200,
+    affinity: 'STR',
+    clean_days: 365,
+    stats: { STR: 310, AGI: 280, VIT: 290, INT: 260, PERC: 275 },
+    quests_completed: 1420,
+    equipped_title: 'Shadow Monarch',
+  }),
+  migrateProfile({
+    id: 'lb-2',
+    hunter_id: 'HUNTER-GOLIATH-S',
+    display_name: 'Thomas Andre',
+    current_level: 118,
+    current_rank: 'S-Rank',
+    total_xp: 412500,
+    affinity: 'VIT',
+    clean_days: 240,
+    stats: { STR: 260, AGI: 190, VIT: 295, INT: 140, PERC: 170 },
+    quests_completed: 980,
+    equipped_title: 'Goliath',
+  }),
+  migrateProfile({
+    id: 'lb-3',
+    hunter_id: 'HUNTER-BLADE-S',
+    display_name: 'Cha Hae-In',
+    current_level: 98,
+    current_rank: 'S-Rank',
+    total_xp: 295000,
+    affinity: 'AGI',
+    clean_days: 180,
+    stats: { STR: 195, AGI: 260, VIT: 180, INT: 155, PERC: 220 },
+    quests_completed: 760,
+    equipped_title: 'Sword Dancer',
+  }),
+  migrateProfile({
+    id: 'lb-4',
+    hunter_id: 'HUNTER-BEAST-A',
+    display_name: 'Baek Yoonho',
+    current_level: 88,
+    current_rank: 'S-Rank',
+    total_xp: 220000,
+    affinity: 'STR',
+    clean_days: 150,
+    stats: { STR: 240, AGI: 190, VIT: 210, INT: 120, PERC: 160 },
+    quests_completed: 640,
+    equipped_title: 'White Tiger',
+  }),
+  migrateProfile({
+    id: 'lb-5',
+    hunter_id: 'HUNTER-SOLDIER-S',
+    display_name: 'Choi Jong-In',
+    current_level: 85,
+    current_rank: 'S-Rank',
+    total_xp: 210000,
+    affinity: 'INT',
+    clean_days: 140,
+    stats: { STR: 120, AGI: 140, VIT: 130, INT: 260, PERC: 190 },
+    quests_completed: 610,
+    equipped_title: 'Ultimate Soldier',
+  }),
+  migrateProfile({
+    id: 'lb-6',
+    hunter_id: 'HUNTER-CHAIRMAN-S',
+    display_name: 'Go Gun-Hee',
+    current_level: 95,
+    current_rank: 'S-Rank',
+    total_xp: 310000,
+    affinity: 'VIT',
+    clean_days: 300,
+    stats: { STR: 200, AGI: 170, VIT: 250, INT: 220, PERC: 230 },
+    quests_completed: 890,
+    equipped_title: 'Guild Chairman',
+  }),
+  migrateProfile({
+    id: 'lb-7',
+    hunter_id: 'HUNTER-CHIEF-A',
+    display_name: 'Woo Jin-Chul',
+    current_level: 72,
+    current_rank: 'A-Rank',
+    total_xp: 155000,
+    affinity: 'PERC',
+    clean_days: 110,
+    stats: { STR: 160, AGI: 175, VIT: 170, INT: 150, PERC: 220 },
+    quests_completed: 480,
+    equipped_title: 'Chief Inspector',
+  }),
+  migrateProfile({
+    id: 'lb-8',
+    hunter_id: 'HUNTER-HEALER-A',
+    display_name: 'Min Byung-Gyu',
+    current_level: 68,
+    current_rank: 'A-Rank',
+    total_xp: 138000,
+    affinity: 'VIT',
+    clean_days: 95,
+    stats: { STR: 100, AGI: 120, VIT: 210, INT: 200, PERC: 170 },
+    quests_completed: 420,
+    equipped_title: 'Brilliant Healer',
+  }),
+  migrateProfile({
+    id: 'lb-9',
+    hunter_id: 'HUNTER-ARCHER-A',
+    display_name: 'Lim Tae-Gyu',
+    current_level: 64,
+    current_rank: 'A-Rank',
+    total_xp: 122000,
+    affinity: 'PERC',
+    clean_days: 85,
+    stats: { STR: 130, AGI: 180, VIT: 140, INT: 130, PERC: 215 },
+    quests_completed: 390,
+    equipped_title: 'Fiend Master',
+  }),
+  migrateProfile({
+    id: 'lb-10',
+    hunter_id: 'HUNTER-TANK-A',
+    display_name: 'Ma Dong-Wook',
+    current_level: 62,
+    current_rank: 'A-Rank',
+    total_xp: 115000,
+    affinity: 'VIT',
+    clean_days: 80,
+    stats: { STR: 180, AGI: 120, VIT: 220, INT: 110, PERC: 140 },
+    quests_completed: 360,
+    equipped_title: 'Fame Master',
+  }),
+  migrateProfile({
+    id: 'lb-11',
+    hunter_id: 'HUNTER-SHIELD-D',
+    display_name: 'Yoo Jinho',
+    current_level: 35,
+    current_rank: 'D-Rank',
+    total_xp: 38000,
+    affinity: 'VIT',
+    clean_days: 45,
+    stats: { STR: 80, AGI: 70, VIT: 120, INT: 90, PERC: 85 },
+    quests_completed: 140,
+    equipped_title: 'Ahjin Vice Master',
+  }),
+  migrateProfile({
+    id: 'lb-12',
+    hunter_id: 'HUNTER-SWORD-E',
+    display_name: 'Song Chi-Yul',
+    current_level: 28,
+    current_rank: 'E-Rank',
+    total_xp: 22000,
+    affinity: 'AGI',
+    clean_days: 30,
+    stats: { STR: 65, AGI: 95, VIT: 70, INT: 60, PERC: 80 },
+    quests_completed: 90,
+    equipped_title: 'Kendo Master',
+  }),
+  migrateProfile({
+    id: 'lb-13',
+    hunter_id: 'HUNTER-HEAL-B',
+    display_name: 'Lee Joohee',
+    current_level: 22,
+    current_rank: 'B-Rank',
+    total_xp: 18500,
+    affinity: 'INT',
+    clean_days: 25,
+    stats: { STR: 40, AGI: 55, VIT: 75, INT: 110, PERC: 90 },
+    quests_completed: 80,
+    equipped_title: 'B-Rank Healer',
+  }),
 ];
-
-
-
-// Helper to fill up to 100 realistic hunter candidates
-const generateTop100Hunters = (): Profile[] => {
-  const list: Profile[] = [...SEED_HUNTERS];
-  const affinities = ['STR', 'AGI', 'VIT', 'INT', 'PERC'];
-  const names = [
-    'Alexander', 'Kurokawa', 'Valeria', 'Kenzo', 'Aria Vance', 'Ezekiel', 'Darius',
-    'Seraphina', 'Tatsuya', 'Roxanne', 'Dmitri', 'Kaede', 'Zephyr', 'Orion', 'Bao',
-    'Cassian', 'Mei-Ling', 'Soren', 'Thorne', 'Althea', 'Gideon', 'Raven', 'Leon',
-    'Nadia', 'Kaelen', 'Vesper', 'Cipher', 'Ignis', 'Lyra', 'Jax', 'Nova', 'Fenris',
-  ];
-
-  let currentLevel = 26;
-  let currentXp = 12000;
-  let currentClean = 80;
-
-  for (let i = 11; i <= 100; i++) {
-    const nameIndex = (i - 11) % names.length;
-    const aff = affinities[i % affinities.length];
-    const generatedUid = `hseed-${i.toString().padStart(3, '0')}`;
-    const hId = generateHunterId(generatedUid, aff);
-
-    currentLevel = Math.max(1, currentLevel - (i % 3 === 0 ? 1 : 0));
-    currentXp = Math.max(150, Math.floor(currentXp * 0.96));
-    currentClean = Math.max(1, currentClean - (i % 2 === 0 ? 1 : 0));
-
-    let rank = 'E-Rank';
-    if (currentLevel >= 70) rank = 'A-Rank';
-    else if (currentLevel >= 45) rank = 'B-Rank';
-    else if (currentLevel >= 25) rank = 'C-Rank';
-    else if (currentLevel >= 10) rank = 'D-Rank';
-
-    list.push(migrateProfile({
-      id: `gen-hunter-${i}`,
-      hunter_id: hId,
-      display_name: `${names[nameIndex]} ${String.fromCharCode(65 + (i % 26))}.`,
-      total_xp: currentXp,
-      current_level: currentLevel,
-      stats: { [aff]: 10 + currentLevel * 2 },
-      clean_days: currentClean,
-      current_rank: rank,
-      affinity: aff,
-    }));
-  }
-
-  return list;
-};
 
 export const Leaderboard: React.FC = () => {
   const { profile } = useHunter();
   const [filter, setFilter] = useState<SortFilter>('xp');
+  const [rankFilter, setRankFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hunters, setHunters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [registryStats, setRegistryStats] = useState<GlobalRegistryStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState<boolean>(true);
 
-  // Fetch aggregate global stats from Supabase profiles table
-  useEffect(() => {
-    let isMounted = true;
-    const fetchGlobalAggregates = async () => {
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, total_xp, current_level, affinity');
-          if (!error && data && data.length > 0) {
-            const total = data.length;
-            const active = data.filter((d: { total_xp?: number }) => (d.total_xp || 0) > 0).length;
-            const sumLvl = data.reduce((acc: number, d: { current_level?: number }) => acc + (d.current_level || 1), 0);
-            const avgLvl = Math.max(1, Math.round(sumLvl / total));
-
-            const tally: Record<string, number> = {};
-            data.forEach((d: { affinity?: string }) => {
-              const aff = d.affinity || 'AGI';
-              tally[aff] = (tally[aff] || 0) + 1;
-            });
-            let topAff = 'AGI';
-            let maxCount = 0;
-            for (const [aff, count] of Object.entries(tally)) {
-              if (count > maxCount) {
-                maxCount = count;
-                topAff = aff;
-              }
-            }
-
-            if (isMounted) {
-              setRegistryStats({
-                totalHunters: total,
-                activeHunters: active,
-                avgLevel: avgLvl,
-                dominantAffinity: topAff,
-              });
-              setStatsLoading(false);
-            }
-            return;
-          }
-        } catch (err) {
-          console.warn('[Leaderboard] Aggregates fetch error:', err);
-        }
-      }
-
-      if (isMounted) {
-        setRegistryStats({
-          totalHunters: 100,
-          activeHunters: 98,
-          avgLevel: 42,
-          dominantAffinity: profile?.affinity || 'AGI',
-        });
-        setStatsLoading(false);
-      }
-    };
-
-    fetchGlobalAggregates();
-    return () => {
-      isMounted = false;
-    };
-  }, [profile?.affinity]);
-
-  // Fetch top 100 hunters from Supabase profiles table or use realistic seeded roster
+  // Fetch top hunters from Firestore collection 'leaderboard'
   const fetchLeaderboard = async () => {
     setLoading(true);
     let fetchedHunters: Profile[] = [];
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const orderColumn = filter === 'xp' ? 'total_xp' : filter === 'level' ? 'current_level' : 'clean_days';
-        const { data, error } = await supabase
-          .from('leaderboard_view')
-          .select('*')
-          .order(orderColumn, { ascending: false })
-          .limit(100);
+    try {
+      const q = query(
+        collection(firestore, 'leaderboard'),
+        orderBy('totalXp', 'desc'),
+        limit(25)
+      );
+      const snap = await getDocs(q);
 
-        if (!error && data && data.length > 0) {
-          fetchedHunters = data.map((d: Record<string, unknown>) => migrateProfile({
-            id: d.id as string,
-            hunter_id: (d.hunter_id as string) || generateHunterId(d.id as string, (d.affinity as string) || 'AGI'),
-            display_name: (d.display_name as string) || 'Hunter Candidate',
-            total_xp: (d.total_xp as number) || 0,
-            current_level: (d.current_level as number) || 1,
-            stats: (d.stats as Record<string, number>) || {},
-            clean_days: (d.clean_days as number) || 0,
-            current_rank: (d.current_rank as string) || 'E-Rank',
-            affinity: (d.affinity as string) || 'AGI',
-          }));
-        }
-      } catch (err) {
-        console.warn('[Leaderboard] Supabase fetch fallback to local pool:', err);
+      if (!snap.empty) {
+        fetchedHunters = snap.docs.map((d) => {
+          const data = d.data();
+          return migrateProfile({
+            id: d.id,
+            hunter_id: (data.hunterId as string) || generateHunterId(d.id, (data.affinity as string) || 'AGI'),
+            display_name: (data.displayName as string) || 'Unknown Hunter',
+            total_xp: (data.totalXp as number) || 0,
+            current_level: (data.level as number) || 1,
+            stats: (data.stats as Record<string, number>) || {},
+            clean_days: (data.streak as number) || 0,
+            current_rank: (data.rank as string) || 'E-Rank',
+            affinity: (data.affinity as string) || 'AGI',
+            equipped_title: (data.equippedTitle as string) || 'The Awakened',
+            quests_completed: (data.questsCompleted as number) || 0,
+          });
+        });
       }
+    } catch (err) {
+      console.warn('[Leaderboard] Firestore fetch fallback to demo roster:', err);
     }
 
-    // If fetched is empty and no supabase, just show the user
+    // If Firestore yielded no hunters, use built-in demo hunters
+    if (fetchedHunters.length === 0) {
+      fetchedHunters = [...DEMO_LEADERBOARD_HUNTERS];
+    }
 
-    // Merge or replace current user profile into the pool so user is always present
+    // Merge or update current user profile so user is always visible in leaderboard
     if (profile) {
-      const existingIdx = fetchedHunters.findIndex((h) => h.id === profile.id || h.hunter_id === profile.hunter_id);
+      const existingIdx = fetchedHunters.findIndex(
+        (h) => h.id === profile.id || h.hunter_id === profile.hunter_id
+      );
       if (existingIdx !== -1) {
         fetchedHunters[existingIdx] = profile;
       } else {
@@ -212,17 +269,50 @@ export const Leaderboard: React.FC = () => {
     }
 
     setHunters(fetchedHunters);
+
+    // Compute registry aggregates
+    const total = fetchedHunters.length;
+    const active = fetchedHunters.filter((h) => h.total_xp > 0).length;
+    const sumLvl = fetchedHunters.reduce((acc, h) => acc + h.current_level, 0);
+    const avgLvl = Math.max(1, Math.round(sumLvl / total));
+
+    const tally: Record<string, number> = {};
+    fetchedHunters.forEach((h) => {
+      tally[h.affinity] = (tally[h.affinity] || 0) + 1;
+    });
+    let topAff = 'AGI';
+    let maxCount = 0;
+    for (const [aff, count] of Object.entries(tally)) {
+      if (count > maxCount) {
+        maxCount = count;
+        topAff = aff;
+      }
+    }
+
+    setRegistryStats({
+      totalHunters: total,
+      activeHunters: active,
+      avgLevel: avgLvl,
+      dominantAffinity: topAff,
+    });
+
     setLoading(false);
   };
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [filter, profile?.total_xp, profile?.current_level, profile?.clean_days]);
+  }, [profile?.total_xp, profile?.current_level, profile?.clean_days]);
 
   // Sort and filter hunters
   const sortedHunters = useMemo(() => {
-    const list = [...hunters];
+    let list = [...hunters];
 
+    // Filter by rank pill
+    if (rankFilter !== 'ALL') {
+      list = list.filter((h) => h.current_rank.includes(rankFilter));
+    }
+
+    // Sort
     list.sort((a, b) => {
       if (filter === 'xp') {
         return (b.total_xp || 0) - (a.total_xp || 0);
@@ -233,37 +323,30 @@ export const Leaderboard: React.FC = () => {
         }
         return (b.total_xp || 0) - (a.total_xp || 0);
       }
-      // clean_days
       return (b.clean_days || 0) - (a.clean_days || 0);
     });
 
-    const realHunters = list.filter(h => !h.id.startsWith('legend-') && !h.id.startsWith('gen-hunter-'));
-
+    // Search query
     if (!searchQuery.trim()) {
-      return realHunters.slice(0, 100);
+      return list;
     }
 
     const q = searchQuery.toLowerCase().trim();
-    return realHunters.filter(
+    return list.filter(
       (h) =>
         h.display_name.toLowerCase().includes(q) ||
         h.hunter_id?.toLowerCase().includes(q) ||
         h.current_rank.toLowerCase().includes(q)
-    ).slice(0, 100);
-  }, [hunters, filter, searchQuery]);
+    );
+  }, [hunters, filter, rankFilter, searchQuery]);
 
   // Find current user's global position
   const currentUserRank = useMemo(() => {
     if (!profile) return null;
-    const sorted = [...hunters].sort((a, b) => {
-      if (filter === 'xp') return (b.total_xp || 0) - (a.total_xp || 0);
-      if (filter === 'level') return (b.current_level || 0) - (a.current_level || 0);
-      return (b.clean_days || 0) - (a.clean_days || 0);
-    });
-
+    const sorted = [...hunters].sort((a, b) => (b.total_xp || 0) - (a.total_xp || 0));
     const index = sorted.findIndex((h) => h.id === profile.id || h.hunter_id === profile.hunter_id);
     return index !== -1 ? index + 1 : null;
-  }, [hunters, profile, filter]);
+  }, [hunters, profile]);
 
   const getRankBadgeStyle = (rankNum: number) => {
     if (rankNum === 1) {
@@ -309,10 +392,10 @@ export const Leaderboard: React.FC = () => {
         <div className="leaderboard-title-group">
           <div className="title-with-badge">
             <Trophy className="w-8 h-8 text-amber-400" />
-            <h1 className="leaderboard-title">GLOBAL HUNTER REGISTRY</h1>
+            <h1 className="leaderboard-title">GLOBAL HUNTER GUILD</h1>
           </div>
           <p className="leaderboard-subtitle">
-            Live worldwide standings certified by the Hunter Association Archives. Top 100 Awakened.
+            Live worldwide standings certified by the Hunter Association Archives. Top Awakened.
           </p>
         </div>
 
@@ -325,7 +408,7 @@ export const Leaderboard: React.FC = () => {
             <div className="global-stat-details">
               <span className="global-stat-label">REGISTERED HUNTERS</span>
               <span className="global-stat-value">
-                {statsLoading ? '...' : (registryStats?.totalHunters || 100).toLocaleString()}
+                {registryStats?.totalHunters || 100}
               </span>
             </div>
           </div>
@@ -337,7 +420,7 @@ export const Leaderboard: React.FC = () => {
             <div className="global-stat-details">
               <span className="global-stat-label">ACTIVE COMBATANTS</span>
               <span className="global-stat-value">
-                {statsLoading ? '...' : (registryStats?.activeHunters || 98).toLocaleString()}
+                {registryStats?.activeHunters || 98}
               </span>
             </div>
           </div>
@@ -349,7 +432,7 @@ export const Leaderboard: React.FC = () => {
             <div className="global-stat-details">
               <span className="global-stat-label">AVG POWER LEVEL</span>
               <span className="global-stat-value">
-                {statsLoading ? '...' : `LVL ${registryStats?.avgLevel || 42}`}
+                LVL {registryStats?.avgLevel || 42}
               </span>
             </div>
           </div>
@@ -361,24 +444,36 @@ export const Leaderboard: React.FC = () => {
             <div className="global-stat-details">
               <span className="global-stat-label">DOMINANT AFFINITY</span>
               <span className="global-stat-value">
-                {statsLoading ? '...' : (registryStats?.dominantAffinity || 'AGI')}
+                {registryStats?.dominantAffinity || 'AGI'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Current User Standing Banner */}
-        {profile && currentUserRank && (
-          <div className="current-user-standing-card">
+        {/* Current User Standing Bar (Flutter Parity) */}
+        {profile && (
+          <div
+            className="current-user-standing-card"
+            style={{
+              background: 'linear-gradient(135deg, #162544, #131c36)',
+              borderColor: 'rgba(0, 229, 255, 0.6)',
+            }}
+          >
             <div className="standing-left">
-              <div className="standing-rank-badge">
-                #{currentUserRank}
+              <div
+                className="standing-rank-badge"
+                style={{ backgroundColor: '#00e5ff', color: '#000' }}
+              >
+                #{currentUserRank || 1}
               </div>
               <div>
                 <span className="standing-label">YOUR ACTIVE STANDING</span>
                 <div className="standing-user-name">
-                  {profile.display_name}
-                  <span className="standing-hunter-id">({profile.hunter_id})</span>
+                  {profile.display_name} <span className="you-badge">(YOU)</span>
+                  <span className="standing-hunter-id"> • {profile.hunter_id}</span>
+                </div>
+                <div style={{ color: '#67e8f9', fontSize: '0.85rem', fontWeight: 600 }}>
+                  Level {profile.current_level} • {profile.current_rank}
                 </div>
               </div>
             </div>
@@ -390,7 +485,9 @@ export const Leaderboard: React.FC = () => {
               </div>
               <div className="stat-pill">
                 <Flame className="w-3.5 h-3.5 text-amber-400" />
-                <span>{profile.total_xp} XP</span>
+                <span style={{ color: '#ffb300', fontWeight: 'bold' }}>
+                  {profile.total_xp.toLocaleString()} XP
+                </span>
               </div>
               <div className="stat-pill">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
@@ -401,12 +498,46 @@ export const Leaderboard: React.FC = () => {
         )}
       </div>
 
+      {/* Rank Filter Tabs (Matching Flutter: ALL, S-Rank, A-Rank, B-Rank, C-Rank) */}
+      <div style={{ display: 'flex', gap: '8px', padding: '12px 0', overflowX: 'auto' }}>
+        {['ALL', 'S-Rank', 'A-Rank', 'B-Rank', 'C-Rank'].map((rf) => {
+          const isSel = rankFilter === rf;
+          return (
+            <button
+              key={rf}
+              type="button"
+              onClick={() => {
+                audioService.playClick();
+                setRankFilter(rf);
+              }}
+              style={{
+                backgroundColor: isSel ? '#00e5ff' : '#131828',
+                color: isSel ? '#000' : '#fff',
+                borderColor: isSel ? '#00e5ff' : '#222c42',
+                borderRadius: '10px',
+                padding: '8px 16px',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                border: '1px solid',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {rf}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Control Bar: Filters & Search */}
       <div className="leaderboard-controls">
         <div className="filter-buttons-group">
           <button
             type="button"
-            onClick={() => setFilter('xp')}
+            onClick={() => {
+              audioService.playClick();
+              setFilter('xp');
+            }}
             className={`filter-tab-btn ${filter === 'xp' ? 'active' : ''}`}
           >
             <Flame className="w-4 h-4 mr-1 text-amber-400" />
@@ -415,7 +546,10 @@ export const Leaderboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setFilter('level')}
+            onClick={() => {
+              audioService.playClick();
+              setFilter('level');
+            }}
             className={`filter-tab-btn ${filter === 'level' ? 'active' : ''}`}
           >
             <Zap className="w-4 h-4 mr-1 text-cyan-400" />
@@ -424,11 +558,14 @@ export const Leaderboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setFilter('clean_days')}
+            onClick={() => {
+              audioService.playClick();
+              setFilter('clean_days');
+            }}
             className={`filter-tab-btn ${filter === 'clean_days' ? 'active' : ''}`}
           >
             <TrendingUp className="w-4 h-4 mr-1 text-emerald-400" />
-            <span>SORT BY CLEAN DAYS</span>
+            <span>SORT BY STREAK</span>
           </button>
         </div>
 
@@ -446,7 +583,10 @@ export const Leaderboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={fetchLeaderboard}
+            onClick={() => {
+              audioService.playClick();
+              fetchLeaderboard();
+            }}
             className="btn-refresh"
             title="Refresh Leaderboard"
           >
@@ -462,7 +602,7 @@ export const Leaderboard: React.FC = () => {
           <div className="col-hunter">HUNTER IDENTITY</div>
           <div className="col-affinity">AFFINITY</div>
           <div className="col-level">LEVEL</div>
-          <div className="col-clean">CLEAN DAYS</div>
+          <div className="col-clean">STREAK</div>
           <div className="col-xp">TOTAL EXP</div>
         </div>
 
@@ -470,7 +610,8 @@ export const Leaderboard: React.FC = () => {
           {sortedHunters.map((hunter, index) => {
             const rankNum = index + 1;
             const rankStyle = getRankBadgeStyle(rankNum);
-            const isCurrentUser = profile && (hunter.id === profile.id || hunter.hunter_id === profile.hunter_id);
+            const isCurrentUser =
+              profile && (hunter.id === profile.id || hunter.hunter_id === profile.hunter_id);
             const hunterRankInfo = getRankBadgeInfo(hunter.current_rank);
 
             return (
@@ -500,9 +641,7 @@ export const Leaderboard: React.FC = () => {
                   <div className="hunter-text-meta">
                     <div className="hunter-name-row">
                       <span className="hunter-name-text">{hunter.display_name}</span>
-                      {isCurrentUser && (
-                        <span className="you-badge">[YOU]</span>
-                      )}
+                      {isCurrentUser && <span className="you-badge">[YOU]</span>}
                       <span
                         className="hunter-rank-tag"
                         style={{ color: hunterRankInfo.color, borderColor: hunterRankInfo.color }}
@@ -510,7 +649,9 @@ export const Leaderboard: React.FC = () => {
                         {hunter.current_rank}
                       </span>
                     </div>
-                    <span className="hunter-id-text">{hunter.hunter_id}</span>
+                    <span className="hunter-id-text">
+                      {hunter.equipped_title || 'The Awakened'} • {hunter.hunter_id}
+                    </span>
                   </div>
                 </div>
 
@@ -526,7 +667,7 @@ export const Leaderboard: React.FC = () => {
                   <span className="level-highlight">LVL {hunter.current_level}</span>
                 </div>
 
-                {/* Clean Days Column */}
+                {/* Streak Column */}
                 <div className="col-clean">
                   <span className="clean-days-val">{hunter.clean_days}d</span>
                   <span className="clean-days-sub">streak</span>
@@ -534,7 +675,9 @@ export const Leaderboard: React.FC = () => {
 
                 {/* XP Column */}
                 <div className="col-xp">
-                  <span className="xp-val">{hunter.total_xp.toLocaleString()} XP</span>
+                  <span className="xp-val" style={{ color: '#ffb300', fontWeight: 'bold' }}>
+                    {hunter.total_xp.toLocaleString()} XP
+                  </span>
                 </div>
               </motion.div>
             );
@@ -542,27 +685,11 @@ export const Leaderboard: React.FC = () => {
 
           {sortedHunters.length === 0 && !loading && (
             <div className="empty-leaderboard">
-              {searchQuery.trim() ? (
-                <>
-                  <Shield className="w-10 h-10 text-slate-600 mb-3" />
-                  <p className="font-bold text-slate-300">No Hunters Found</p>
-                  <p className="text-sm text-slate-500 mt-1">No hunters match "{searchQuery}". Try a different name or ID.</p>
-                </>
-              ) : (
-                <>
-                  <Trophy className="w-10 h-10 text-amber-600/40 mb-3" />
-                  <p className="font-bold text-slate-300">No Registered Hunters Yet</p>
-                  <p className="text-sm text-slate-500 mt-1 max-w-sm text-center">
-                    You are among the first Awakened. Complete quests to stake your claim on the global registry.
-                  </p>
-                  {profile && (
-                    <div className="mt-4 bg-slate-800/60 border border-cyan-500/30 rounded-lg px-4 py-3 text-sm text-cyan-300 flex items-center gap-2">
-                      <ChevronUp className="w-4 h-4 text-cyan-400" />
-                      <span><strong>[YOU]</strong> {profile.display_name} — Rank #{1} by default</span>
-                    </div>
-                  )}
-                </>
-              )}
+              <Shield className="w-10 h-10 text-slate-600 mb-3" />
+              <p className="font-bold text-slate-300">No Hunters Found</p>
+              <p className="text-sm text-slate-500 mt-1">
+                No hunters match the current filter criteria.
+              </p>
             </div>
           )}
         </div>

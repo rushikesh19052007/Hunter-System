@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { NotificationCenterModal } from '@/components/notification-center-modal';
 import { SystemSettingsModal } from '@/components/system-settings-modal';
+import { LevelUpDialog } from '@/components/level-up-dialog';
 import './index.css';
 import './App.css';
 
@@ -103,7 +104,14 @@ const SystemNotificationOverlay: React.FC = () => {
 
 // Route and Tab Controller
 const HunterAppContent: React.FC = () => {
-  const { isOnboarded, profile } = useHunter();
+  const {
+    isOnboarded,
+    profile,
+    showLevelUpModal,
+    leveledUpTo,
+    newRankAchieved,
+    dismissLevelUpModal,
+  } = useHunter();
   const { user, logout } = useAuth();
   const [currentRoute, setCurrentRoute] = useState<'onboarding' | 'dashboard'>(() => {
     return isOnboarded ? 'dashboard' : 'onboarding';
@@ -235,17 +243,6 @@ const HunterAppContent: React.FC = () => {
                 </span>
               </div>
             </div>
-
-            <button
-              type="button"
-              id="btn-header-reawakening"
-              onClick={() => setCurrentRoute('onboarding')}
-              className="btn-header-action"
-              title="Re-run Awakening Sequence"
-            >
-              <RotateCcw className="w-4 h-4 text-cyan-400" />
-              <span className="hidden-mobile">AWAKENING</span>
-            </button>
 
             {/* Notification Center */}
             <button
@@ -386,6 +383,17 @@ const HunterAppContent: React.FC = () => {
           <SystemSettingsModal
             onClose={() => setShowSettings(false)}
             onReplayAwakening={() => setCurrentRoute('onboarding')}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Level Up Celebration Dialog */}
+      <AnimatePresence>
+        {showLevelUpModal && (
+          <LevelUpDialog
+            newLevel={leveledUpTo}
+            newRank={newRankAchieved}
+            onDismiss={dismissLevelUpModal}
           />
         )}
       </AnimatePresence>
