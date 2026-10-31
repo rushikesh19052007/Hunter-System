@@ -26,13 +26,14 @@ export const StatAllocationPage: React.FC = () => {
     profile.available_skill_points ?? profile.available_stat_points ?? 0;
 
   // Calculate live Combat Power
+  const stats = profile.stats || {};
   const combatPower =
-    profile.current_level * 45 +
-    (profile.stats['STR'] || 10) * 12 +
-    (profile.stats['AGI'] || 10) * 11 +
-    (profile.stats['VIT'] || 10) * 10 +
-    (profile.stats['INT'] || 10) * 13 +
-    (profile.stats['PERC'] || 10) * 9;
+    (profile.current_level || 1) * 45 +
+    (stats['STR'] || 10) * 12 +
+    (stats['AGI'] || 10) * 11 +
+    (stats['VIT'] || 10) * 10 +
+    (stats['INT'] || 10) * 13 +
+    (stats['PERC'] || 10) * 9;
 
   const statIcons: Record<HunterStat, React.ReactNode> = {
     STR: <Flame className="w-5 h-5 text-red-400" />,

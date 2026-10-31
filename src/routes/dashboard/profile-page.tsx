@@ -48,9 +48,9 @@ export const ProfilePage: React.FC = () => {
   const physicalXpToNextThreshold = 500 - (profile.physical_xp % 500);
   const mentalXpToNextThreshold = 500 - (profile.mental_xp % 500);
 
-  const skillKeys = Object.keys(profile.skill_points) as (keyof typeof profile.skill_points)[];
+  const skillKeys = Object.keys(profile.skill_points || {}) as (keyof typeof profile.skill_points)[];
 
-  const SKILL_LABELS: Record<keyof typeof profile.skill_points, { label: string; desc: string; icon: React.ReactNode }> = {
+  const SKILL_LABELS: Record<string, { label: string; desc: string; icon: React.ReactNode }> = {
     strength: { label: 'Strength', desc: '+5% Physical Quest rewards', icon: <Dumbbell className="w-4 h-4 text-red-400" /> },
     intelligence: { label: 'Intelligence', desc: '+5% Mental Quest rewards', icon: <Brain className="w-4 h-4 text-purple-400" /> },
     endurance: { label: 'Endurance', desc: '+5% Streak bonuses', icon: <TrendingUp className="w-4 h-4 text-emerald-400" /> },
@@ -59,13 +59,14 @@ export const ProfilePage: React.FC = () => {
     agility: { label: 'Agility', desc: '+5% Time-based quest bonuses', icon: <Zap className="w-4 h-4 text-sky-400" /> },
   };
 
+  const stats = profile.stats || {};
   const combatPower =
-    profile.current_level * 45 +
-    (profile.stats['STR'] || 10) * 12 +
-    (profile.stats['AGI'] || 10) * 11 +
-    (profile.stats['VIT'] || 10) * 10 +
-    (profile.stats['INT'] || 10) * 13 +
-    (profile.stats['PERC'] || 10) * 9;
+    (profile.current_level || 1) * 45 +
+    (stats['STR'] || 10) * 12 +
+    (stats['AGI'] || 10) * 11 +
+    (stats['VIT'] || 10) * 10 +
+    (stats['INT'] || 10) * 13 +
+    (stats['PERC'] || 10) * 9;
 
   return (
     <div className="profile-page">

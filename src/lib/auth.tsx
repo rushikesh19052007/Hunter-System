@@ -14,7 +14,6 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { audioService } from './audio-service';
-import { HunterAuthScreen } from '@/components/hunter-auth-screen';
 
 export interface AuthUser {
   id: string;
@@ -203,45 +202,4 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#060812',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#00e5ff',
-          fontFamily: "'Inter', sans-serif",
-          gap: '16px',
-        }}
-      >
-        <div
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            border: '3px solid rgba(0, 229, 255, 0.2)',
-            borderTopColor: '#00e5ff',
-            animation: 'spin 1s linear infinite',
-          }}
-        />
-        <div style={{ letterSpacing: '2px', fontWeight: 800, fontSize: '13px' }}>
-          INITIALIZING HUNTER SYSTEM...
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <HunterAuthScreen />;
-  }
-
-  return <>{children}</>;
-};
 

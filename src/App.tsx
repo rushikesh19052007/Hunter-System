@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HunterProvider, useHunter } from '@/lib/hunter-store';
-import { AuthProvider, AuthGate, useAuth } from '@/lib/auth';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { HunterAuthScreen } from '@/components/hunter-auth-screen';
 import { SystemAwakening } from '@/routes/onboarding/system-awakening';
 import { HunterHub } from '@/routes/dashboard/hunter-hub';
 import { ProfilePage } from '@/routes/dashboard/profile-page';
@@ -18,11 +19,8 @@ import {
   Bell,
   X,
   LayoutDashboard,
-  Trophy,
   LogOut,
-  User,
   Sparkles,
-  RotateCcw,
   Settings,
   Sun,
   Moon,
@@ -32,6 +30,121 @@ import { SystemSettingsModal } from '@/components/system-settings-modal';
 import { LevelUpDialog } from '@/components/level-up-dialog';
 import './index.css';
 import './App.css';
+
+// ============================================================
+// SYSTEM ERROR BOUNDARY
+// Prevents blank screens on any unexpected client runtime exception
+// ============================================================
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[System Error Boundary Intercepted]', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            minHeight: '100vh',
+            backgroundColor: '#040714',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            fontFamily: "'Inter', sans-serif",
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              padding: '32px 24px',
+              backgroundColor: '#0a0e20',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <div
+              style={{
+                color: '#ef4444',
+                fontSize: '13px',
+                fontWeight: 900,
+                letterSpacing: '2px',
+                marginBottom: '10px',
+                textTransform: 'uppercase',
+              }}
+            >
+              [SYSTEM ANOMALY DETECTED]
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px', lineHeight: 1.5 }}>
+              The Hunter Interface encountered an unexpected state error:
+              <br />
+              <code
+                style={{
+                  color: '#f87171',
+                  fontSize: '11px',
+                  display: 'inline-block',
+                  marginTop: '8px',
+                  backgroundColor: '#050814',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #1f293d',
+                }}
+              >
+                {this.state.error?.message || 'Unknown runtime error'}
+              </code>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('local_hunter_profile');
+                } catch {}
+                window.location.reload();
+              }}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#00e5ff',
+                color: '#040714',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '12px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+              }}
+            >
+              REBOOT HUNTER SYSTEM
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // In-App Notification Toast Overlay
 const SystemNotificationOverlay: React.FC = () => {
@@ -105,17 +218,16 @@ const SystemNotificationOverlay: React.FC = () => {
 // Route and Tab Controller
 const HunterAppContent: React.FC = () => {
   const {
-    isOnboarded,
     profile,
+    isLoading: isHunterLoading,
     showLevelUpModal,
     leveledUpTo,
     newRankAchieved,
     dismissLevelUpModal,
   } = useHunter();
-  const { user, logout } = useAuth();
-  const [currentRoute, setCurrentRoute] = useState<'onboarding' | 'dashboard'>(() => {
-    return isOnboarded ? 'dashboard' : 'onboarding';
-  });
+  const { logout } = useAuth();
+
+  const [replayAwakening, setReplayAwakening] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'profile' | 'leaderboard' | 'settings'>('dashboard');
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -144,21 +256,48 @@ const HunterAppContent: React.FC = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Keep route synced if profile changes
-  useEffect(() => {
-    if (isOnboarded && currentRoute === 'onboarding') {
-      setCurrentRoute('dashboard');
-    } else if (!isOnboarded && currentRoute === 'dashboard') {
-      setCurrentRoute('onboarding');
-    }
-  }, [isOnboarded]);
+  // While Firestore data is initially synchronizing and no profile cached
+  if (isHunterLoading && !profile) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#040714',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#00e5ff',
+          fontFamily: "'Orbitron', 'Inter', sans-serif",
+          gap: '16px',
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid rgba(0, 229, 255, 0.2)',
+            borderTopColor: '#00e5ff',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <div style={{ letterSpacing: '2px', fontWeight: 800, fontSize: '13px' }}>
+          SYNCHRONIZING HUNTER DATABASE...
+        </div>
+      </div>
+    );
+  }
+
+  // Determine if in awakening sequence (only if no profile exists or user requested replay)
+  const isAwakening = !profile || replayAwakening;
 
   return (
     <div className="hunter-system-app">
       <SystemNotificationOverlay />
 
       {/* Top Application Header when user has awakened */}
-      {currentRoute === 'dashboard' && (
+      {!isAwakening && (
         <header className="app-main-header">
           <div className="app-header-left">
             <div className="app-brand">
@@ -200,7 +339,7 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
                 aria-current={activeTab === 'profile' ? 'page' : undefined}
               >
-                <User className="w-4 h-4 mr-1.5 text-purple-400" />
+                <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
                 <span>PROFILE</span>
               </button>
 
@@ -211,7 +350,7 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
                 aria-current={activeTab === 'leaderboard' ? 'page' : undefined}
               >
-                <Trophy className="w-4 h-4 mr-1.5 text-amber-400" />
+                <Sparkles className="w-4 h-4 mr-1.5 text-pink-400" />
                 <span>LEADERBOARD</span>
               </button>
 
@@ -222,29 +361,14 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
                 aria-current={activeTab === 'settings' ? 'page' : undefined}
               >
-                <Settings className="w-4 h-4 mr-1.5 text-slate-400" />
+                <Settings className="w-4 h-4 mr-1.5 text-slate-300" />
                 <span>SETTINGS</span>
               </button>
             </nav>
           </div>
 
           <div className="app-header-right">
-            {/* User identification */}
-            <div className="header-user-meta">
-              <div className="user-avatar-circle">
-                <User className="w-3.5 h-3.5 text-cyan-400" />
-              </div>
-              <div className="user-text-info">
-                <span className="user-display-name">
-                  {profile?.display_name || user?.name || user?.email || 'Hunter'}
-                </span>
-                <span className="user-id-sub">
-                  {profile?.hunter_id || 'ID: PENDING'}
-                </span>
-              </div>
-            </div>
-
-            {/* Notification Center */}
+            {/* System Logs Trigger */}
             <button
               type="button"
               id="btn-header-notifications"
@@ -306,7 +430,7 @@ const HunterAppContent: React.FC = () => {
       {/* Main View Transition */}
       <main className="app-main-body">
         <AnimatePresence mode="wait">
-          {currentRoute === 'onboarding' ? (
+          {isAwakening ? (
             <motion.div
               key="onboarding-route"
               initial={{ opacity: 0 }}
@@ -314,7 +438,7 @@ const HunterAppContent: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <SystemAwakening onComplete={() => setCurrentRoute('dashboard')} />
+              <SystemAwakening onComplete={() => setReplayAwakening(false)} />
             </motion.div>
           ) : activeTab === 'dashboard' ? (
             <motion.div
@@ -324,7 +448,7 @@ const HunterAppContent: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <HunterHub onReplayAwakening={() => setCurrentRoute('onboarding')} />
+              <HunterHub onReplayAwakening={() => setReplayAwakening(true)} />
             </motion.div>
           ) : activeTab === 'stats' ? (
             <motion.div
@@ -382,7 +506,7 @@ const HunterAppContent: React.FC = () => {
         {showSettings && (
           <SystemSettingsModal
             onClose={() => setShowSettings(false)}
-            onReplayAwakening={() => setCurrentRoute('onboarding')}
+            onReplayAwakening={() => setReplayAwakening(true)}
           />
         )}
       </AnimatePresence>
@@ -401,15 +525,60 @@ const HunterAppContent: React.FC = () => {
   );
 };
 
+// Top-level Auth Barrier
+const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#040714',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#00e5ff',
+          fontFamily: "'Orbitron', 'Inter', sans-serif",
+          gap: '16px',
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid rgba(0, 229, 255, 0.2)',
+            borderTopColor: '#00e5ff',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <div style={{ letterSpacing: '2px', fontWeight: 800, fontSize: '13px' }}>
+          INITIALIZING HUNTER SYSTEM...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <HunterAuthScreen />;
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   return (
-    <AuthProvider>
-      <AuthGate>
-        <HunterProvider>
-          <HunterAppContent />
-        </HunterProvider>
-      </AuthGate>
-    </AuthProvider>
+    <SystemErrorBoundary>
+      <AuthProvider>
+        <AuthGate>
+          <HunterProvider>
+            <HunterAppContent />
+          </HunterProvider>
+        </AuthGate>
+      </AuthProvider>
+    </SystemErrorBoundary>
   );
 }
 

@@ -538,7 +538,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                   transition={{ duration: 0.8, ease: 'easeOut' }}
                 />
               </div>
-              <div className="xp-lifetime">Lifetime XP: {profile.total_xp.toLocaleString()}</div>
+              <div className="xp-lifetime">Lifetime XP: {(profile.total_xp || 0).toLocaleString()}</div>
             </div>
 
             {/* HP / MP Bars (REAL) */}
@@ -549,7 +549,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                     <Heart className="w-3.5 h-3.5 text-rose-400" />
                     <span>HP</span>
                   </div>
-                  <span>{profile.hp} / {profile.max_hp}</span>
+                  <span>{profile.hp || 100} / {profile.max_hp || 100}</span>
                 </div>
                 <div className="vital-track">
                   <motion.div
@@ -560,7 +560,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                   />
                 </div>
                 <div className="vital-sub-info">
-                  Physical XP: {profile.physical_xp.toLocaleString()} • Threshold: {Math.floor(profile.physical_xp / 500) * 500}→{(Math.floor(profile.physical_xp / 500) + 1) * 500}
+                  Physical XP: {(profile.physical_xp || 0).toLocaleString()} • Threshold: {Math.floor((profile.physical_xp || 0) / 500) * 500}→{(Math.floor((profile.physical_xp || 0) / 500) + 1) * 500}
                 </div>
               </div>
 
@@ -570,7 +570,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                     <Droplets className="w-3.5 h-3.5 text-blue-400" />
                     <span>MP</span>
                   </div>
-                  <span>{profile.mp} / {profile.max_mp}</span>
+                  <span>{profile.mp || 100} / {profile.max_mp || 100}</span>
                 </div>
                 <div className="vital-track">
                   <motion.div
@@ -581,7 +581,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                   />
                 </div>
                 <div className="vital-sub-info">
-                  Mental XP: {profile.mental_xp.toLocaleString()} • Complete mental quests to increase MP
+                  Mental XP: {(profile.mental_xp || 0).toLocaleString()} • Complete mental quests to increase MP
                 </div>
               </div>
             </div>
@@ -600,7 +600,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               <div className="stats-list">
                 {(Object.keys(HUNTER_STATS) as HunterStat[]).map(statKey => {
                   const statDef = HUNTER_STATS[statKey];
-                  const value = profile.stats[statKey] || 10;
+                  const value = (profile.stats && profile.stats[statKey]) || 10;
                   const hasPoints = (profile.available_stat_points || 0) > 0;
                   return (
                     <div key={statKey} className="stat-row-item">
@@ -639,12 +639,12 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               </div>
               <div className="metric-box">
                 <Target className="w-4 h-4 text-cyan-400" />
-                <div className="metric-val">{completedCount} / {quests.length}</div>
+                <div className="metric-val">{completedCount} / {(quests || []).length}</div>
                 <div className="metric-sub">CLEARED</div>
               </div>
               <div className="metric-box">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                <div className="metric-val">{unlockedAchievements.length}</div>
+                <div className="metric-val">{(unlockedAchievements || []).length}</div>
                 <div className="metric-sub">ACHIEVEMENTS</div>
               </div>
             </div>
