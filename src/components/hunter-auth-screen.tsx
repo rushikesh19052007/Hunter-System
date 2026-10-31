@@ -13,7 +13,6 @@ import {
   User,
   ArrowRight,
   AlertCircle,
-  HelpCircle,
   CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -33,35 +32,35 @@ const AFFINITY_DETAILS: Record<string, AffinityConfig> = {
     title: 'Monarch of Destruction',
     desc: 'Overwhelming kinetic force, trials of brute iron. (+5 STR)',
     color: '#ef4444',
-    icon: <Flame className="w-5 h-5 text-red-500" />,
+    icon: <Flame size={18} color="#ef4444" style={{ flexShrink: 0 }} />,
     stat: 'STR',
   },
   AGI: {
     title: 'Shadow Step Assassin',
     desc: 'Sub-second reflexes, phantom speed & rapid strikes. (+5 AGI)',
     color: '#00e5ff',
-    icon: <Zap className="w-5 h-5 text-cyan-400" />,
+    icon: <Zap size={18} color="#00e5ff" style={{ flexShrink: 0 }} />,
     stat: 'AGI',
   },
   VIT: {
     title: 'Immortal Vanguard',
     desc: 'Unbreakable stamina, maximum durability & steel defense. (+5 VIT)',
     color: '#10b981',
-    icon: <Shield className="w-5 h-5 text-emerald-400" />,
+    icon: <Shield size={18} color="#10b981" style={{ flexShrink: 0 }} />,
     stat: 'VIT',
   },
   INT: {
     title: 'Monarch of Shadows',
     desc: 'Cognitive dominance, tactical strategy & LeetCode focus. (+5 INT)',
     color: '#a855f7',
-    icon: <Brain className="w-5 h-5 text-purple-400" />,
+    icon: <Brain size={18} color="#a855f7" style={{ flexShrink: 0 }} />,
     stat: 'INT',
   },
   PERC: {
     title: "Ruler's Authority",
     desc: 'Spatial mindfulness, razor-sharp discipline & vision. (+5 PERC)',
     color: '#f59e0b',
-    icon: <Eye className="w-5 h-5 text-amber-400" />,
+    icon: <Eye size={18} color="#f59e0b" style={{ flexShrink: 0 }} />,
     stat: 'PERC',
   },
 };
@@ -83,6 +82,9 @@ export const HunterAuthScreen: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
   const [resetEmail, setResetEmail] = useState<string>('');
+
+  // Input focus tracking for cyber-glow border effects
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const cleanFirebaseError = (error: unknown): string => {
     const msg = error instanceof Error ? error.message : String(error);
@@ -114,7 +116,7 @@ export const HunterAuthScreen: React.FC = () => {
       return 'Google Sign-In is not enabled in Firebase Console for hunter-x-guild. Enable Google under Firebase Console > Authentication > Sign-in method, or use Email / Guest mode.';
     }
     if (msg.includes('unauthorized-domain')) {
-      return 'This domain is not authorized in Firebase Console. Add localhost under Authentication > Settings > Authorized domains.';
+      return 'This domain is not authorized in Firebase Console. Add your deployment URL under Authentication > Settings > Authorized domains.';
     }
     return msg.replace(/\[.*?\]/g, '').trim();
   };
@@ -216,77 +218,89 @@ export const HunterAuthScreen: React.FC = () => {
 
   const activeAffinity = AFFINITY_DETAILS[selectedAffinity] || AFFINITY_DETAILS['AGI'];
 
+  const getInputContainerStyle = (field: string) => ({
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#050814',
+    border: focusedField === field ? '1.5px solid #00e5ff' : '1px solid #1c2742',
+    boxShadow: focusedField === field ? '0 0 14px rgba(0, 229, 255, 0.25)' : 'none',
+    borderRadius: '10px',
+    padding: '0 14px',
+    height: '46px',
+    transition: 'all 0.2s ease',
+  });
+
   return (
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#060812',
+        backgroundColor: '#04060f',
         color: '#fff',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '24px 16px',
+        padding: '32px 16px',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Ambient Dungeon Glow Orbs */}
+      {/* Ambient Cyber Orbs */}
       <div
         style={{
           position: 'absolute',
-          top: '-80px',
-          right: '-80px',
-          width: '280px',
-          height: '280px',
+          top: '-100px',
+          right: '-100px',
+          width: '320px',
+          height: '320px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0, 229, 255, 0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0, 229, 255, 0.16) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
       <div
         style={{
           position: 'absolute',
-          bottom: '-60px',
-          left: '-60px',
-          width: '260px',
-          height: '260px',
+          bottom: '-80px',
+          left: '-80px',
+          width: '300px',
+          height: '300px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(147, 51, 234, 0.16) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
-      <div style={{ maxWidth: '480px', width: '100%', zIndex: 10 }}>
+      <div style={{ maxWidth: '440px', width: '100%', zIndex: 10 }}>
         {/* Animated System Directive Badge */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '18px' }}>
           <motion.div
             animate={{
               boxShadow: [
                 '0 0 10px rgba(0, 229, 255, 0.2)',
-                '0 0 25px rgba(0, 229, 255, 0.6)',
+                '0 0 22px rgba(0, 229, 255, 0.55)',
                 '0 0 10px rgba(0, 229, 255, 0.2)',
               ],
             }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 16px',
+              padding: '6px 16px',
               borderRadius: '24px',
               backgroundColor: 'rgba(0, 229, 255, 0.08)',
-              border: '1.5px solid rgba(0, 229, 255, 0.6)',
+              border: '1.5px solid rgba(0, 229, 255, 0.5)',
             }}
           >
-            <Sparkles className="w-4 h-4 text-cyan-400 animate-spin-slow" />
+            <Sparkles size={14} color="#00e5ff" style={{ flexShrink: 0 }} />
             <span
               style={{
                 color: '#00e5ff',
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: 800,
-                letterSpacing: '2px',
+                letterSpacing: '1.5px',
                 textTransform: 'uppercase',
               }}
             >
@@ -296,17 +310,21 @@ export const HunterAuthScreen: React.FC = () => {
 
           <h1
             style={{
-              fontSize: '2rem',
+              fontSize: '1.85rem',
               fontWeight: 900,
-              letterSpacing: '2px',
-              marginTop: '16px',
+              letterSpacing: '2.5px',
+              marginTop: '14px',
               marginBottom: '6px',
-              textShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+              fontFamily: "'Orbitron', 'Inter', sans-serif",
+              background: 'linear-gradient(135deg, #ffffff 40%, #00e5ff 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 0 25px rgba(0, 229, 255, 0.35)',
             }}
           >
             HUNTR ASSOCIATION
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', letterSpacing: '0.3px', margin: 0 }}>
             {isSignUp
               ? 'Register your Hunter License to awaken and track progression'
               : 'Synchronize your Hunter profile across mobile & web'}
@@ -317,11 +335,11 @@ export const HunterAuthScreen: React.FC = () => {
         <div
           style={{
             display: 'flex',
-            backgroundColor: '#0c1020',
+            backgroundColor: '#090d1c',
             padding: '4px',
             borderRadius: '12px',
-            border: '1px solid #1c253d',
-            marginBottom: '20px',
+            border: '1px solid #1a233a',
+            marginBottom: '16px',
           }}
         >
           <button
@@ -333,13 +351,13 @@ export const HunterAuthScreen: React.FC = () => {
             }}
             style={{
               flex: 1,
-              padding: '10px 0',
+              padding: '9px 0',
               borderRadius: '8px',
               border: 'none',
               backgroundColor: !isSignUp ? '#00e5ff' : 'transparent',
-              color: !isSignUp ? '#000' : '#94a3b8',
+              color: !isSignUp ? '#040714' : '#94a3b8',
               fontWeight: 800,
-              fontSize: '13px',
+              fontSize: '12px',
               letterSpacing: '1px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -356,13 +374,13 @@ export const HunterAuthScreen: React.FC = () => {
             }}
             style={{
               flex: 1,
-              padding: '10px 0',
+              padding: '9px 0',
               borderRadius: '8px',
               border: 'none',
               backgroundColor: isSignUp ? '#00e5ff' : 'transparent',
-              color: isSignUp ? '#000' : '#94a3b8',
+              color: isSignUp ? '#040714' : '#94a3b8',
               fontWeight: 800,
-              fontSize: '13px',
+              fontSize: '12px',
               letterSpacing: '1px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -375,44 +393,44 @@ export const HunterAuthScreen: React.FC = () => {
         {/* Error / Success Notifications */}
         {errorMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.6)',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
               borderRadius: '10px',
-              padding: '12px 16px',
-              marginBottom: '16px',
+              padding: '10px 14px',
+              marginBottom: '14px',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
               color: '#fca5a5',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
             }}
           >
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
+            <AlertCircle size={18} color="#f87171" style={{ flexShrink: 0 }} />
             <span>{errorMessage}</span>
           </motion.div>
         )}
 
         {successMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.6)',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.5)',
               borderRadius: '10px',
-              padding: '12px 16px',
-              marginBottom: '16px',
+              padding: '10px 14px',
+              marginBottom: '14px',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
               color: '#6ee7b7',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
             }}
           >
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
+            <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
             <span>{successMessage}</span>
           </motion.div>
         )}
@@ -421,16 +439,16 @@ export const HunterAuthScreen: React.FC = () => {
         <form
           onSubmit={handleSubmit}
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: '#0a0e20',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
-            padding: '24px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
+            border: '1px solid rgba(0, 229, 255, 0.18)',
+            padding: '22px',
+            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 229, 255, 0.05)',
           }}
         >
           {/* Sign Up: Hunter Designation Name */}
           {isSignUp && (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '14px' }}>
               <label
                 style={{
                   display: 'block',
@@ -443,29 +461,22 @@ export const HunterAuthScreen: React.FC = () => {
               >
                 HUNTER DESIGNATION (NAME)
               </label>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: '#060812',
-                  border: '1px solid #1e293b',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                }}
-              >
-                <User className="w-4 h-4 text-cyan-400 mr-2" />
+              <div style={getInputContainerStyle('name')}>
+                <User size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
                 <input
                   type="text"
                   placeholder="e.g. Sung Jin-Woo"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onFocus={() => setFocusedField('name')}
+                  onBlur={() => setFocusedField(null)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
                     color: '#fff',
                     outline: 'none',
                     width: '100%',
-                    fontSize: '14px',
+                    fontSize: '13px',
                   }}
                 />
               </div>
@@ -473,7 +484,7 @@ export const HunterAuthScreen: React.FC = () => {
           )}
 
           {/* Email Address */}
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <label
               style={{
                 display: 'block',
@@ -486,36 +497,29 @@ export const HunterAuthScreen: React.FC = () => {
             >
               HUNTER EMAIL IDENTIFIER
             </label>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: '#060812',
-                border: '1px solid #1e293b',
-                borderRadius: '10px',
-                padding: '10px 14px',
-              }}
-            >
-              <Mail className="w-4 h-4 text-cyan-400 mr-2" />
+            <div style={getInputContainerStyle('email')}>
+              <Mail size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
               <input
                 type="email"
                 placeholder="hunter@guild.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
                   color: '#fff',
                   outline: 'none',
                   width: '100%',
-                  fontSize: '14px',
+                  fontSize: '13px',
                 }}
               />
             </div>
           </div>
 
           {/* Password */}
-          <div style={{ marginBottom: isSignUp ? '16px' : '8px' }}>
+          <div style={{ marginBottom: isSignUp ? '14px' : '6px' }}>
             <label
               style={{
                 display: 'block',
@@ -528,44 +532,45 @@ export const HunterAuthScreen: React.FC = () => {
             >
               SECURITY PASSCODE
             </label>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: '#060812',
-                border: '1px solid #1e293b',
-                borderRadius: '10px',
-                padding: '10px 14px',
-              }}
-            >
-              <Lock className="w-4 h-4 text-cyan-400 mr-2" />
+            <div style={getInputContainerStyle('password')}>
+              <Lock size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
                   color: '#fff',
                   outline: 'none',
                   width: '100%',
-                  fontSize: '14px',
+                  fontSize: '13px',
                 }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px',
+                }}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff size={16} color="#94a3b8" /> : <Eye size={16} color="#64748b" />}
               </button>
             </div>
           </div>
 
           {/* Confirm Password (Sign Up only) */}
           {isSignUp && (
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label
                 style={{
                   display: 'block',
@@ -578,37 +583,38 @@ export const HunterAuthScreen: React.FC = () => {
               >
                 CONFIRM PASSCODE
               </label>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: '#060812',
-                  border: '1px solid #1e293b',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                }}
-              >
-                <Lock className="w-4 h-4 text-cyan-400 mr-2" />
+              <div style={getInputContainerStyle('confirmPassword')}>
+                <Lock size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  onFocus={() => setFocusedField('confirmPassword')}
+                  onBlur={() => setFocusedField(null)}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
                     color: '#fff',
                     outline: 'none',
                     width: '100%',
-                    fontSize: '14px',
+                    fontSize: '13px',
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px',
+                  }}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <EyeOff size={16} color="#94a3b8" /> : <Eye size={16} color="#64748b" />}
                 </button>
               </div>
             </div>
@@ -616,7 +622,7 @@ export const HunterAuthScreen: React.FC = () => {
 
           {/* Forgot Password link (Log In only) */}
           {!isSignUp && (
-            <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+            <div style={{ textAlign: 'right', marginBottom: '16px' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -626,10 +632,11 @@ export const HunterAuthScreen: React.FC = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#67e8f9',
+                  color: '#00e5ff',
                   fontSize: '12px',
                   cursor: 'pointer',
                   textDecoration: 'underline',
+                  fontWeight: 600,
                 }}
               >
                 Forgot passcode?
@@ -639,7 +646,7 @@ export const HunterAuthScreen: React.FC = () => {
 
           {/* Sign Up: Affinity Selection Grid */}
           {isSignUp && (
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <label
                 style={{
                   display: 'block',
@@ -647,7 +654,7 @@ export const HunterAuthScreen: React.FC = () => {
                   fontSize: '11px',
                   fontWeight: 800,
                   letterSpacing: '1px',
-                  marginBottom: '10px',
+                  marginBottom: '8px',
                 }}
               >
                 SELECT COMBAT AFFINITY (AWAKENING PATH)
@@ -665,19 +672,20 @@ export const HunterAuthScreen: React.FC = () => {
                         setSelectedAffinity(aff);
                       }}
                       style={{
-                        padding: '12px 6px',
+                        padding: '10px 4px',
                         borderRadius: '10px',
-                        border: isSel ? `1.5px solid ${cfg.color}` : '1px solid #1e293b',
-                        backgroundColor: isSel ? 'rgba(0, 229, 255, 0.1)' : '#060812',
+                        border: isSel ? `1.5px solid ${cfg.color}` : '1px solid #1a233a',
+                        backgroundColor: isSel ? 'rgba(0, 229, 255, 0.12)' : '#050814',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '4px',
                         transition: 'all 0.15s ease',
+                        boxShadow: isSel ? `0 0 12px ${cfg.color}40` : 'none',
                       }}
                     >
-                      <span style={{ color: cfg.color, fontWeight: 900, fontSize: '14px' }}>{aff}</span>
+                      <span style={{ color: cfg.color, fontWeight: 900, fontSize: '13px' }}>{aff}</span>
                       <span style={{ fontSize: '10px', color: '#94a3b8' }}>+5</span>
                     </button>
                   );
@@ -687,17 +695,20 @@ export const HunterAuthScreen: React.FC = () => {
               {/* Affinity Details Lore Card */}
               <div
                 style={{
-                  marginTop: '12px',
-                  padding: '12px 16px',
-                  backgroundColor: '#060812',
+                  marginTop: '10px',
+                  padding: '10px 14px',
+                  backgroundColor: '#050814',
                   borderRadius: '10px',
                   borderLeft: `3px solid ${activeAffinity.color}`,
+                  borderTop: '1px solid #1a233a',
+                  borderRight: '1px solid #1a233a',
+                  borderBottom: '1px solid #1a233a',
                 }}
               >
-                <div style={{ color: activeAffinity.color, fontWeight: 800, fontSize: '13px' }}>
+                <div style={{ color: activeAffinity.color, fontWeight: 800, fontSize: '12px' }}>
                   {activeAffinity.title}
                 </div>
-                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '3px' }}>
                   {activeAffinity.desc}
                 </div>
               </div>
@@ -710,14 +721,15 @@ export const HunterAuthScreen: React.FC = () => {
             disabled={isLoading}
             style={{
               width: '100%',
-              padding: '14px',
-              borderRadius: '12px',
+              height: '46px',
+              padding: '0 16px',
+              borderRadius: '10px',
               border: 'none',
               backgroundColor: '#00e5ff',
-              color: '#000',
+              color: '#040714',
               fontWeight: 900,
-              fontSize: '14px',
-              letterSpacing: '1.5px',
+              fontSize: '13px',
+              letterSpacing: '1.2px',
               cursor: isLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -728,11 +740,20 @@ export const HunterAuthScreen: React.FC = () => {
             }}
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <div
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  border: '2.5px solid #040714',
+                  borderTopColor: 'transparent',
+                  animation: 'spin 0.8s linear infinite',
+                }}
+              />
             ) : (
               <>
                 <span>{isSignUp ? 'INITIALIZE HUNTER AWAKENING' : 'ACCESS HUNTER SYSTEM'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight size={16} color="#040714" style={{ flexShrink: 0 }} />
               </>
             )}
           </button>
@@ -743,16 +764,16 @@ export const HunterAuthScreen: React.FC = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            margin: '20px 0',
+            margin: '18px 0',
             color: '#475569',
             fontSize: '11px',
             fontWeight: 800,
             letterSpacing: '1px',
           }}
         >
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#1e293b' }} />
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#1a233a' }} />
           <span style={{ padding: '0 12px' }}>ALTERNATIVE PROTOCOLS</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#1e293b' }} />
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#1a233a' }} />
         </div>
 
         {/* Google Authentication Button */}
@@ -762,23 +783,46 @@ export const HunterAuthScreen: React.FC = () => {
           disabled={isLoading}
           style={{
             width: '100%',
-            padding: '12px',
+            height: '46px',
+            padding: '0 16px',
             borderRadius: '12px',
-            border: '1px solid #1e293b',
-            backgroundColor: '#0c1020',
-            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            backgroundColor: '#0a0e20',
+            color: '#f8fafc',
             fontWeight: 700,
             fontSize: '13px',
+            letterSpacing: '0.5px',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '10px',
+            gap: '12px',
             marginBottom: '10px',
-            transition: 'all 0.15s ease',
+            transition: 'all 0.18s ease',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.5)';
+            e.currentTarget.style.backgroundColor = '#0e142c';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+            e.currentTarget.style.backgroundColor = '#0a0e20';
           }}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <svg
+            style={{
+              width: '18px',
+              height: '18px',
+              minWidth: '18px',
+              minHeight: '18px',
+              flexShrink: 0,
+              display: 'block',
+            }}
+            viewBox="0 0 24 24"
+            width={18}
+            height={18}
+          >
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -806,22 +850,34 @@ export const HunterAuthScreen: React.FC = () => {
           disabled={isLoading}
           style={{
             width: '100%',
-            padding: '12px',
+            height: '46px',
+            padding: '0 16px',
             borderRadius: '12px',
             border: '1px solid rgba(0, 229, 255, 0.3)',
             backgroundColor: 'rgba(0, 229, 255, 0.05)',
-            color: '#67e8f9',
+            color: '#00e5ff',
             fontWeight: 700,
             fontSize: '13px',
+            letterSpacing: '0.5px',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            transition: 'all 0.15s ease',
+            transition: 'all 0.18s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#00e5ff';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.12)';
+            e.currentTarget.style.boxShadow = '0 0 16px rgba(0, 229, 255, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+            e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.05)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <Zap className="w-4 h-4 text-cyan-400" />
+          <Zap size={16} color="#00e5ff" style={{ flexShrink: 0 }} />
           <span>QUICK TRIAL / OFFLINE GUEST MODE</span>
         </button>
 
@@ -835,22 +891,39 @@ export const HunterAuthScreen: React.FC = () => {
               style={{
                 marginTop: '16px',
                 padding: '16px',
-                backgroundColor: '#0c1020',
+                backgroundColor: '#0a0e20',
                 borderRadius: '12px',
-                border: '1px solid #1c253d',
+                border: '1px solid rgba(0, 229, 255, 0.25)',
+                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ color: '#fff', fontWeight: 800, fontSize: '13px' }}>RECOVER PASSCODE</span>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                }}
+              >
+                <span style={{ color: '#fff', fontWeight: 800, fontSize: '13px', letterSpacing: '0.5px' }}>
+                  RECOVER PASSCODE
+                </span>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(false)}
-                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    lineHeight: 1,
+                  }}
                 >
                   ✕
                 </button>
               </div>
-              <p style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '10px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '10px', lineHeight: 1.4 }}>
                 Enter your registered Hunter email. The system will dispatch a security reset link.
               </p>
               <form onSubmit={handlePasswordResetSubmit} style={{ display: 'flex', gap: '8px' }}>
@@ -862,8 +935,8 @@ export const HunterAuthScreen: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: '8px 12px',
-                    backgroundColor: '#060812',
-                    border: '1px solid #1e293b',
+                    backgroundColor: '#050814',
+                    border: '1px solid #1a233a',
                     borderRadius: '8px',
                     color: '#fff',
                     fontSize: '13px',
@@ -874,13 +947,14 @@ export const HunterAuthScreen: React.FC = () => {
                   type="submit"
                   disabled={isLoading}
                   style={{
-                    padding: '8px 14px',
+                    padding: '8px 16px',
                     backgroundColor: '#00e5ff',
-                    color: '#000',
+                    color: '#040714',
                     border: 'none',
                     borderRadius: '8px',
                     fontWeight: 800,
                     fontSize: '12px',
+                    letterSpacing: '0.5px',
                     cursor: 'pointer',
                   }}
                 >
