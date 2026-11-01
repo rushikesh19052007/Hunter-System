@@ -2,7 +2,122 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: usernames
+    // Document ID: {username} (normalized lowercase string)
+    // Fields:
+    //   - uid: string (required, creator's auth UID)
+    //   - username: string (required, matches document ID)
+    //   - createdAt: timestamp (server timestamp)
+    //
+    // Collection: hunterIds
+    // Document ID: {hunterId} (e.g. HUNTR-XXXXXXXX)
+    // Fields:
+    //   - uid: string (required, creator's auth UID)
+    //   - username: string (optional)
+    //   - createdAt: timestamp (server timestamp)
+    //
+    // Collection: players
+    // Document ID: {userId} (user's auth UID)
+    // Fields:
+    //   - uid: string (required, user's auth UID)
+    //   - username: string (required)
+    //   - hunterId: string (required)
+    //   - displayName: string (required)
+    //   - currentLevel: number
+    //   - currentRank: string
+    //   - totalXp: number
+    //   - affinity: string
+    //   - equippedTitle: string (optional)
+    //   - questsCompleted: number (optional)
+    //   - streak: number (optional)
+    //   - guildId: string | null (optional)
+    //   - guildRole: string | null (optional)
+    //   - guildName: string | null (optional)
+    //   - guildTag: string | null (optional)
+    //   - stats: map (optional)
+    //   - updatedAt: timestamp (optional)
+    //
+    // Collection: hunters
+    // Document ID: {userId} (user's auth UID)
+    // Fields:
+    //   - Private hunter profile data, active quests, stats, and inventory
+    //   - guildId, guildRole, guildName, guildTag, updatedAt (guild metadata)
+    // Subcollection: hunters/{userId}/friends/{friendId}
+    //   - Mutual friendship record
+    //
+    // Collection: friendRequests
+    // Document ID: {requestId} (e.g. {fromUid}_{toUid})
+    // Fields:
+    //   - id: string
+    //   - fromUid: string (sender UID)
+    //   - toUid: string (receiver UID)
+    //   - fromUsername: string
+    //   - fromHunterId: string
+    //   - fromDisplayName: string
+    //   - fromLevel: number
+    //   - fromRank: string
+    //   - status: string ('pending' | 'accepted' | 'declined')
+    //   - createdAt: timestamp
+    //   - acceptedAt: timestamp (optional)
+    //
+    // Collection: presence
+    // Document ID: {userId} (user's auth UID)
+    // Fields:
+    //   - state: string ('online' | 'offline')
+    //   - lastSeen: timestamp
+    //   - client: string ('flutter' | 'web')
+    //   - updatedAt: timestamp
+    //
+    // Collection: guilds
+    // Document ID: {guildId}
+    // Fields:
+    //   - id: string
+    //   - name: string
+    //   - nameLower: string
+    //   - tag: string
+    //   - description: string
+    //   - icon: string
+    //   - joinType: string ('open' | 'request')
+    //   - leaderUid: string
+    //   - leaderUsername: string
+    //   - leaderDisplayName: string
+    //   - memberCount: number
+    //   - createdAt: timestamp
+    //   - updatedAt: timestamp
+    // Subcollection: guilds/{guildId}/members/{memberUid}
+    //   - uid, username, hunterId, displayName, level, rank, role, joinedAt
+    // Subcollection: guilds/{guildId}/joinRequests/{requestUid}
+    //   - id, guildId, uid, username, hunterId, displayName, level, rank, status, createdAt
+    //
+    // Collection: leaderboard
+    // Document ID: {userId} (user's auth UID)
+    // Fields:
+    //   - id: string
+    //   - hunterId: string
+    //   - username: string
+    //   - displayName: string
+    //   - level: number
+    //   - rank: string
+    //   - totalXp: number
+    //   - affinity: string
+    //   - equippedTitle: string
+    //   - questsCompleted: number
+    //   - streak: number
+    //   - guildId: string | null (optional)
+    //   - guildRole: string | null (optional)
+    //   - guildName: string | null (optional)
+    //   - guildTag: string | null (optional)
+    //   - updatedAt: timestamp
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -15,12 +130,16 @@ service cloud.firestore {
       return uname.matches('^[a-z0-9_]{3,20}$');
     }
 
-    function isGuildLeader(guildId) {
+    function isGuildUpdateOnly() {
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/guilds/$(guildId)).data.leaderUid == request.auth.uid;
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['guildId', 'guildRole', 'guildName', 'guildTag', 'updatedAt']);
     }
 
-    // 1. Usernames Registry (Enforces global uniqueness and strict lowercase)
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. Usernames Registry (Enforces global uniqueness and lowercase validation)
     match /usernames/{username} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() &&
@@ -35,114 +154,89 @@ service cloud.firestore {
     match /hunterIds/{hunterId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() &&
-        request.resource.data.uid == request.auth.uid &&
-        hunterId.matches('^HUNTR-[A-Z0-9]{8}$');
+        request.resource.data.uid == request.auth.uid;
       allow update, delete: if false; // Permanent and immutable
     }
 
     // 3. Public Player Profiles (Searchable, visible to all authenticated hunters)
     match /players/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId) &&
-        isValidUsername(request.resource.data.username) &&
-        request.resource.data.hunterId.matches('^HUNTR-[A-Z0-9]{8}$');
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isGuildUpdateOnly();
       allow delete: if isOwner(userId);
     }
 
-    // 4. Private Hunter Profile & Quests
+    // 4. Private Hunter Profile, Quests & Friends
     match /hunters/{userId} {
       allow read: if isOwner(userId);
-      allow create, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isGuildUpdateOnly();
+      allow delete: if isOwner(userId);
 
-      // Friends subcollection
+      // Friends subcollection (bidirectional friendship management)
       match /friends/{friendId} {
-        allow read: if isOwner(userId);
-        // Both the user and the friend can add/remove mutual friendship
-        allow create, delete: if isAuthenticated() &&
+        allow read, create, delete, update: if isAuthenticated() &&
           (request.auth.uid == userId || request.auth.uid == friendId);
-        allow update: if false;
       }
     }
 
     // 5. Friend Requests
     match /friendRequests/{requestId} {
-      // Both sender and receiver can read the request
-      allow read: if isAuthenticated() &&
-        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      // Allow read to all authenticated users so existence checks (getDoc) and queries succeed
+      allow read: if isAuthenticated();
 
-      // Create: sender must be authenticated user, cannot send to self
+      // Sender can create a friend request
       allow create: if isAuthenticated() &&
-        request.resource.data.fromUid == request.auth.uid &&
-        request.resource.data.fromUid != request.resource.data.toUid &&
-        request.resource.data.status == 'pending';
+        request.resource.data.fromUid == request.auth.uid;
 
-      // Update: receiver can accept/decline; sender can cancel
-      allow update: if isAuthenticated() &&
-        (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+      // Sender or receiver can update (accept, decline, cancel)
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid ||
+        request.auth.uid == request.resource.data.fromUid ||
+        request.auth.uid == request.resource.data.toUid
+      );
 
-      // Delete: sender or receiver can delete
-      allow delete: if isAuthenticated() &&
-        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      // Sender or receiver can delete, or no-op cleanup if document does not exist
+      allow delete: if isAuthenticated() && (
+        resource == null ||
+        request.auth.uid == resource.data.fromUid ||
+        request.auth.uid == resource.data.toUid
+      );
     }
 
     // 6. Real-Time Online Presence
     match /presence/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create, update, delete: if isOwner(userId);
     }
 
     // 7. Guilds
     match /guilds/{guildId} {
       allow read: if isAuthenticated();
-
-      // Creation: Creator becomes leader atomically, member count starts at 1
-      allow create: if isAuthenticated() &&
-        request.resource.data.leaderUid == request.auth.uid &&
-        request.resource.data.memberCount == 1;
-
-      // Update: Leader can update settings; or member count changes during join/leave
-      allow update: if isAuthenticated() && (
-        resource.data.leaderUid == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'updatedAt'])
-      );
-
-      // Delete: Leader only
+      allow create: if isAuthenticated() && request.resource.data.leaderUid == request.auth.uid;
+      allow update: if isAuthenticated();
       allow delete: if isAuthenticated() && resource.data.leaderUid == request.auth.uid;
 
-      // Guild Members
+      // Guild Members subcollection
       match /members/{memberUid} {
-        allow read: if isAuthenticated();
-        // Member can join themselves (if allowed by guild) or leader can add
-        allow create: if isAuthenticated() &&
-          (request.auth.uid == memberUid || isGuildLeader(guildId));
-        // Member can leave, or leader can remove
-        allow delete: if isAuthenticated() &&
-          (request.auth.uid == memberUid || isGuildLeader(guildId));
-        allow update: if isGuildLeader(guildId);
+        allow read, create, update, delete: if isAuthenticated();
       }
 
-      // Guild Join Requests
+      // Guild Join Requests subcollection
       match /joinRequests/{requestUid} {
-        // Requester or Guild Leader can read
-        allow read: if isAuthenticated() &&
-          (request.auth.uid == requestUid || isGuildLeader(guildId));
-        // Requester can create their own request
-        allow create: if isAuthenticated() && request.auth.uid == requestUid;
-        // Leader can accept/reject; requester can cancel
-        allow update: if isGuildLeader(guildId);
-        allow delete: if isAuthenticated() &&
-          (request.auth.uid == requestUid || isGuildLeader(guildId));
+        allow read, create, update, delete: if isAuthenticated();
       }
     }
 
     // 8. Global Leaderboard Registry
     match /leaderboard/{userId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isOwner(userId);
+      allow create, delete: if isOwner(userId);
+      allow update: if isOwner(userId) || isGuildUpdateOnly();
     }
 
-    // Deny all other access
+    // Default deny for all other unmatched documents
     match /{document=**} {
       allow read, write: if false;
     }
