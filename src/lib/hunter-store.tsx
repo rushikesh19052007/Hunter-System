@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import {
   doc,
   setDoc,
+  deleteDoc,
   onSnapshot,
   serverTimestamp,
   type Unsubscribe,
@@ -80,6 +81,7 @@ export interface HunterContextType {
   allocateStatPoint: (stat: string, points?: number) => void;
   updateProfile: (updates: Partial<Profile>) => void;
   resetHunter: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   addCustomQuest: (quest: Omit<Quest, 'id' | 'user_id' | 'progress' | 'completed'>) => void;
   completeBonusQuest: () => void;
   completeDungeonBreak: () => void;
@@ -103,7 +105,7 @@ const STORAGE_ACHIEVEMENTS_KEY = 'hunter_system_achievements';
 // ============================================================
 
 export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, deleteAccount: deleteAuthAccount } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(() => {
     try {
@@ -213,6 +215,9 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         } else {
           // No profile in cloud yet: user needs to go through System Awakening
           setNeedsAwakening(true);
+          // If hunter profile doesn't exist, purge any stale leaderboard record
+          const leaderboardDocRef = doc(firestore, 'leaderboard', user.id);
+          deleteDoc(leaderboardDocRef).catch(() => {});
         }
       },
       (error) => {
@@ -716,19 +721,82 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     audioService.playClick();
     if (user) {
       try {
+        // 1. Remove from global leaderboard immediately so reset hunter does not linger
+        const leaderboardDocRef = doc(firestore, 'leaderboard', user.id);
+        await deleteDoc(leaderboardDocRef);
+      } catch (err) {
+        console.warn('[Hunter Store] Error deleting leaderboard entry on reset:', err);
+      }
+
+      try {
+        // 2. Delete hunter document from Firestore
         const hunterDocRef = doc(firestore, 'hunters', user.id);
-        const defaultProf = createDefaultProfile(user.id, user.name || 'Awakened Hunter', 'AGI');
-        setProfile(null);
-        setQuests([]);
-        setUnlockedAchievements(['first_blood']);
-        setNeedsAwakening(true);
-        await syncToFirestore(defaultProf, []);
-      } catch {}
-    } else {
-      localStorage.clear();
-      setProfile(null);
-      setQuests([]);
-      setNeedsAwakening(true);
+        await deleteDoc(hunterDocRef);
+      } catch (err) {
+        console.warn('[Hunter Store] Error deleting hunter document on reset:', err);
+      }
+    }
+
+    try {
+      localStorage.removeItem(STORAGE_PROFILE_KEY);
+      localStorage.removeItem(STORAGE_QUESTS_KEY);
+      localStorage.removeItem(STORAGE_ACHIEVEMENTS_KEY);
+      localStorage.removeItem('hunter_preferred_affinity');
+      localStorage.removeItem('local_hunter_profile');
+      localStorage.removeItem('daily_system_state');
+    } catch {}
+
+    setProfile(null);
+    setQuests([]);
+    setUnlockedAchievements(['first_blood']);
+    setActiveBonus(null);
+    setActiveDungeon(null);
+    setNeedsAwakening(true);
+  };
+
+  const deleteAccount = async () => {
+    audioService.playClick();
+    const uid = user?.id;
+
+    if (uid) {
+      try {
+        // 1. Remove from global leaderboard first while user is still authenticated
+        const leaderboardDocRef = doc(firestore, 'leaderboard', uid);
+        await deleteDoc(leaderboardDocRef);
+      } catch (err) {
+        console.warn('[Hunter Store] Error removing from leaderboard on account delete:', err);
+      }
+
+      try {
+        // 2. Remove hunter profile document from Firestore
+        const hunterDocRef = doc(firestore, 'hunters', uid);
+        await deleteDoc(hunterDocRef);
+      } catch (err) {
+        console.warn('[Hunter Store] Error deleting hunter document on account delete:', err);
+      }
+    }
+
+    // 3. Clear local storage caches
+    try {
+      localStorage.removeItem(STORAGE_PROFILE_KEY);
+      localStorage.removeItem(STORAGE_QUESTS_KEY);
+      localStorage.removeItem(STORAGE_ACHIEVEMENTS_KEY);
+      localStorage.removeItem('hunter_preferred_affinity');
+      localStorage.removeItem('local_hunter_profile');
+      localStorage.removeItem('daily_system_state');
+    } catch {}
+
+    // 4. Reset in-memory state
+    setProfile(null);
+    setQuests([]);
+    setUnlockedAchievements(['first_blood']);
+    setActiveBonus(null);
+    setActiveDungeon(null);
+    setNeedsAwakening(true);
+
+    // 5. Delete Firebase Auth user account
+    if (deleteAuthAccount) {
+      await deleteAuthAccount();
     }
   };
 
@@ -756,6 +824,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         allocateStatPoint,
         updateProfile,
         resetHunter,
+        deleteAccount,
         addCustomQuest,
         completeBonusQuest,
         completeDungeonBreak,

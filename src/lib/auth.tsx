@@ -10,6 +10,7 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   updateProfile,
+  deleteUser,
   type User,
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
@@ -33,6 +34,7 @@ export interface AuthContextType {
   loginAsGuest: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -175,6 +177,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const deleteAccount = async () => {
+    audioService.playClick();
+    if (firebaseUser) {
+      await deleteUser(firebaseUser);
+      setFirebaseUser(null);
+      setUser(null);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -187,6 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsGuest,
         resetPassword,
         logout,
+        deleteAccount,
       }}
     >
       {children}

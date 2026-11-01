@@ -26,10 +26,11 @@ import { audioService } from '@/lib/audio-service';
 import { getRankBadgeInfo } from '@/lib/game-engine';
 
 export const AccountSettingsPage: React.FC = () => {
-  const { profile, resetHunter } = useHunter();
-  const [resetConfirmText, setResetConfirmText] = useState('');
-  const [isResetting, setIsResetting] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
+  const { profile, resetHunter, deleteAccount } = useHunter();
+  const [dangerAction, setDangerAction] = useState<'none' | 'reset' | 'delete'>('none');
+  const [confirmText, setConfirmText] = useState('');
+  const [isProcessingDanger, setIsProcessingDanger] = useState(false);
+  const [dangerError, setDangerError] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [copiedId, setCopiedId] = useState(false);
   const [isMuted, setIsMuted] = useState(audioService.isMuted());
@@ -161,14 +162,40 @@ export const AccountSettingsPage: React.FC = () => {
     if (importRef.current) importRef.current.value = '';
   };
 
-  const handleResetAccount = async () => {
-    if (resetConfirmText.trim() !== 'RESET') return;
-    setIsResetting(true);
-    audioService.playDungeonAlert();
-    await resetHunter();
-    setIsResetting(false);
-    setShowWarning(false);
-    setResetConfirmText('');
+  const handleResetProgression = async () => {
+    if (confirmText.trim() !== 'RESET') return;
+    setIsProcessingDanger(true);
+    setDangerError(null);
+    try {
+      audioService.playDungeonAlert();
+      await resetHunter();
+      setDangerAction('none');
+      setConfirmText('');
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setDangerError(e?.message || 'Failed to reset hunter progression.');
+    } finally {
+      setIsProcessingDanger(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmText.trim() !== 'DELETE') return;
+    setIsProcessingDanger(true);
+    setDangerError(null);
+    try {
+      audioService.playDungeonAlert();
+      await deleteAccount();
+      // AuthGate automatically redirects to login screen when user is deleted
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string };
+      if (e?.code === 'auth/requires-recent-login') {
+        setDangerError('For security, deleting your account requires a recent sign-in. Please log out, sign in again, and retry account deletion.');
+      } else {
+        setDangerError(e?.message || 'Failed to delete account.');
+      }
+      setIsProcessingDanger(false);
+    }
   };
 
   return (
@@ -719,35 +746,88 @@ export const AccountSettingsPage: React.FC = () => {
           </div>
 
           <p style={{ color: '#cbd5e1', fontSize: '0.85rem', lineHeight: '1.5', margin: '0 0 16px 0' }}>
-            Reinitializing your Hunter license wipes your current level, stats, quest records, and progression, resetting you to an unranked candidate.
+            Choose whether to reset your Hunter progression or permanently delete your account. Both actions completely remove your presence from the Global Leaderboard.
           </p>
 
-          {!showWarning ? (
-            <button
-              type="button"
-              onClick={() => setShowWarning(true)}
+          {dangerError && (
+            <div
               style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '10px',
-                border: '1px solid rgba(239, 68, 68, 0.6)',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: '#f87171',
-                fontWeight: 800,
-                fontSize: '13px',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'all 0.15s ease',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid #ef4444',
+                color: '#fca5a5',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                marginBottom: '14px',
               }}
             >
-              <Trash2 className="w-4 h-4" />
-              <span>INITIALIZE ACCOUNT RESET</span>
-            </button>
-          ) : (
+              {dangerError}
+            </div>
+          )}
+
+          {dangerAction === 'none' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setDangerAction('reset');
+                  setConfirmText('');
+                  setDangerError(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(239, 68, 68, 0.6)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#f87171',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>RESET HUNTER PROGRESSION & LEADERBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDangerAction('delete');
+                  setConfirmText('');
+                  setDangerError(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid #dc2626',
+                  backgroundColor: 'rgba(220, 38, 38, 0.25)',
+                  color: '#fca5a5',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+                <span>PERMANENTLY DELETE ACCOUNT & ALL DATA</span>
+              </button>
+            </div>
+          )}
+
+          {dangerAction === 'reset' && (
             <div
               style={{
                 backgroundColor: 'rgba(239, 68, 68, 0.12)',
@@ -764,13 +844,13 @@ export const AccountSettingsPage: React.FC = () => {
                   margin: '0 0 10px 0',
                 }}
               >
-                Type <strong style={{ color: '#fff' }}>RESET</strong> below to confirm wiping this profile:
+                Type <strong style={{ color: '#fff' }}>RESET</strong> below to confirm wiping your Hunter license, stats, quests, and removing yourself from the Global Leaderboard:
               </p>
               <input
                 type="text"
                 placeholder='Type "RESET"'
-                value={resetConfirmText}
-                onChange={(e) => setResetConfirmText(e.target.value)}
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -787,18 +867,18 @@ export const AccountSettingsPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
-                  disabled={resetConfirmText.trim() !== 'RESET' || isResetting}
-                  onClick={handleResetAccount}
+                  disabled={confirmText.trim() !== 'RESET' || isProcessingDanger}
+                  onClick={handleResetProgression}
                   style={{
                     flex: 1,
                     padding: '10px',
                     borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: resetConfirmText.trim() === 'RESET' ? '#ef4444' : '#475569',
+                    backgroundColor: confirmText.trim() === 'RESET' ? '#ef4444' : '#475569',
                     color: '#fff',
                     fontWeight: 800,
                     fontSize: '12px',
-                    cursor: resetConfirmText.trim() === 'RESET' ? 'pointer' : 'not-allowed',
+                    cursor: confirmText.trim() === 'RESET' ? 'pointer' : 'not-allowed',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -806,13 +886,98 @@ export const AccountSettingsPage: React.FC = () => {
                   }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{isResetting ? 'WIPING...' : 'CONFIRM RESET'}</span>
+                  <span>{isProcessingDanger ? 'WIPING...' : 'CONFIRM RESET & REMOVE FROM LEADERBOARD'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowWarning(false);
-                    setResetConfirmText('');
+                    setDangerAction('none');
+                    setConfirmText('');
+                    setDangerError(null);
+                  }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #334155',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )}
+
+          {dangerAction === 'delete' && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.18)',
+                border: '1px solid #ef4444',
+                borderRadius: '10px',
+                padding: '16px',
+              }}
+            >
+              <p
+                style={{
+                  color: '#fca5a5',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  margin: '0 0 10px 0',
+                }}
+              >
+                Type <strong style={{ color: '#fff' }}>DELETE</strong> below to permanently delete your account, purge all Hunter data, and remove yourself from the Global Leaderboard forever:
+              </p>
+              <input
+                type="text"
+                placeholder='Type "DELETE"'
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: '#060812',
+                  border: '1px solid #ef4444',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none',
+                  marginBottom: '12px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={confirmText.trim() !== 'DELETE' || isProcessingDanger}
+                  onClick={handleDeleteAccount}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: confirmText.trim() === 'DELETE' ? '#dc2626' : '#475569',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: '12px',
+                    cursor: confirmText.trim() === 'DELETE' ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isProcessingDanger ? 'DELETING ACCOUNT...' : 'CONFIRM PERMANENT ACCOUNT DELETION'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDangerAction('none');
+                    setConfirmText('');
+                    setDangerError(null);
                   }}
                   style={{
                     padding: '10px 14px',

@@ -17,6 +17,7 @@ import {
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import { useHunter } from '@/lib/hunter-store';
+import { useAuth } from '@/lib/auth';
 import {
   type Profile,
   getRankBadgeInfo,
@@ -209,6 +210,7 @@ const DEMO_LEADERBOARD_HUNTERS: Profile[] = [
 
 export const Leaderboard: React.FC = () => {
   const { profile } = useHunter();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<SortFilter>('xp');
   const [rankFilter, setRankFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -266,6 +268,9 @@ export const Leaderboard: React.FC = () => {
       } else {
         fetchedHunters.push(profile);
       }
+    } else if (user) {
+      // If profile is null (deleted or reset), ensure user is never shown in fetchedHunters
+      fetchedHunters = fetchedHunters.filter((h) => h.id !== user.id);
     }
 
     setHunters(fetchedHunters);
