@@ -1,5 +1,6 @@
 import { startPresence, stopPresence } from './presence-service';
 import { claimUsername, claimHunterId, syncPublicPlayer } from './social-service';
+import { leaveGuild } from './guild-service';
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
   doc,
@@ -33,6 +34,7 @@ import {
   RANK_TITLES,
   PROFILE_FRAMES,
   createDefaultProfile,
+  normalizeUsername,
 } from './game-engine';
 import QUEST_LIBRARY, { type LibraryQuest } from './quest-library';
 import { checkNewAchievements, type NewUnlock } from './achievements';
@@ -771,24 +773,56 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const uid = user?.id;
 
     if (uid) {
+      // 1. Remove from global leaderboard while user is still authenticated
       try {
-        // 1. Remove from global leaderboard first while user is still authenticated
-        const leaderboardDocRef = doc(firestore, 'leaderboard', uid);
-        await deleteDoc(leaderboardDocRef);
+        await deleteDoc(doc(firestore, 'leaderboard', uid));
       } catch (err) {
         console.warn('[Hunter Store] Error removing from leaderboard on account delete:', err);
       }
 
+      // 2. Remove public player profile card
       try {
-        // 2. Remove hunter profile document from Firestore
-        const hunterDocRef = doc(firestore, 'hunters', uid);
-        await deleteDoc(hunterDocRef);
+        await deleteDoc(doc(firestore, 'players', uid));
+      } catch (err) {
+        console.warn('[Hunter Store] Error removing player profile on account delete:', err);
+      }
+
+      // 3. Remove presence doc
+      try {
+        await deleteDoc(doc(firestore, 'presence', uid));
+      } catch (err) {
+        console.warn('[Hunter Store] Error removing presence on account delete:', err);
+      }
+
+      // 4. Release unique username if claimed
+      if (profile?.username) {
+        try {
+          const clean = normalizeUsername(profile.username);
+          await deleteDoc(doc(firestore, 'usernames', clean));
+        } catch (err) {
+          console.warn('[Hunter Store] Error releasing username on account delete:', err);
+        }
+      }
+
+      // 5. Leave guild if enrolled
+      if (profile?.guild_id) {
+        try {
+          const isLeader = profile.guild_role === 'leader';
+          await leaveGuild(profile.guild_id, uid, isLeader);
+        } catch (err) {
+          console.warn('[Hunter Store] Error leaving guild on account delete:', err);
+        }
+      }
+
+      // 6. Remove private hunter profile document from Firestore
+      try {
+        await deleteDoc(doc(firestore, 'hunters', uid));
       } catch (err) {
         console.warn('[Hunter Store] Error deleting hunter document on account delete:', err);
       }
     }
 
-    // 3. Clear local storage caches
+    // 7. Clear local storage caches
     try {
       localStorage.removeItem(STORAGE_PROFILE_KEY);
       localStorage.removeItem(STORAGE_QUESTS_KEY);
@@ -798,7 +832,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.removeItem('daily_system_state');
     } catch {}
 
-    // 4. Reset in-memory state
+    // 8. Reset in-memory state
     setProfile(null);
     setQuests([]);
     setUnlockedAchievements(['first_blood']);
@@ -806,7 +840,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setActiveDungeon(null);
     setNeedsAwakening(true);
 
-    // 5. Delete Firebase Auth user account
+    // 9. Delete Firebase Auth user account
     if (deleteAuthAccount) {
       await deleteAuthAccount();
     }
