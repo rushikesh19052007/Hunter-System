@@ -1,3 +1,5 @@
+import { checkUsernameAvailable } from '@/lib/social-service';
+import { normalizeUsername, isValidUsername } from '@/lib/game-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -58,15 +60,32 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
   };
 
   // Screen 2: Name confirmation
-  const handleNameSubmit = (e?: React.FormEvent) => {
+  const handleNameSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!hunterName.trim()) {
-      setNameError('The System cannot register a nameless Hunter. Enter your designation.');
+    const clean = normalizeUsername(hunterName);
+    if (!clean || clean.length < 3) {
+      setNameError('Username must be 3-20 lowercase alphanumeric characters (a-z, 0-9, _).');
       playSystemChime('alert');
       return;
     }
+    if (!isValidUsername(clean)) {
+      setNameError('Username must contain lowercase characters only (no uppercase, no special chars except _).');
+      playSystemChime('alert');
+      return;
+    }
+
+    try {
+      const isAvailable = await checkUsernameAvailable(clean);
+      if (!isAvailable) {
+        setNameError(`The username "@${clean}" is already claimed by another Hunter.`);
+        playSystemChime('alert');
+        return;
+      }
+    } catch (_) {}
+
     setNameError('');
-    trackEvent(AnalyticsEvent.AWAKENING_NAME_ENTERED, { name: hunterName });
+    setHunterName(clean);
+    trackEvent(AnalyticsEvent.AWAKENING_NAME_ENTERED, { name: clean });
     playSystemChime('quest');
     setStep(3);
   };
@@ -241,23 +260,27 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
               <form onSubmit={handleNameSubmit} className="name-form">
                 <div className="input-group">
                   <label htmlFor="hunter-name-input" className="input-label">
-                    HUNTER DESIGNATION
+                    UNIQUE USERNAME (STRICTLY LOWERCASE)
                   </label>
                   <div className="input-field-wrapper">
                     <input
                       id="hunter-name-input"
                       type="text"
                       autoFocus
-                      placeholder="e.g. Sung Jin-Woo, Jin, Monarch..."
+                      placeholder="e.g. mahesh, rushikesh, hunter_x..."
                       value={hunterName}
                       onChange={(e) => {
-                        setHunterName(e.target.value);
+                        const lowerVal = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                        setHunterName(lowerVal);
                         if (nameError) setNameError('');
                       }}
                       className="system-text-input"
-                      maxLength={30}
+                      maxLength={20}
                     />
                   </div>
+                  <p className="text-[11px] text-cyan-400/80 mt-1 font-mono">
+                    * Input is automatically converted to lowercase.
+                  </p>
                   {nameError && <p className="error-message">{nameError}</p>}
                 </div>
 
@@ -265,9 +288,9 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                   <div className="preview-label">PRELIMINARY REGISTRATION TICKET</div>
                   <div className="preview-body">
                     <div>
-                      <span className="text-muted">PLAYER: </span>
-                      <strong className="text-cyan-300">
-                        {hunterName.trim() || 'AWAITING INPUT...'}
+                      <span className="text-muted">USERNAME: </span>
+                      <strong className="text-cyan-300 font-mono">
+                        {hunterName ? `@${hunterName}` : 'AWAITING INPUT...'}
                       </strong>
                     </div>
                     <div>

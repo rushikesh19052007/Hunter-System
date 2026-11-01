@@ -1,30 +1,148 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Hunter profile and private quest data
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUsername(uname) {
+      return uname.matches('^[a-z0-9_]{3,20}$');
+    }
+
+    function isGuildLeader(guildId) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/guilds/$(guildId)).data.leaderUid == request.auth.uid;
+    }
+
+    // 1. Usernames Registry (Enforces global uniqueness and strict lowercase)
+    match /usernames/{username} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.username == username &&
+        isValidUsername(username);
+      allow update: if false; // Usernames cannot be transferred
+      allow delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 2. Permanent Unique Hunter IDs
+    match /hunterIds/{hunterId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.uid == request.auth.uid &&
+        hunterId.matches('^HUNTR-[A-Z0-9]{8}$');
+      allow update, delete: if false; // Permanent and immutable
+    }
+
+    // 3. Public Player Profiles (Searchable, visible to all authenticated hunters)
+    match /players/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) &&
+        isValidUsername(request.resource.data.username) &&
+        request.resource.data.hunterId.matches('^HUNTR-[A-Z0-9]{8}$');
+      allow delete: if isOwner(userId);
+    }
+
+    // 4. Private Hunter Profile & Quests
     match /hunters/{userId} {
-      // Allow read if user is authenticated and is the owner
-      allow read: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow create and update only by the authenticated owner
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      
-      // Prevent unauthorized deletion
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow create, update, delete: if isOwner(userId);
+
+      // Friends subcollection
+      match /friends/{friendId} {
+        allow read: if isOwner(userId);
+        // Both the user and the friend can add/remove mutual friendship
+        allow create, delete: if isAuthenticated() &&
+          (request.auth.uid == userId || request.auth.uid == friendId);
+        allow update: if false;
+      }
     }
-    
-    // Global Leaderboard Registry
+
+    // 5. Friend Requests
+    match /friendRequests/{requestId} {
+      // Both sender and receiver can read the request
+      allow read: if isAuthenticated() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+
+      // Create: sender must be authenticated user, cannot send to self
+      allow create: if isAuthenticated() &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.fromUid != request.resource.data.toUid &&
+        request.resource.data.status == 'pending';
+
+      // Update: receiver can accept/decline; sender can cancel
+      allow update: if isAuthenticated() &&
+        (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+
+      // Delete: sender or receiver can delete
+      allow delete: if isAuthenticated() &&
+        (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+    }
+
+    // 6. Real-Time Online Presence
+    match /presence/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // 7. Guilds
+    match /guilds/{guildId} {
+      allow read: if isAuthenticated();
+
+      // Creation: Creator becomes leader atomically, member count starts at 1
+      allow create: if isAuthenticated() &&
+        request.resource.data.leaderUid == request.auth.uid &&
+        request.resource.data.memberCount == 1;
+
+      // Update: Leader can update settings; or member count changes during join/leave
+      allow update: if isAuthenticated() && (
+        resource.data.leaderUid == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'updatedAt'])
+      );
+
+      // Delete: Leader only
+      allow delete: if isAuthenticated() && resource.data.leaderUid == request.auth.uid;
+
+      // Guild Members
+      match /members/{memberUid} {
+        allow read: if isAuthenticated();
+        // Member can join themselves (if allowed by guild) or leader can add
+        allow create: if isAuthenticated() &&
+          (request.auth.uid == memberUid || isGuildLeader(guildId));
+        // Member can leave, or leader can remove
+        allow delete: if isAuthenticated() &&
+          (request.auth.uid == memberUid || isGuildLeader(guildId));
+        allow update: if isGuildLeader(guildId);
+      }
+
+      // Guild Join Requests
+      match /joinRequests/{requestUid} {
+        // Requester or Guild Leader can read
+        allow read: if isAuthenticated() &&
+          (request.auth.uid == requestUid || isGuildLeader(guildId));
+        // Requester can create their own request
+        allow create: if isAuthenticated() && request.auth.uid == requestUid;
+        // Leader can accept/reject; requester can cancel
+        allow update: if isGuildLeader(guildId);
+        allow delete: if isAuthenticated() &&
+          (request.auth.uid == requestUid || isGuildLeader(guildId));
+      }
+    }
+
+    // 8. Global Leaderboard Registry
     match /leaderboard/{userId} {
-      // Public read for authenticated hunters
-      allow read: if request.auth != null;
-      
-      // Write allowed only by the owner of the leaderboard record
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
     }
-    
-    // Deny all other access by default
+
+    // Deny all other access
     match /{document=**} {
       allow read, write: if false;
     }

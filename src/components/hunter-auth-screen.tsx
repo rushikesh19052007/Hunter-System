@@ -1,3 +1,5 @@
+import { checkUsernameAvailable } from '@/lib/social-service';
+import { normalizeUsername, isValidUsername } from '@/lib/game-engine';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -142,12 +144,26 @@ export const HunterAuthScreen: React.FC = () => {
     }
 
     if (isSignUp) {
-      const cleanName = name.trim();
-      if (!cleanName) {
-        setErrorMessage('Please enter your Hunter Designation Name.');
+      const cleanUsername = normalizeUsername(name);
+      if (!cleanUsername || cleanUsername.length < 3) {
+        setErrorMessage('Username must be 3-20 lowercase alphanumeric characters (a-z, 0-9, _).');
         audioService.playClick();
         return;
       }
+      if (!isValidUsername(cleanUsername)) {
+        setErrorMessage('Username must contain lowercase characters only.');
+        audioService.playClick();
+        return;
+      }
+
+      try {
+        const isAvail = await checkUsernameAvailable(cleanUsername);
+        if (!isAvail) {
+          setErrorMessage(`The username "@${cleanUsername}" is already claimed by another hunter.`);
+          audioService.playClick();
+          return;
+        }
+      } catch (_) {}
       if (cleanPassword !== confirmPassword.trim()) {
         setErrorMessage('Passcodes do not match. Please verify.');
         audioService.playClick();
@@ -156,7 +172,7 @@ export const HunterAuthScreen: React.FC = () => {
 
       setIsLoading(true);
       try {
-        await signUpWithEmail(cleanName, cleanEmail, cleanPassword, selectedAffinity);
+        await signUpWithEmail(cleanUsername, cleanEmail, cleanPassword, selectedAffinity);
       } catch (err) {
         setErrorMessage(cleanFirebaseError(err));
       } finally {
@@ -459,15 +475,18 @@ export const HunterAuthScreen: React.FC = () => {
                   marginBottom: '6px',
                 }}
               >
-                HUNTER DESIGNATION (NAME)
+                UNIQUE USERNAME (LOWERCASE ONLY)
               </label>
               <div style={getInputContainerStyle('name')}>
                 <User size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
                 <input
                   type="text"
-                  placeholder="e.g. Sung Jin-Woo"
+                  placeholder="e.g. mahesh, hunter_x, kavya123"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const lower = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                    setName(lower);
+                  }}
                   onFocus={() => setFocusedField('name')}
                   onBlur={() => setFocusedField(null)}
                   style={{

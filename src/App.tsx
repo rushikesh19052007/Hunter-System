@@ -1,3 +1,6 @@
+import { FriendsPage } from '@/routes/dashboard/friends-page';
+import { GuildsPage } from '@/routes/dashboard/guilds-page';
+import { NotFoundPage } from '@/routes/not-found-page';
 import React, { useState, useEffect } from 'react';
 import { HunterProvider, useHunter } from '@/lib/hunter-store';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -15,6 +18,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldAlert,
+  Users,
+  Shield,
   CheckCircle,
   Bell,
   X,
@@ -229,9 +234,46 @@ const HunterAppContent: React.FC = () => {
   const { logout } = useAuth();
 
   const [replayAwakening, setReplayAwakening] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'profile' | 'leaderboard' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'guilds' | 'friends' | 'leaderboard' | 'stats' | 'profile' | 'settings'>('dashboard');
+  const [isNotFound, setIsNotFound] = useState<boolean>(false);
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // URL Routing & Custom 404 Interceptor
+  useEffect(() => {
+    const handleRoute = () => {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (!path || path === 'dashboard' || path === 'hub') {
+        setActiveTab('dashboard');
+        setIsNotFound(false);
+      } else if (path === 'guilds' || path === 'guild') {
+        setActiveTab('guilds');
+        setIsNotFound(false);
+      } else if (path === 'friends' || path === 'social') {
+        setActiveTab('friends');
+        setIsNotFound(false);
+      } else if (path === 'leaderboard') {
+        setActiveTab('leaderboard');
+        setIsNotFound(false);
+      } else if (path === 'stats') {
+        setActiveTab('stats');
+        setIsNotFound(false);
+      } else if (path === 'profile') {
+        setActiveTab('profile');
+        setIsNotFound(false);
+      } else if (path === 'settings') {
+        setActiveTab('settings');
+        setIsNotFound(false);
+      } else {
+        setIsNotFound(true);
+      }
+    };
+
+    handleRoute();
+    window.addEventListener('popstate', handleRoute);
+    return () => window.removeEventListener('popstate', handleRoute);
+  }, []);
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem('hunter_theme');
@@ -314,12 +356,34 @@ const HunterAppContent: React.FC = () => {
               <button
                 type="button"
                 id="nav-tab-dashboard"
-                onClick={() => setActiveTab('dashboard')}
-                className={`header-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('dashboard'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'dashboard' && !isNotFound ? 'active' : ''}`}
                 aria-current={activeTab === 'dashboard' ? 'page' : undefined}
               >
                 <LayoutDashboard className="w-4 h-4 mr-1.5" />
                 <span>DASHBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-guilds"
+                onClick={() => { setActiveTab('guilds'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'guilds' && !isNotFound ? 'active' : ''}`}
+                aria-current={activeTab === 'guilds' ? 'page' : undefined}
+              >
+                <Shield className="w-4 h-4 mr-1.5 text-purple-400" />
+                <span>GUILDS</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-friends"
+                onClick={() => { setActiveTab('friends'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'friends' && !isNotFound ? 'active' : ''}`}
+                aria-current={activeTab === 'friends' ? 'page' : undefined}
+              >
+                <Users className="w-4 h-4 mr-1.5 text-cyan-400" />
+                <span>FRIENDS</span>
               </button>
 
               <button
@@ -441,6 +505,22 @@ const HunterAppContent: React.FC = () => {
             >
               <SystemAwakening onComplete={() => setReplayAwakening(false)} />
             </motion.div>
+          ) : isNotFound ? (
+            <motion.div
+              key="not-found-route"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <NotFoundPage
+                onReturnToBase={() => {
+                  window.history.pushState({}, '', '/');
+                  setActiveTab('dashboard');
+                  setIsNotFound(false);
+                }}
+              />
+            </motion.div>
           ) : activeTab === 'dashboard' ? (
             <motion.div
               key="dashboard-tab"
@@ -450,6 +530,26 @@ const HunterAppContent: React.FC = () => {
               transition={{ duration: 0.3 }}
             >
               <HunterHub onReplayAwakening={() => setReplayAwakening(true)} />
+            </motion.div>
+          ) : activeTab === 'guilds' ? (
+            <motion.div
+              key="guilds-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <GuildsPage />
+            </motion.div>
+          ) : activeTab === 'friends' ? (
+            <motion.div
+              key="friends-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FriendsPage />
             </motion.div>
           ) : activeTab === 'stats' ? (
             <motion.div

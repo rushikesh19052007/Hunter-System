@@ -6,6 +6,8 @@ import {
   type HunterStat,
   type StatXpType,
   type SystemLogEntry,
+  normalizeUsername,
+  generateUniqueHunterId,
 } from './game-engine';
 
 // ============================================================
@@ -204,15 +206,22 @@ export function serializeProfileForFirestore(profile: Profile): Record<string, u
     xp: entry.xp ?? null,
   }));
 
+  const cleanUsername = profile.username ? normalizeUsername(profile.username) : normalizeUsername(profile.display_name);
+
   return {
     id: profile.id,
     hunterId: profile.hunter_id,
+    username: cleanUsername,
     displayName: profile.display_name,
     totalXp: profile.total_xp,
     currentLevel: profile.current_level,
     stats: statsInFlutterFormat,
     currentRank: profile.current_rank,
     affinity: profile.affinity,
+    guildId: profile.guild_id || null,
+    guildRole: profile.guild_role || null,
+    guildName: profile.guild_name || null,
+    guildTag: profile.guild_tag || null,
     hp: profile.hp,
     mp: profile.mp,
     maxHp: profile.max_hp,
@@ -270,16 +279,28 @@ export function deserializeProfileFromFirestore(data: Record<string, unknown>): 
     xp: typeof l.xp === 'number' ? l.xp : undefined,
   }));
 
+  const rawName = (data.displayName as string) || (data.display_name as string) || 'Awakened Hunter';
+  const rawUsername = (data.username as string) || normalizeUsername(rawName);
+  let hunterId = (data.hunterId as string) || (data.hunter_id as string) || '';
+  if (!/^HUNTR-[A-Z0-9]{8}$/.test(hunterId)) {
+    hunterId = generateUniqueHunterId();
+  }
+
   return {
     id: (data.id as string) || '',
-    hunter_id: (data.hunterId as string) || (data.hunter_id as string) || 'HUNTER-UNKNOWN',
-    display_name: (data.displayName as string) || (data.display_name as string) || 'Awakened Hunter',
+    hunter_id: hunterId,
+    username: rawUsername,
+    display_name: rawName,
     total_xp: (data.totalXp as number) || (data.total_xp as number) || 0,
     current_level: (data.currentLevel as number) || (data.current_level as number) || 1,
     stats: normalizedStats,
     clean_days: (data.streak as number) || (data.clean_days as number) || 0,
     current_rank: (data.currentRank as string) || (data.current_rank as string) || 'E-Rank',
     affinity: (data.affinity as string) || 'AGI',
+    guild_id: (data.guildId as string) || (data.guild_id as string) || null,
+    guild_role: (data.guildRole as 'leader' | 'member') || (data.guild_role as 'leader' | 'member') || null,
+    guild_name: (data.guildName as string) || (data.guild_name as string) || null,
+    guild_tag: (data.guildTag as string) || (data.guild_tag as string) || null,
     hp: (data.hp as number) ?? 100,
     mp: (data.mp as number) ?? 100,
     max_hp: (data.maxHp as number) ?? (data.max_hp as number) ?? 100,

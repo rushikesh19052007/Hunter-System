@@ -1,3 +1,5 @@
+import { startPresence, stopPresence } from './presence-service';
+import { claimUsername, claimHunterId, syncPublicPlayer } from './social-service';
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
   doc,
@@ -74,7 +76,7 @@ export interface HunterContextType {
   dismissLevelUpModal: () => void;
 
   // Actions
-  saveAwakenedProfile: (name: string, primaryStat: string) => Promise<Profile>;
+  saveAwakenedProfile: (name: string, primaryStat: string, customUsername?: string) => Promise<Profile>;
   completeQuest: (questId: string) => void;
   incrementProgress: (questId: string, amount?: number) => void;
   addXp: (amount: number, source?: string) => void;
@@ -188,6 +190,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     setIsLoading(true);
+    const cleanupPresence = startPresence(user.id);
     const hunterDocRef = doc(firestore, 'hunters', user.id);
 
     const unsubscribe: Unsubscribe = onSnapshot(
@@ -197,6 +200,23 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (snapshot.exists()) {
           const rawData = snapshot.data();
           const remoteProfile = deserializeProfileFromFirestore(rawData);
+
+          // Migration safeguard: Ensure valid username & standard Hunter ID
+          if (!remoteProfile.username || remoteProfile.username.length < 3) {
+            const fallback = (remoteProfile.display_name || user.email?.split('@')[0] || 'hunter')
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, '');
+            claimUsername(user.id, fallback).then((u) => {
+              remoteProfile.username = u;
+              syncPublicPlayer(remoteProfile);
+            }).catch(() => {});
+          }
+          if (!remoteProfile.hunter_id || !/^HUNTR-[A-Z0-9]{8}$/.test(remoteProfile.hunter_id)) {
+            claimHunterId(user.id, undefined, remoteProfile.username).then((hid) => {
+              remoteProfile.hunter_id = hid;
+              syncPublicPlayer(remoteProfile);
+            }).catch(() => {});
+          }
 
           // Update local profile state
           setProfile(remoteProfile);
@@ -227,6 +247,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
 
     return () => {
+      cleanupPresence();
       unsubscribe();
     };
   }, [user?.id]);
@@ -251,25 +272,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         { merge: true }
       );
 
-      // Update public leaderboard entry
-      const leaderboardDocRef = doc(firestore, 'leaderboard', profToSync.id);
-      await setDoc(
-        leaderboardDocRef,
-        {
-          id: profToSync.id,
-          hunterId: profToSync.hunter_id,
-          displayName: profToSync.display_name,
-          level: profToSync.current_level,
-          rank: profToSync.current_rank,
-          totalXp: profToSync.total_xp,
-          affinity: profToSync.affinity,
-          equippedTitle: profToSync.equipped_title,
-          questsCompleted: profToSync.quests_completed,
-          streak: profToSync.streak,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      // Sync public player profile & leaderboard registry
+      await syncPublicPlayer(profToSync);
     } catch (err) {
       console.warn('[Hunter Store] Firestore write notice (offline or permission):', err);
     } finally {
@@ -622,9 +626,17 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     syncToFirestore(updatedProf, currentQuests);
   };
 
-  const saveAwakenedProfile = async (name: string, primaryStat: string): Promise<Profile> => {
+  const saveAwakenedProfile = async (name: string, primaryStat: string, customUsername?: string): Promise<Profile> => {
     const uid = user?.id || `hunter_${Date.now()}`;
-    const newProfile = createDefaultProfile(uid, name, primaryStat);
+    const targetUsername = customUsername || name;
+    let cleanUsername = targetUsername.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+    if (cleanUsername.length < 3) cleanUsername = 'hunter_' + Math.random().toString(36).slice(2, 6);
+    
+    cleanUsername = await claimUsername(uid, cleanUsername);
+    const hid = await claimHunterId(uid, undefined, cleanUsername);
+    const newProfile = createDefaultProfile(uid, name, primaryStat, cleanUsername);
+    newProfile.hunter_id = hid;
+    newProfile.username = cleanUsername;
 
     // Create starter quests matching Flutter
     const starterQuests: Quest[] = [

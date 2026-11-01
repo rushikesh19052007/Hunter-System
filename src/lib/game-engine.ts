@@ -1,3 +1,28 @@
+
+// ============================================================
+// USERNAME & HUNTER ID UTILITIES
+// ============================================================
+
+export const normalizeUsername = (raw: string): string => {
+  return (raw || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_]/g, '');
+};
+
+export const isValidUsername = (username: string): boolean => {
+  return /^[a-z0-9_]{3,20}$/.test(username);
+};
+
+export const generateUniqueHunterId = (): string => {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `HUNTR-${result}`;
+};
+
 // Hunter System Core Game Engine — v2.0
 
 // ============================================================
@@ -194,7 +219,12 @@ export interface SkillPoints {
 export type Profile = {
   id: string;
   hunter_id: string;
+  username: string;
   display_name: string;
+  guild_id?: string | null;
+  guild_role?: 'leader' | 'member' | null;
+  guild_name?: string | null;
+  guild_tag?: string | null;
   total_xp: number;
   current_level: number;
   stats: Record<string, number>;
@@ -445,15 +475,8 @@ export const PROFILE_FRAMES: Record<string, string> = {
 // HUNTER ID GENERATOR
 // ============================================================
 
-export const generateHunterId = (userId: string, affinity: string): string => {
-  const cleanId = (userId || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  let first6 = cleanId.slice(0, 6);
-  if (first6.length < 6) {
-    const fallback = Math.random().toString(36).substring(2, 8).toUpperCase();
-    first6 = (first6 + fallback).slice(0, 6);
-  }
-  const cleanAffinity = (affinity || 'AGI').toUpperCase().trim();
-  return `HUNTER-${first6}-${cleanAffinity}`;
+export const generateHunterId = (_userId?: string, _affinity?: string): string => {
+  return generateUniqueHunterId();
 };
 
 // ============================================================
@@ -488,8 +511,9 @@ export function getDifficultyStars(difficulty: DifficultyGrade | string): string
 // DEFAULT PROFILE FACTORY
 // ============================================================
 
-export function createDefaultProfile(id: string, name: string, affinity: string): Profile {
-  const hunterId = generateHunterId(id, affinity);
+export function createDefaultProfile(id: string, name: string, affinity: string, customUsername?: string): Profile {
+  const hunterId = generateUniqueHunterId();
+  const username = normalizeUsername(customUsername || name || 'hunter');
   const initialStats: Record<string, number> = {
     STR: 10, AGI: 10, VIT: 10, INT: 10, PERC: 10,
   };
@@ -500,7 +524,12 @@ export function createDefaultProfile(id: string, name: string, affinity: string)
   return {
     id,
     hunter_id: hunterId,
+    username,
     display_name: name,
+    guild_id: null,
+    guild_role: null,
+    guild_name: null,
+    guild_tag: null,
     total_xp: 15,
     current_level: 1,
     stats: initialStats,
@@ -548,10 +577,23 @@ export function createDefaultProfile(id: string, name: string, affinity: string)
 
 /** Migrate an old profile shape to v2 */
 export function migrateProfile(old: Partial<Profile> & Record<string, unknown>): Profile {
+  const rawId = (old.id as string) || 'hunter-' + Math.random().toString(36).slice(2, 9);
+  const rawName = (old.display_name as string) || (old.displayName as string) || 'Awakened Hunter';
+  const rawUsername = (old.username as string) || normalizeUsername(rawName);
+  let hunterId = (old.hunter_id as string) || (old.hunterId as string) || '';
+  if (!/^HUNTR-[A-Z0-9]{8}$/.test(hunterId)) {
+    hunterId = generateUniqueHunterId();
+  }
+
   return {
-    id: (old.id as string) || 'hunter-' + Math.random().toString(36).slice(2, 9),
-    hunter_id: (old.hunter_id as string) || generateHunterId((old.id as string) || '', (old.affinity as string) || 'AGI'),
-    display_name: (old.display_name as string) || 'Awakened Hunter',
+    id: rawId,
+    hunter_id: hunterId,
+    username: rawUsername,
+    display_name: rawName,
+    guild_id: (old.guild_id as string) || (old.guildId as string) || null,
+    guild_role: (old.guild_role as 'leader' | 'member') || (old.guildRole as 'leader' | 'member') || null,
+    guild_name: (old.guild_name as string) || (old.guildName as string) || null,
+    guild_tag: (old.guild_tag as string) || (old.guildTag as string) || null,
     total_xp: (old.total_xp as number) || 0,
     current_level: (old.current_level as number) || 1,
     stats: (old.stats as Record<string, number>) || { STR: 10, AGI: 10, VIT: 10, INT: 10, PERC: 10 },

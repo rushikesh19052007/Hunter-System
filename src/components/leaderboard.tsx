@@ -1,3 +1,4 @@
+import { PlayerProfileModal } from './player-profile-modal';
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -213,6 +214,7 @@ export const Leaderboard: React.FC = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState<SortFilter>('xp');
   const [rankFilter, setRankFilter] = useState<string>('ALL');
+  const [selectedPlayerUid, setSelectedPlayerUid] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [hunters, setHunters] = useState<Profile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -626,9 +628,11 @@ export const Leaderboard: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.4) }}
+                onClick={() => setSelectedPlayerUid(hunter.id)}
+                style={{ cursor: 'pointer' }}
                 className={`leaderboard-row ${rankStyle.bg} ${
                   isCurrentUser ? 'current-user-row' : ''
-                }`}
+                } hover:border-cyan-500/40 transition`}
               >
                 {/* Rank Column */}
                 <div className="col-rank">
@@ -699,6 +703,13 @@ export const Leaderboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {selectedPlayerUid && (
+        <PlayerProfileModal
+          playerUid={selectedPlayerUid}
+          onClose={() => setSelectedPlayerUid(null)}
+        />
+      )}
     </div>
   );
 };
