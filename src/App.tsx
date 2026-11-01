@@ -220,6 +220,7 @@ const HunterAppContent: React.FC = () => {
   const {
     profile,
     isLoading: isHunterLoading,
+    needsAwakening,
     showLevelUpModal,
     leveledUpTo,
     newRankAchieved,
@@ -289,8 +290,8 @@ const HunterAppContent: React.FC = () => {
     );
   }
 
-  // Determine if in awakening sequence (only if no profile exists or user requested replay)
-  const isAwakening = !profile || replayAwakening;
+  // Determine if in awakening sequence (no profile yet, first-time user, or replay)
+  const isAwakening = !profile || needsAwakening || replayAwakening;
 
   return (
     <div className="hunter-system-app">

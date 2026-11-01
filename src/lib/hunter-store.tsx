@@ -60,6 +60,7 @@ export interface HunterContextType {
   dailyQuests: Quest[];
   isOnboarded: boolean;
   isLoading: boolean;
+  needsAwakening: boolean;
   primaryAffinity: string | null;
   unlockedAchievements: string[];
   activeBonus: Quest | null;
@@ -135,6 +136,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeBonus, setActiveBonus] = useState<Quest | null>(null);
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [needsAwakening, setNeedsAwakening] = useState<boolean>(false);
 
   // Level Up Modal State
   const [showLevelUpModal, setShowLevelUpModal] = useState<boolean>(false);
@@ -209,87 +211,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setUnlockedAchievements(rawData.badges);
           }
         } else {
-          // No profile in cloud yet: check if we should initialize default from auth info
-          const preferredAffinity = localStorage.getItem('hunter_preferred_affinity') || 'AGI';
-          const defaultProf = createDefaultProfile(
-            user.id,
-            user.name || user.email?.split('@')[0] || 'Awakened Hunter',
-            preferredAffinity
-          );
-
-          // Initial starter quests matching Flutter
-          const starterQuests: Quest[] = [
-            {
-              id: `starter-1_${Date.now()}`,
-              user_id: user.id,
-              name: '20 Push-ups',
-              description: 'Standard push-ups with proper form',
-              difficulty: 'E',
-              category: 'physical',
-              stat: 'STR',
-              progress: 0,
-              target: 20,
-              completed: false,
-              xp_reward: 15,
-              stat_xp_reward: 10,
-              stat_xp_type: 'physical',
-              repeatable: 'daily',
-            },
-            {
-              id: `starter-2_${Date.now()}`,
-              user_id: user.id,
-              name: '30s Plank',
-              description: 'Core stabilization hold',
-              difficulty: 'E',
-              category: 'physical',
-              stat: 'VIT',
-              progress: 0,
-              target: 30,
-              completed: false,
-              xp_reward: 15,
-              stat_xp_reward: 10,
-              stat_xp_type: 'physical',
-              repeatable: 'daily',
-            },
-            {
-              id: `starter-3_${Date.now()}`,
-              user_id: user.id,
-              name: 'LeetCode Problem',
-              description: 'Solve 1 algorithmic or coding problem',
-              difficulty: 'D',
-              category: 'coding',
-              stat: 'INT',
-              progress: 0,
-              target: 1,
-              completed: false,
-              xp_reward: 35,
-              stat_xp_reward: 20,
-              stat_xp_type: 'mental',
-              repeatable: 'daily',
-            },
-            {
-              id: `starter-4_${Date.now()}`,
-              user_id: user.id,
-              name: '20 Pages Deep Reading',
-              description: 'Continuous technical or personal development reading',
-              difficulty: 'E',
-              category: 'study',
-              stat: 'PERC',
-              progress: 0,
-              target: 20,
-              completed: false,
-              xp_reward: 15,
-              stat_xp_reward: 10,
-              stat_xp_type: 'mental',
-              repeatable: 'daily',
-            },
-          ];
-
-          setProfile(defaultProf);
-          setQuests(starterQuests);
-
-          // Sync to Firestore
-          syncToFirestore(defaultProf, starterQuests);
+          // No profile in cloud yet: user needs to go through System Awakening
+          setNeedsAwakening(true);
         }
       },
       (error) => {
@@ -697,9 +620,80 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const saveAwakenedProfile = async (name: string, primaryStat: string): Promise<Profile> => {
     const uid = user?.id || `hunter_${Date.now()}`;
     const newProfile = createDefaultProfile(uid, name, primaryStat);
+
+    // Create starter quests matching Flutter
+    const starterQuests: Quest[] = [
+      {
+        id: `starter-1_${Date.now()}`,
+        user_id: uid,
+        name: '20 Push-ups',
+        description: 'Standard push-ups with proper form',
+        difficulty: 'E',
+        category: 'physical',
+        stat: 'STR',
+        progress: 0,
+        target: 20,
+        completed: false,
+        xp_reward: 15,
+        stat_xp_reward: 10,
+        stat_xp_type: 'physical',
+        repeatable: 'daily',
+      },
+      {
+        id: `starter-2_${Date.now()}`,
+        user_id: uid,
+        name: '30s Plank',
+        description: 'Core stabilization hold',
+        difficulty: 'E',
+        category: 'physical',
+        stat: 'VIT',
+        progress: 0,
+        target: 30,
+        completed: false,
+        xp_reward: 15,
+        stat_xp_reward: 10,
+        stat_xp_type: 'physical',
+        repeatable: 'daily',
+      },
+      {
+        id: `starter-3_${Date.now()}`,
+        user_id: uid,
+        name: 'LeetCode Problem',
+        description: 'Solve 1 algorithmic or coding problem',
+        difficulty: 'D',
+        category: 'coding',
+        stat: 'INT',
+        progress: 0,
+        target: 1,
+        completed: false,
+        xp_reward: 35,
+        stat_xp_reward: 20,
+        stat_xp_type: 'mental',
+        repeatable: 'daily',
+      },
+      {
+        id: `starter-4_${Date.now()}`,
+        user_id: uid,
+        name: '20 Pages Deep Reading',
+        description: 'Continuous technical or personal development reading',
+        difficulty: 'E',
+        category: 'study',
+        stat: 'PERC',
+        progress: 0,
+        target: 20,
+        completed: false,
+        xp_reward: 15,
+        stat_xp_reward: 10,
+        stat_xp_type: 'mental',
+        repeatable: 'daily',
+      },
+    ];
+
     setProfile(newProfile);
+    setQuests(starterQuests);
+    setNeedsAwakening(false);
     audioService.playAwakening();
-    await syncToFirestore(newProfile, quests);
+    await syncToFirestore(newProfile, starterQuests);
     return newProfile;
   };
 
@@ -724,15 +718,17 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         const hunterDocRef = doc(firestore, 'hunters', user.id);
         const defaultProf = createDefaultProfile(user.id, user.name || 'Awakened Hunter', 'AGI');
-        setProfile(defaultProf);
+        setProfile(null);
         setQuests([]);
         setUnlockedAchievements(['first_blood']);
+        setNeedsAwakening(true);
         await syncToFirestore(defaultProf, []);
       } catch {}
     } else {
       localStorage.clear();
       setProfile(null);
       setQuests([]);
+      setNeedsAwakening(true);
     }
   };
 
@@ -744,6 +740,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         dailyQuests,
         isOnboarded: profile !== null,
         isLoading,
+        needsAwakening,
         primaryAffinity: profile?.affinity || null,
         unlockedAchievements,
         activeBonus,
