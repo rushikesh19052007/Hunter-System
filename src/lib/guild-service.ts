@@ -165,19 +165,16 @@ export async function searchGuilds(
   joinTypeFilter: 'all' | 'open' | 'request' = 'all'
 ): Promise<Guild[]> {
   try {
-    let q = query(collection(firestore, 'guilds'), orderBy('memberCount', 'desc'), limit(50));
-
-    if (joinTypeFilter !== 'all') {
-      q = query(
-        collection(firestore, 'guilds'),
-        where('joinType', '==', joinTypeFilter),
-        orderBy('memberCount', 'desc'),
-        limit(50)
-      );
-    }
-
-    const snap = await getDocs(q);
+    const snap = await getDocs(query(collection(firestore, 'guilds'), limit(100)));
     let list: Guild[] = snap.docs.map((d) => d.data() as Guild);
+
+    // Sort by memberCount descending
+    list.sort((a, b) => (Number(b.memberCount) || 0) - (Number(a.memberCount) || 0));
+
+    // Filter by joinType in-memory to prevent missing composite index errors
+    if (joinTypeFilter !== 'all') {
+      list = list.filter((g) => (g.joinType || 'open') === joinTypeFilter);
+    }
 
     const term = searchText.trim().toLowerCase();
     if (term) {
