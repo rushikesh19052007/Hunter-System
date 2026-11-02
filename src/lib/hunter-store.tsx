@@ -22,6 +22,9 @@ import {
   migrateProfile,
   migrateDifficulty,
   createDefaultProfile,
+  DEFAULT_PERSONAL_RECORDS,
+  type PersonalRecords,
+  type SystemLogEntry,
 } from './game-engine';
 import QUEST_LIBRARY, { type LibraryQuest } from './quest-library';
 import { checkNewAchievements, type NewUnlock } from './achievements';
@@ -54,6 +57,7 @@ export interface HunterContextType {
   activeBonus: Quest | null;
   activeDungeon: DungeonBreak | null;
   activeBossQuest: BossQuest | null;
+  promotionCelebration: PromotionCelebration | null;
 
   // Actions
   saveAwakenedProfile: (name: string, primaryStat: string) => Promise<Profile>;
@@ -69,6 +73,8 @@ export interface HunterContextType {
   dismissDungeonBreak: () => void;
   completeBossQuest: () => void;
   dismissBossQuest: () => void;
+  dismissPromotionCelebration: () => void;
+  updatePersonalRecord: (recordId: string, newValue: number, customName?: string, unit?: string, category?: 'physical' | 'mental' | 'coding' | 'study') => void;
   equipTitle: (title: string) => void;
   allocateSkillPoint: (skill: keyof Profile['skill_points']) => void;
   refreshDaily: () => void;
@@ -77,6 +83,25 @@ export interface HunterContextType {
   // Legacy compatibility
   auth: { isAuthenticated: boolean; user: { id: string; email: string } | null };
 }
+
+export interface PromotionCelebration {
+  prevRank: string;
+  newRank: string;
+  statPointsGranted: number;
+  skillPointsGranted: number;
+  unlockedTitles: string[];
+  frameUnlocked?: string;
+  hpBonus: number;
+  mpBonus: number;
+}
+
+export const RANK_STAT_POINT_REWARDS: Record<string, number> = {
+  'D-Rank': 10,
+  'C-Rank': 15,
+  'B-Rank': 20,
+  'A-Rank': 25,
+  'S-Rank': 35,
+};
 
 const HunterContext = createContext<HunterContextType | undefined>(undefined);
 
@@ -142,6 +167,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeBonus, setActiveBonus] = useState<Quest | null>(null);
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
   const [activeBossQuest, setActiveBossQuest] = useState<BossQuest | null>(null);
+  const [promotionCelebration, setPromotionCelebration] = useState<PromotionCelebration | null>(null);
+  const dismissPromotionCelebration = () => setPromotionCelebration(null);
 
   // Legacy auth state
   const [auth] = useState(() => {
@@ -1070,6 +1097,67 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
+  const updatePersonalRecord = (
+    recordId: string,
+    newValue: number,
+    customName?: string,
+    unit?: string,
+    category?: 'physical' | 'mental' | 'coding' | 'study'
+  ) => {
+    if (!profile) return;
+    const existingRecord = profile.personal_records[recordId];
+    if (!existingRecord && !customName) return;
+
+    const record = existingRecord || {
+      id: recordId,
+      name: customName || recordId,
+      value: 0,
+      unit: unit || 'units',
+      category: category || 'physical',
+      achievedAt: new Date().toISOString(),
+    };
+
+    const isNewRecord = newValue > record.value;
+    const logEntry = isNewRecord ? {
+      id: `log-${Date.now()}-rec`,
+      timestamp: Date.now(),
+      event_type: 'record' as const,
+      message: `📈 NEW PERSONAL RECORD: ${record.name} — ${record.value} → ${newValue} ${record.unit}`,
+    } : null;
+
+    setProfile(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        personal_records: {
+          ...prev.personal_records,
+          [recordId]: {
+            ...record,
+            ...(customName ? { name: customName } : {}),
+            ...(unit ? { unit } : {}),
+            ...(category ? { category } : {}),
+            previousValue: record.value,
+            value: newValue,
+            achievedAt: new Date().toISOString(),
+          },
+        },
+        system_log: logEntry
+          ? [logEntry, ...(prev.system_log || [])].slice(0, 20)
+          : prev.system_log,
+      };
+    });
+
+    if (isNewRecord) {
+      scheduleNotification({
+        title: '📈 NEW PERSONAL RECORD',
+        message: `${record.name}: ${record.value} → ${newValue} ${record.unit}. Keep pushing!`,
+        priority: 'high',
+        category: 'system',
+        playSound: true,
+      });
+    }
+  };
+
   const addXp = (amount: number, source: string = 'General') => {
     if (!profile) return;
     addXpToProfile(profile, amount, source);
@@ -1156,6 +1244,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       activeBonus,
       activeDungeon,
       activeBossQuest,
+      promotionCelebration,
       saveAwakenedProfile,
       completeQuest,
       incrementProgress,
@@ -1169,13 +1258,15 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       dismissDungeonBreak,
       completeBossQuest,
       dismissBossQuest,
+      dismissPromotionCelebration,
+      updatePersonalRecord,
       equipTitle,
       allocateSkillPoint,
       refreshDaily,
       acceptLibraryQuest,
       deleteQuest,
     }),
-    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon, activeBossQuest]
+    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon, activeBossQuest, promotionCelebration]
   );
 
   return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;

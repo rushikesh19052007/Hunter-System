@@ -240,6 +240,72 @@ export type Profile = {
   
   // Stat points (v3)
   available_stat_points?: number;
+
+  // Personal Records (v3 Feature 11)
+  personal_records: PersonalRecords;
+};
+
+export interface PersonalRecordItem {
+  id: string;
+  name: string;
+  value: number;
+  unit: string;
+  category: 'physical' | 'mental' | 'coding' | 'study';
+  previousValue?: number;
+  achievedAt: string;
+}
+
+export type PersonalRecords = Record<string, PersonalRecordItem>;
+
+export const DEFAULT_PERSONAL_RECORDS: PersonalRecords = {
+  pushups: {
+    id: 'pushups',
+    name: 'Max Push-ups in Single Set',
+    value: 20,
+    unit: 'reps',
+    category: 'physical',
+    achievedAt: new Date().toISOString(),
+  },
+  squats: {
+    id: 'squats',
+    name: 'Max Squats in Single Set',
+    value: 30,
+    unit: 'reps',
+    category: 'physical',
+    achievedAt: new Date().toISOString(),
+  },
+  run_distance: {
+    id: 'run_distance',
+    name: 'Longest Continuous Run',
+    value: 3,
+    unit: 'km',
+    category: 'physical',
+    achievedAt: new Date().toISOString(),
+  },
+  coding_challenges: {
+    id: 'coding_challenges',
+    name: 'LeetCode / Algorithmic Problems',
+    value: 5,
+    unit: 'problems',
+    category: 'coding',
+    achievedAt: new Date().toISOString(),
+  },
+  study_session: {
+    id: 'study_session',
+    name: 'Deep Focus Study Session',
+    value: 60,
+    unit: 'mins',
+    category: 'study',
+    achievedAt: new Date().toISOString(),
+  },
+  plank_hold: {
+    id: 'plank_hold',
+    name: 'Max Plank Hold Time',
+    value: 60,
+    unit: 'sec',
+    category: 'physical',
+    achievedAt: new Date().toISOString(),
+  },
 };
 
 export interface SystemLogEntry {
@@ -536,6 +602,7 @@ export function createDefaultProfile(id: string, name: string, affinity: string)
     skill_points: { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 },
     available_skill_points: 0,
     available_stat_points: 0,
+    personal_records: { ...DEFAULT_PERSONAL_RECORDS },
 
     system_log: [{
       id: 'log-init',
@@ -588,6 +655,7 @@ export function migrateProfile(old: Partial<Profile> & Record<string, unknown>):
     skill_points: (old.skill_points as SkillPoints) || { strength: 0, intelligence: 0, endurance: 0, discipline: 0, focus: 0, agility: 0 },
     available_skill_points: (old.available_skill_points as number) || 0,
     available_stat_points: (old.available_stat_points as number) || 0,
+    personal_records: (old.personal_records as PersonalRecords) || { ...DEFAULT_PERSONAL_RECORDS },
 
     system_log: (old.system_log as SystemLogEntry[]) || [],
   };
