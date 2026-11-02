@@ -1,6 +1,10 @@
+import { FriendsPage } from '@/routes/dashboard/friends-page';
+import { GuildsPage } from '@/routes/dashboard/guilds-page';
+import { NotFoundPage } from '@/routes/not-found-page';
 import React, { useState, useEffect } from 'react';
 import { HunterProvider, useHunter } from '@/lib/hunter-store';
-import { AuthProvider, AuthGate, useAuth } from '@/lib/auth';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { HunterAuthScreen } from '@/components/hunter-auth-screen';
 import { SystemAwakening } from '@/routes/onboarding/system-awakening';
 import { HunterHub } from '@/routes/dashboard/hunter-hub';
 import { ProfilePage } from '@/routes/dashboard/profile-page';
@@ -14,23 +18,138 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldAlert,
+  Users,
+  Shield,
   CheckCircle,
   Bell,
   X,
   LayoutDashboard,
-  Trophy,
   LogOut,
-  User,
   Sparkles,
-  RotateCcw,
   Settings,
   Sun,
   Moon,
 } from 'lucide-react';
 import { NotificationCenterModal } from '@/components/notification-center-modal';
 import { SystemSettingsModal } from '@/components/system-settings-modal';
+import { LevelUpDialog } from '@/components/level-up-dialog';
 import './index.css';
 import './App.css';
+
+// ============================================================
+// SYSTEM ERROR BOUNDARY
+// Prevents blank screens on any unexpected client runtime exception
+// ============================================================
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[System Error Boundary Intercepted]', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            minHeight: '100vh',
+            backgroundColor: '#040714',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            fontFamily: "'Inter', sans-serif",
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              padding: '32px 24px',
+              backgroundColor: '#0a0e20',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <div
+              style={{
+                color: '#ef4444',
+                fontSize: '13px',
+                fontWeight: 900,
+                letterSpacing: '2px',
+                marginBottom: '10px',
+                textTransform: 'uppercase',
+              }}
+            >
+              [SYSTEM ANOMALY DETECTED]
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px', lineHeight: 1.5 }}>
+              The Hunter Interface encountered an unexpected state error:
+              <br />
+              <code
+                style={{
+                  color: '#f87171',
+                  fontSize: '11px',
+                  display: 'inline-block',
+                  marginTop: '8px',
+                  backgroundColor: '#050814',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #1f293d',
+                }}
+              >
+                {this.state.error?.message || 'Unknown runtime error'}
+              </code>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('local_hunter_profile');
+                } catch {}
+                window.location.reload();
+              }}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#00e5ff',
+                color: '#040714',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '12px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+              }}
+            >
+              REBOOT HUNTER SYSTEM
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // In-App Notification Toast Overlay
 const SystemNotificationOverlay: React.FC = () => {
@@ -103,14 +222,58 @@ const SystemNotificationOverlay: React.FC = () => {
 
 // Route and Tab Controller
 const HunterAppContent: React.FC = () => {
-  const { isOnboarded, profile } = useHunter();
-  const { user, logout } = useAuth();
-  const [currentRoute, setCurrentRoute] = useState<'onboarding' | 'dashboard'>(() => {
-    return isOnboarded ? 'dashboard' : 'onboarding';
-  });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'profile' | 'leaderboard' | 'settings'>('dashboard');
+  const {
+    profile,
+    isLoading: isHunterLoading,
+    needsAwakening,
+    showLevelUpModal,
+    leveledUpTo,
+    newRankAchieved,
+    dismissLevelUpModal,
+  } = useHunter();
+  const { logout } = useAuth();
+
+  const [replayAwakening, setReplayAwakening] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'guilds' | 'friends' | 'leaderboard' | 'stats' | 'profile' | 'settings'>('dashboard');
+  const [isNotFound, setIsNotFound] = useState<boolean>(false);
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // URL Routing & Custom 404 Interceptor
+  useEffect(() => {
+    const handleRoute = () => {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      if (!path || path === 'dashboard' || path === 'hub') {
+        setActiveTab('dashboard');
+        setIsNotFound(false);
+      } else if (path === 'guilds' || path === 'guild') {
+        setActiveTab('guilds');
+        setIsNotFound(false);
+      } else if (path === 'friends' || path === 'social') {
+        setActiveTab('friends');
+        setIsNotFound(false);
+      } else if (path === 'leaderboard') {
+        setActiveTab('leaderboard');
+        setIsNotFound(false);
+      } else if (path === 'stats') {
+        setActiveTab('stats');
+        setIsNotFound(false);
+      } else if (path === 'profile') {
+        setActiveTab('profile');
+        setIsNotFound(false);
+      } else if (path === 'settings') {
+        setActiveTab('settings');
+        setIsNotFound(false);
+      } else {
+        setIsNotFound(true);
+      }
+    };
+
+    handleRoute();
+    window.addEventListener('popstate', handleRoute);
+    return () => window.removeEventListener('popstate', handleRoute);
+  }, []);
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem('hunter_theme');
@@ -136,21 +299,48 @@ const HunterAppContent: React.FC = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Keep route synced if profile changes
-  useEffect(() => {
-    if (isOnboarded && currentRoute === 'onboarding') {
-      setCurrentRoute('dashboard');
-    } else if (!isOnboarded && currentRoute === 'dashboard') {
-      setCurrentRoute('onboarding');
-    }
-  }, [isOnboarded]);
+  // While Firestore data is initially synchronizing and no profile cached
+  if (isHunterLoading && !profile) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#040714',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#00e5ff',
+          fontFamily: "'Orbitron', 'Inter', sans-serif",
+          gap: '16px',
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid rgba(0, 229, 255, 0.2)',
+            borderTopColor: '#00e5ff',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <div style={{ letterSpacing: '2px', fontWeight: 800, fontSize: '13px' }}>
+          SYNCHRONIZING HUNTER DATABASE...
+        </div>
+      </div>
+    );
+  }
+
+  // Determine if in awakening sequence (no profile yet, first-time user, or replay)
+  const isAwakening = !profile || needsAwakening || replayAwakening;
 
   return (
     <div className="hunter-system-app">
       <SystemNotificationOverlay />
 
       {/* Top Application Header when user has awakened */}
-      {currentRoute === 'dashboard' && (
+      {!isAwakening && (
         <header className="app-main-header">
           <div className="app-header-left">
             <div className="app-brand">
@@ -166,12 +356,34 @@ const HunterAppContent: React.FC = () => {
               <button
                 type="button"
                 id="nav-tab-dashboard"
-                onClick={() => setActiveTab('dashboard')}
-                className={`header-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('dashboard'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'dashboard' && !isNotFound ? 'active' : ''}`}
                 aria-current={activeTab === 'dashboard' ? 'page' : undefined}
               >
                 <LayoutDashboard className="w-4 h-4 mr-1.5" />
                 <span>DASHBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-guilds"
+                onClick={() => { setActiveTab('guilds'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'guilds' && !isNotFound ? 'active' : ''}`}
+                aria-current={activeTab === 'guilds' ? 'page' : undefined}
+              >
+                <Shield className="w-4 h-4 mr-1.5 text-purple-400" />
+                <span>GUILDS</span>
+              </button>
+
+              <button
+                type="button"
+                id="nav-tab-friends"
+                onClick={() => { setActiveTab('friends'); setIsNotFound(false); }}
+                className={`header-tab-btn ${activeTab === 'friends' && !isNotFound ? 'active' : ''}`}
+                aria-current={activeTab === 'friends' ? 'page' : undefined}
+              >
+                <Users className="w-4 h-4 mr-1.5 text-cyan-400" />
+                <span>FRIENDS</span>
               </button>
 
               <button
@@ -192,7 +404,7 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
                 aria-current={activeTab === 'profile' ? 'page' : undefined}
               >
-                <User className="w-4 h-4 mr-1.5 text-purple-400" />
+                <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
                 <span>PROFILE</span>
               </button>
 
@@ -203,7 +415,7 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
                 aria-current={activeTab === 'leaderboard' ? 'page' : undefined}
               >
-                <Trophy className="w-4 h-4 mr-1.5 text-amber-400" />
+                <Sparkles className="w-4 h-4 mr-1.5 text-pink-400" />
                 <span>LEADERBOARD</span>
               </button>
 
@@ -214,40 +426,14 @@ const HunterAppContent: React.FC = () => {
                 className={`header-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
                 aria-current={activeTab === 'settings' ? 'page' : undefined}
               >
-                <Settings className="w-4 h-4 mr-1.5 text-slate-400" />
+                <Settings className="w-4 h-4 mr-1.5 text-slate-300" />
                 <span>SETTINGS</span>
               </button>
             </nav>
           </div>
 
           <div className="app-header-right">
-            {/* User identification */}
-            <div className="header-user-meta">
-              <div className="user-avatar-circle">
-                <User className="w-3.5 h-3.5 text-cyan-400" />
-              </div>
-              <div className="user-text-info">
-                <span className="user-display-name">
-                  {profile?.display_name || user?.name || user?.email || 'Hunter'}
-                </span>
-                <span className="user-id-sub">
-                  {profile?.hunter_id || 'ID: PENDING'}
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              id="btn-header-reawakening"
-              onClick={() => setCurrentRoute('onboarding')}
-              className="btn-header-action"
-              title="Re-run Awakening Sequence"
-            >
-              <RotateCcw className="w-4 h-4 text-cyan-400" />
-              <span className="hidden-mobile">AWAKENING</span>
-            </button>
-
-            {/* Notification Center */}
+            {/* System Logs Trigger */}
             <button
               type="button"
               id="btn-header-notifications"
@@ -309,7 +495,7 @@ const HunterAppContent: React.FC = () => {
       {/* Main View Transition */}
       <main className="app-main-body">
         <AnimatePresence mode="wait">
-          {currentRoute === 'onboarding' ? (
+          {isAwakening ? (
             <motion.div
               key="onboarding-route"
               initial={{ opacity: 0 }}
@@ -317,7 +503,23 @@ const HunterAppContent: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <SystemAwakening onComplete={() => setCurrentRoute('dashboard')} />
+              <SystemAwakening onComplete={() => setReplayAwakening(false)} />
+            </motion.div>
+          ) : isNotFound ? (
+            <motion.div
+              key="not-found-route"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <NotFoundPage
+                onReturnToBase={() => {
+                  window.history.pushState({}, '', '/');
+                  setActiveTab('dashboard');
+                  setIsNotFound(false);
+                }}
+              />
             </motion.div>
           ) : activeTab === 'dashboard' ? (
             <motion.div
@@ -327,7 +529,27 @@ const HunterAppContent: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <HunterHub onReplayAwakening={() => setCurrentRoute('onboarding')} />
+              <HunterHub onReplayAwakening={() => setReplayAwakening(true)} />
+            </motion.div>
+          ) : activeTab === 'guilds' ? (
+            <motion.div
+              key="guilds-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <GuildsPage />
+            </motion.div>
+          ) : activeTab === 'friends' ? (
+            <motion.div
+              key="friends-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FriendsPage />
             </motion.div>
           ) : activeTab === 'stats' ? (
             <motion.div
@@ -385,7 +607,18 @@ const HunterAppContent: React.FC = () => {
         {showSettings && (
           <SystemSettingsModal
             onClose={() => setShowSettings(false)}
-            onReplayAwakening={() => setCurrentRoute('onboarding')}
+            onReplayAwakening={() => setReplayAwakening(true)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Level Up Celebration Dialog */}
+      <AnimatePresence>
+        {showLevelUpModal && (
+          <LevelUpDialog
+            newLevel={leveledUpTo}
+            newRank={newRankAchieved}
+            onDismiss={dismissLevelUpModal}
           />
         )}
       </AnimatePresence>
@@ -393,15 +626,60 @@ const HunterAppContent: React.FC = () => {
   );
 };
 
+// Top-level Auth Barrier
+const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#040714',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#00e5ff',
+          fontFamily: "'Orbitron', 'Inter', sans-serif",
+          gap: '16px',
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid rgba(0, 229, 255, 0.2)',
+            borderTopColor: '#00e5ff',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        <div style={{ letterSpacing: '2px', fontWeight: 800, fontSize: '13px' }}>
+          INITIALIZING HUNTER SYSTEM...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <HunterAuthScreen />;
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   return (
-    <AuthProvider>
-      <AuthGate>
-        <HunterProvider>
-          <HunterAppContent />
-        </HunterProvider>
-      </AuthGate>
-    </AuthProvider>
+    <SystemErrorBoundary>
+      <AuthProvider>
+        <AuthGate>
+          <HunterProvider>
+            <HunterAppContent />
+          </HunterProvider>
+        </AuthGate>
+      </AuthProvider>
+    </SystemErrorBoundary>
   );
 }
 

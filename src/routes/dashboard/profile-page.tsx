@@ -48,9 +48,9 @@ export const ProfilePage: React.FC = () => {
   const physicalXpToNextThreshold = 500 - (profile.physical_xp % 500);
   const mentalXpToNextThreshold = 500 - (profile.mental_xp % 500);
 
-  const skillKeys = Object.keys(profile.skill_points) as (keyof typeof profile.skill_points)[];
+  const skillKeys = Object.keys(profile.skill_points || {}) as (keyof typeof profile.skill_points)[];
 
-  const SKILL_LABELS: Record<keyof typeof profile.skill_points, { label: string; desc: string; icon: React.ReactNode }> = {
+  const SKILL_LABELS: Record<string, { label: string; desc: string; icon: React.ReactNode }> = {
     strength: { label: 'Strength', desc: '+5% Physical Quest rewards', icon: <Dumbbell className="w-4 h-4 text-red-400" /> },
     intelligence: { label: 'Intelligence', desc: '+5% Mental Quest rewards', icon: <Brain className="w-4 h-4 text-purple-400" /> },
     endurance: { label: 'Endurance', desc: '+5% Streak bonuses', icon: <TrendingUp className="w-4 h-4 text-emerald-400" /> },
@@ -58,6 +58,15 @@ export const ProfilePage: React.FC = () => {
     focus: { label: 'Focus', desc: '+5% Daily quest rewards', icon: <Target className="w-4 h-4 text-amber-400" /> },
     agility: { label: 'Agility', desc: '+5% Time-based quest bonuses', icon: <Zap className="w-4 h-4 text-sky-400" /> },
   };
+
+  const stats = profile.stats || {};
+  const combatPower =
+    (profile.current_level || 1) * 45 +
+    (stats['STR'] || 10) * 12 +
+    (stats['AGI'] || 10) * 11 +
+    (stats['VIT'] || 10) * 10 +
+    (stats['INT'] || 10) * 13 +
+    (stats['PERC'] || 10) * 9;
 
   return (
     <div className="profile-page">
@@ -87,6 +96,10 @@ export const ProfilePage: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
               LVL {profile.current_level}
             </span>
+            <span className="hero-pill" style={{ borderColor: 'rgba(236, 72, 153, 0.5)', color: '#ec4899' }}>
+              <Zap className="w-3.5 h-3.5 text-pink-400" />
+              POWER {combatPower.toLocaleString()}
+            </span>
             <span className="hero-pill">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
               {profile.total_xp.toLocaleString()} XP
@@ -100,6 +113,29 @@ export const ProfilePage: React.FC = () => {
               {profile.quests_completed} quests
             </span>
           </div>
+
+          {/* SP Available Banner */}
+          {profile.available_skill_points > 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 14px',
+                background: 'linear-gradient(135deg, #854d0e, #ca8a04)',
+                borderRadius: '10px',
+                color: '#fff',
+                fontWeight: 900,
+                fontSize: '12px',
+                letterSpacing: '1px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 0 15px rgba(245, 158, 11, 0.3)',
+              }}
+            >
+              <Star className="w-4 h-4 text-amber-200 animate-pulse" />
+              <span>UNASSIGNED POINTS: {profile.available_skill_points} SP AVAILABLE</span>
+            </div>
+          )}
         </div>
 
         {/* XP Bar */}

@@ -1,15 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useHunter } from '@/lib/hunter-store';
 import {
-  ShieldAlert, Download, Upload, RefreshCcw, HardDrive, User, Calendar,
-  Trash2, Wifi, WifiOff, Monitor, Globe, Cpu, CheckCircle,
+  ShieldAlert,
+  Download,
+  Upload,
+  User,
+  Calendar,
+  Trash2,
+  Wifi,
+  WifiOff,
+  Monitor,
+  Globe,
+  Cpu,
+  CheckCircle,
+  Copy,
+  Check,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Lock,
+  Mail,
+  Shield,
 } from 'lucide-react';
-import { playSystemChime } from '@/lib/notifications';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { audioService } from '@/lib/audio-service';
+import { getRankBadgeInfo } from '@/lib/game-engine';
 
-// System Vitals Panel
-const SystemVitalsPanel: React.FC = () => {
+export const AccountSettingsPage: React.FC = () => {
+  const { profile, resetHunter, deleteAccount } = useHunter();
+  const [dangerAction, setDangerAction] = useState<'none' | 'reset' | 'delete'>('none');
+  const [confirmText, setConfirmText] = useState('');
+  const [isProcessingDanger, setIsProcessingDanger] = useState(false);
+  const [dangerError, setDangerError] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [copiedId, setCopiedId] = useState(false);
+  const [isMuted, setIsMuted] = useState(audioService.isMuted());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -22,73 +49,64 @@ const SystemVitalsPanel: React.FC = () => {
     };
   }, []);
 
+  if (!profile) return null;
+
+  const rankInfo = getRankBadgeInfo(profile.current_rank);
   const screenRes = `${window.screen.width}×${window.screen.height}`;
   const viewportSize = `${window.innerWidth}×${window.innerHeight}`;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const ua = navigator.userAgent;
   const isMobile = /Android|iPhone|iPad/i.test(ua);
-  const browser = ua.includes('Firefox') ? 'Firefox'
-    : ua.includes('Edg') ? 'Edge'
-    : ua.includes('Chrome') ? 'Chrome'
-    : ua.includes('Safari') ? 'Safari'
+  const browser = ua.includes('Firefox')
+    ? 'Firefox'
+    : ua.includes('Edg')
+    ? 'Edge'
+    : ua.includes('Chrome')
+    ? 'Chrome'
+    : ua.includes('Safari')
+    ? 'Safari'
     : 'Unknown';
 
-  return (
-    <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-6">
-      <h2 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
-        <Cpu className="w-5 h-5 text-emerald-400" /> System Vitals
-      </h2>
-      <div className="space-y-3 text-sm text-slate-300">
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-slate-500 flex items-center gap-1">
-            {isOnline ? <Wifi className="w-3.5 h-3.5 text-emerald-400" /> : <WifiOff className="w-3.5 h-3.5 text-rose-400" />}
-            Network
-          </span>
-          <span className={isOnline ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-            {isOnline ? '● ONLINE' : '● OFFLINE'}
-          </span>
-        </div>
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-slate-500 flex items-center gap-1"><Monitor className="w-3.5 h-3.5" /> Screen</span>
-          <span className="font-mono text-xs">{screenRes} (viewport: {viewportSize})</span>
-        </div>
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-slate-500">Device Type</span>
-          <span>{isMobile ? '📱 Mobile' : '🖥️ Desktop'}</span>
-        </div>
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-slate-500">Browser</span>
-          <span>{browser}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500 flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Timezone</span>
-          <span className="font-mono text-xs">{timezone}</span>
-        </div>
-      </div>
-    </div>
+  const daysActive = Math.max(
+    1,
+    Math.floor(
+      (Date.now() - new Date(profile.created_at || Date.now()).getTime()) /
+        (1000 * 60 * 60 * 24)
+    )
   );
-};
 
-export const AccountSettingsPage: React.FC = () => {
-  const { profile, resetHunter } = useHunter();
-  const [resetConfirmText, setResetConfirmText] = useState('');
-  const [isResetting, setIsResetting] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
-  const [backupExists, setBackupExists] = useState(false);
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const importRef = useRef<HTMLInputElement>(null);
+  const handleCopyId = () => {
+    audioService.playClick();
+    navigator.clipboard.writeText(profile.hunter_id);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
 
-  if (!profile) return null;
-
-  const daysActive = Math.max(1, Math.floor((Date.now() - (new Date(profile.created_at || Date.now())).getTime()) / (1000 * 60 * 60 * 24)));
+  const handleToggleAudio = () => {
+    const nextMute = !isMuted;
+    audioService.setMuted(nextMute);
+    setIsMuted(nextMute);
+    if (!nextMute) {
+      audioService.playSuccess();
+    }
+  };
 
   // Export full profile + quests + achievements as JSON
   const handleExportBackup = () => {
+    audioService.playClick();
     const quests = (() => {
-      try { return JSON.parse(localStorage.getItem('hunter_system_quests') || '[]'); } catch { return []; }
+      try {
+        return JSON.parse(localStorage.getItem('hunter_system_quests') || '[]');
+      } catch {
+        return [];
+      }
     })();
     const achievements = (() => {
-      try { return JSON.parse(localStorage.getItem('hunter_system_achievements') || '[]'); } catch { return []; }
+      try {
+        return JSON.parse(localStorage.getItem('hunter_system_achievements') || '[]');
+      } catch {
+        return [];
+      }
     })();
 
     const backupData = {
@@ -99,14 +117,18 @@ export const AccountSettingsPage: React.FC = () => {
       achievements,
     };
 
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hunter-backup-${profile.hunter_id || 'profile'}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `hunter-backup-${profile.hunter_id || 'profile'}-${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    playSystemChime('level');
+    audioService.playSuccess();
   };
 
   // Import a previously exported backup
@@ -127,220 +149,855 @@ export const AccountSettingsPage: React.FC = () => {
           localStorage.setItem('hunter_system_achievements', JSON.stringify(data.achievements));
         }
         setImportStatus('success');
-        playSystemChime('level');
-        setTimeout(() => { window.location.reload(); }, 1500);
+        audioService.playLevelUp();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } catch {
         setImportStatus('error');
         setTimeout(() => setImportStatus('idle'), 3000);
       }
     };
     reader.readAsText(file);
-    // Reset input
     if (importRef.current) importRef.current.value = '';
   };
 
-  const handleResetAccount = async () => {
-    if (resetConfirmText !== 'RESET') return;
-    setIsResetting(true);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('backup_profiles').upsert({
-          ...profile,
-          reset_timestamp: new Date().toISOString(),
-          retention_days: 30,
-        });
-        await supabase.from('notifications').delete().eq('user_id', profile.id);
-        await supabase.from('system_log_events').delete().eq('user_id', profile.id);
-        await supabase.from('achievements').delete().eq('user_id', profile.id);
-        await supabase.from('profiles').update({
-          has_backup: true,
-          total_xp: 15,
-          current_level: 1,
-          quests_completed: 0,
-        }).eq('id', profile.id);
-      } catch (e) {
-        console.error('Reset error', e);
-      }
+  const handleResetProgression = async () => {
+    if (confirmText.trim() !== 'RESET') return;
+    setIsProcessingDanger(true);
+    setDangerError(null);
+    try {
+      audioService.playDungeonAlert();
+      await resetHunter();
+      setDangerAction('none');
+      setConfirmText('');
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setDangerError(e?.message || 'Failed to reset hunter progression.');
+    } finally {
+      setIsProcessingDanger(false);
     }
-
-    resetHunter();
-    playSystemChime('alert');
-    setIsResetting(false);
-    setShowWarning(false);
-    setBackupExists(true);
   };
 
-  const handleRecover = () => {
-    if (confirm('Restore all data from backup? This will overwrite your current state.')) {
-      alert('Recovery initiated (Simulated). Your data is being restored.');
-      setBackupExists(false);
+  const handleDeleteAccount = async () => {
+    if (confirmText.trim() !== 'DELETE') return;
+    setIsProcessingDanger(true);
+    setDangerError(null);
+    try {
+      audioService.playDungeonAlert();
+      await deleteAccount();
+      // AuthGate automatically redirects to login screen when user is deleted
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string };
+      if (e?.code === 'auth/requires-recent-login') {
+        setDangerError('For security, deleting your account requires a recent sign-in. Please log out, sign in again, and retry account deletion.');
+      } else {
+        setDangerError(e?.message || 'Failed to delete account.');
+      }
+      setIsProcessingDanger(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-500">
-      <h1 className="text-3xl font-bold tracking-tight text-white mb-6 border-b border-slate-800 pb-4">
-        ACCOUNT SETTINGS
-      </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Account Identity */}
-        <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-cyan-400" /> Account Identity
-          </h2>
-          <div className="space-y-3 text-sm text-slate-300">
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">Hunter ID</span>
-              <span className="font-mono text-cyan-400">{profile.hunter_id}</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">Alias</span>
-              <span>{profile.display_name}</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">Rank</span>
-              <span className="text-amber-400 font-bold">{profile.current_rank}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Account Age</span>
-              <span className="flex items-center gap-1"><Calendar className="w-4 h-4"/> {daysActive} Days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Data & Storage */}
-        <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-slate-200 mb-4 flex items-center gap-2">
-            <HardDrive className="w-5 h-5 text-purple-400" /> Data & Storage
-          </h2>
-          <div className="space-y-3 text-sm text-slate-300">
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">Quests Completed</span>
-              <span>{profile.quests_completed} Records</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">System Log Entries</span>
-              <span>{profile.system_log?.length || 0} Entries</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-500">Total XP Earned</span>
-              <span className="text-cyan-400">{profile.total_xp.toLocaleString()} XP</span>
-            </div>
-
-            {/* Export */}
-            <div className="pt-2 flex flex-wrap gap-2">
-              <button
-                onClick={handleExportBackup}
-                className="text-sm bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" /> Export Backup
-              </button>
-
-              {/* Import */}
-              <label className="text-sm bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/40 text-purple-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer">
-                <Upload className="w-3.5 h-3.5" /> Import Backup
-                <input
-                  ref={importRef}
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={handleImportBackup}
-                />
-              </label>
-            </div>
-
-            {importStatus === 'success' && (
-              <div className="flex items-center gap-2 text-emerald-400 text-xs mt-1">
-                <CheckCircle className="w-3.5 h-3.5" /> Backup imported! Reloading…
-              </div>
-            )}
-            {importStatus === 'error' && (
-              <div className="flex items-center gap-2 text-rose-400 text-xs mt-1">
-                <ShieldAlert className="w-3.5 h-3.5" /> Invalid backup file. Please use a Hunter System export.
-              </div>
-            )}
-          </div>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '28px 20px 80px',
+        color: '#fff',
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
+          marginBottom: '28px',
+        }}
+      >
+        <Sparkles className="w-7 h-7 text-cyan-400" />
+        <div>
+          <h1
+            style={{
+              fontSize: '1.9rem',
+              fontWeight: 900,
+              letterSpacing: '2px',
+              margin: 0,
+              textTransform: 'uppercase',
+              textShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+            }}
+          >
+            ACCOUNT & SYSTEM SETTINGS
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem', margin: '4px 0 0 0' }}>
+            Manage Hunter license identity, local data backups, system diagnostics, and security controls.
+          </p>
         </div>
       </div>
 
-      {/* System Vitals */}
-      <SystemVitalsPanel />
-
-      {/* Danger Zone */}
-      <div className="bg-rose-900/10 border border-rose-500/20 rounded-xl p-6 mt-8">
-        <h2 className="text-xl font-bold text-rose-400 mb-2 flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5" /> Danger Zone
-        </h2>
-        <p className="text-sm text-slate-400 mb-6 max-w-2xl">
-          Account reset will wipe your current progress, level, stats, and quests. A temporary backup will be kept for 30 days.
-          <strong className="text-amber-400 ml-1">Export a backup first!</strong>
-        </p>
-
-        {!showWarning ? (
-          <div className="flex gap-4 flex-wrap">
-            <button
-              onClick={() => setShowWarning(true)}
-              className="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500 text-rose-400 py-2 px-6 rounded-lg font-bold transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              RESET ACCOUNT
-            </button>
-            {backupExists && (
-              <button
-                onClick={handleRecover}
-                className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500 text-cyan-400 py-2 px-6 rounded-lg font-bold transition-colors flex items-center gap-2"
-              >
-                <RefreshCcw className="w-4 h-4" />
-                RECOVER ACCOUNT
-              </button>
-            )}
+      {/* 2-Column Grid of Settings Cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '20px',
+          marginBottom: '28px',
+        }}
+      >
+        {/* Card 1: Account Identity */}
+        <div
+          style={{
+            backgroundColor: '#0c1020',
+            borderRadius: '16px',
+            border: '1px solid #1c253d',
+            padding: '24px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '20px',
+              paddingBottom: '14px',
+              borderBottom: '1px solid #1a233a',
+            }}
+          >
+            <User className="w-5 h-5 text-cyan-400" />
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '1px' }}>
+              HUNTER IDENTITY
+            </h2>
           </div>
-        ) : (
-          <div className="bg-rose-950/40 p-5 rounded-lg border border-rose-500/50">
-            <h3 className="font-bold text-rose-400 mb-3 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5" /> WARNING: ACCOUNT RESET
-            </h3>
-            <div className="text-sm text-rose-200/80 mb-4 space-y-2">
-              <p>This action CANNOT be undone immediately.</p>
-              <p>You will lose: All quests history, levels, ranks, stats, and customization.</p>
-              <p>Your data will be kept in backup for 30 days.</p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Hunter ID</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    color: '#00e5ff',
+                    fontSize: '13px',
+                  }}
+                >
+                  {profile.hunter_id}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  title="Copy Hunter ID"
+                  style={{
+                    background: 'none',
+                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    borderRadius: '6px',
+                    padding: '4px 6px',
+                    color: copiedId ? '#10b981' : '#00e5ff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {copiedId ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
-            <div className="mb-4">
-              <label className="text-xs text-rose-300 block mb-1">Type "RESET" to confirm (case-sensitive)</label>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Alias / Name</span>
+              <span style={{ fontWeight: 800, color: '#fff', fontSize: '14px' }}>
+                {profile.display_name}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Class / Rank</span>
+              <span
+                style={{
+                  padding: '4px 10px',
+                  backgroundColor: `${rankInfo.color}22`,
+                  border: `1px solid ${rankInfo.color}`,
+                  borderRadius: '6px',
+                  color: rankInfo.color,
+                  fontWeight: 900,
+                  fontSize: '12px',
+                }}
+              >
+                {rankInfo.label}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Equipped Title</span>
+              <span style={{ color: '#ffb300', fontWeight: 700, fontSize: '13px' }}>
+                〔{profile.equipped_title || 'The Awakened'}〕
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Account Age</span>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#fff',
+                  fontSize: '13px',
+                }}
+              >
+                <Calendar className="w-3.5 h-3.5 text-cyan-400" /> {daysActive} Days Active
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Data & Storage */}
+        <div
+          style={{
+            backgroundColor: '#0c1020',
+            borderRadius: '16px',
+            border: '1px solid #1c253d',
+            padding: '24px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '20px',
+              paddingBottom: '14px',
+              borderBottom: '1px solid #1a233a',
+            }}
+          >
+            <Shield className="w-5 h-5 text-purple-400" />
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '1px' }}>
+              CLOUD DATA & BACKUPS
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Quests Completed</span>
+              <span style={{ fontWeight: 800, color: '#10b981', fontSize: '14px' }}>
+                {profile.quests_completed} Cleared
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>System Logs</span>
+              <span style={{ fontWeight: 700, color: '#fff', fontSize: '13px' }}>
+                {profile.system_log?.length || 0} Recorded
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '14px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Total Accumulated XP</span>
+              <span style={{ fontWeight: 900, color: '#ffb300', fontSize: '14px' }}>
+                {profile.total_xp.toLocaleString()} XP
+              </span>
+            </div>
+
+            {/* Backup Action Buttons */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                style={{
+                  flex: 1,
+                  minWidth: '140px',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(0, 229, 255, 0.4)',
+                  backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                  color: '#67e8f9',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Download className="w-4 h-4 text-cyan-400" />
+                <span>EXPORT BACKUP</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => importRef.current?.click()}
+                style={{
+                  flex: 1,
+                  minWidth: '140px',
+                  padding: '11px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  color: '#d8b4fe',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Upload className="w-4 h-4 text-purple-400" />
+                <span>IMPORT BACKUP</span>
+              </button>
+
               <input
-                type="text"
-                value={resetConfirmText}
-                onChange={e => setResetConfirmText(e.target.value)}
-                className="bg-black/50 border border-rose-500/50 rounded p-2 text-white outline-none focus:border-rose-400 w-full max-w-sm"
-                placeholder="RESET"
+                ref={importRef}
+                type="file"
+                accept=".json"
+                style={{ display: 'none' }}
+                onChange={handleImportBackup}
               />
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowWarning(false);
-                  setResetConfirmText('');
+            {importStatus === 'success' && (
+              <div
+                style={{
+                  padding: '10px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.5)',
+                  borderRadius: '8px',
+                  color: '#6ee7b7',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
                 }}
-                className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 transition-colors"
               >
-                Cancel
-              </button>
+                <CheckCircle className="w-4 h-4" />
+                <span>Backup verified and imported. Synchronizing...</span>
+              </div>
+            )}
+
+            {importStatus === 'error' && (
+              <div
+                style={{
+                  padding: '10px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '8px',
+                  color: '#fca5a5',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <ShieldAlert className="w-4 h-4" />
+                <span>Invalid backup format. Please select an exported Hunter file.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 3: System Vitals & Diagnostics */}
+        <div
+          style={{
+            backgroundColor: '#0c1020',
+            borderRadius: '16px',
+            border: '1px solid #1c253d',
+            padding: '24px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '20px',
+              paddingBottom: '14px',
+              borderBottom: '1px solid #1a233a',
+            }}
+          >
+            <Cpu className="w-5 h-5 text-emerald-400" />
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '1px' }}>
+              SYSTEM VITALS & DIAGNOSTICS
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {isOnline ? <Wifi className="w-4 h-4 text-emerald-400" /> : <WifiOff className="w-4 h-4 text-rose-400" />}
+                Network Sync
+              </span>
+              <span
+                style={{
+                  color: isOnline ? '#34d399' : '#f87171',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                }}
+              >
+                {isOnline ? '● ONLINE (LIVE SYNC)' : '● OFFLINE (CACHE)'}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Monitor className="w-4 h-4 text-cyan-400" /> Display
+              </span>
+              <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#cbd5e1' }}>
+                {screenRes} ({viewportSize})
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Client Platform</span>
+              <span style={{ fontSize: '13px', color: '#fff', fontWeight: 600 }}>
+                {isMobile ? '📱 Mobile Browser' : '🖥️ Desktop Web Client'}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>Browser Engine</span>
+              <span style={{ fontSize: '13px', color: '#67e8f9', fontWeight: 700 }}>
+                {browser}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Globe className="w-4 h-4 text-indigo-400" /> Timezone
+              </span>
+              <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#cbd5e1' }}>
+                {timezone}
+              </span>
+            </div>
+
+            {/* Audio Toggle */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
+                Audio Feedback
+              </span>
               <button
-                onClick={handleResetAccount}
-                disabled={resetConfirmText !== 'RESET' || isResetting}
-                className="px-4 py-2 bg-rose-600 text-white font-bold rounded hover:bg-rose-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                type="button"
+                onClick={handleToggleAudio}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: isMuted ? '1px solid #334155' : '1px solid #00e5ff',
+                  backgroundColor: isMuted ? 'transparent' : 'rgba(0, 229, 255, 0.1)',
+                  color: isMuted ? '#64748b' : '#00e5ff',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
               >
-                {isResetting ? <RefreshCcw className="w-4 h-4 animate-spin" /> : null}
-                Confirm Reset
+                {isMuted ? 'SOUND MUTED' : 'SOUND ACTIVE'}
               </button>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Card 4: Danger Zone */}
+        <div
+          style={{
+            backgroundColor: '#0c1020',
+            borderRadius: '16px',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            padding: '24px',
+            boxShadow: '0 8px 24px rgba(239, 68, 68, 0.15)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '16px',
+              paddingBottom: '14px',
+              borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <ShieldAlert className="w-5 h-5 text-red-500" />
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#f87171', letterSpacing: '1px' }}>
+              DANGER ZONE
+            </h2>
+          </div>
+
+          <p style={{ color: '#cbd5e1', fontSize: '0.85rem', lineHeight: '1.5', margin: '0 0 16px 0' }}>
+            Choose whether to reset your Hunter progression or permanently delete your account. Both actions completely remove your presence from the Global Leaderboard.
+          </p>
+
+          {dangerError && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid #ef4444',
+                color: '#fca5a5',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                marginBottom: '14px',
+              }}
+            >
+              {dangerError}
+            </div>
+          )}
+
+          {dangerAction === 'none' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setDangerAction('reset');
+                  setConfirmText('');
+                  setDangerError(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(239, 68, 68, 0.6)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#f87171',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>RESET HUNTER PROGRESSION & LEADERBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDangerAction('delete');
+                  setConfirmText('');
+                  setDangerError(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid #dc2626',
+                  backgroundColor: 'rgba(220, 38, 38, 0.25)',
+                  color: '#fca5a5',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+                <span>PERMANENTLY DELETE ACCOUNT & ALL DATA</span>
+              </button>
+            </div>
+          )}
+
+          {dangerAction === 'reset' && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.6)',
+                borderRadius: '10px',
+                padding: '16px',
+              }}
+            >
+              <p
+                style={{
+                  color: '#fca5a5',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  margin: '0 0 10px 0',
+                }}
+              >
+                Type <strong style={{ color: '#fff' }}>RESET</strong> below to confirm wiping your Hunter license, stats, quests, and removing yourself from the Global Leaderboard:
+              </p>
+              <input
+                type="text"
+                placeholder='Type "RESET"'
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: '#060812',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none',
+                  marginBottom: '12px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={confirmText.trim() !== 'RESET' || isProcessingDanger}
+                  onClick={handleResetProgression}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: confirmText.trim() === 'RESET' ? '#ef4444' : '#475569',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: '12px',
+                    cursor: confirmText.trim() === 'RESET' ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isProcessingDanger ? 'WIPING...' : 'CONFIRM RESET & REMOVE FROM LEADERBOARD'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDangerAction('none');
+                    setConfirmText('');
+                    setDangerError(null);
+                  }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #334155',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )}
+
+          {dangerAction === 'delete' && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.18)',
+                border: '1px solid #ef4444',
+                borderRadius: '10px',
+                padding: '16px',
+              }}
+            >
+              <p
+                style={{
+                  color: '#fca5a5',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  margin: '0 0 10px 0',
+                }}
+              >
+                Type <strong style={{ color: '#fff' }}>DELETE</strong> below to permanently delete your account, purge all Hunter data, and remove yourself from the Global Leaderboard forever:
+              </p>
+              <input
+                type="text"
+                placeholder='Type "DELETE"'
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  backgroundColor: '#060812',
+                  border: '1px solid #ef4444',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none',
+                  marginBottom: '12px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={confirmText.trim() !== 'DELETE' || isProcessingDanger}
+                  onClick={handleDeleteAccount}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: confirmText.trim() === 'DELETE' ? '#dc2626' : '#475569',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: '12px',
+                    cursor: confirmText.trim() === 'DELETE' ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isProcessingDanger ? 'DELETING ACCOUNT...' : 'CONFIRM PERMANENT ACCOUNT DELETION'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDangerAction('none');
+                    setConfirmText('');
+                    setDangerError(null);
+                  }}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #334155',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
+export default AccountSettingsPage;
