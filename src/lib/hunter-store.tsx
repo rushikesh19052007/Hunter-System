@@ -1,7 +1,7 @@
 import { startPresence, stopPresence } from './presence-service';
 import { claimUsername, claimHunterId, syncPublicPlayer } from './social-service';
 import { leaveGuild } from './guild-service';
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useMemo } from 'react';
 import {
   doc,
   setDoc,
@@ -34,6 +34,7 @@ import {
   RANK_TITLES,
   PROFILE_FRAMES,
   createDefaultProfile,
+  normalizeUsername,
   DEFAULT_PERSONAL_RECORDS,
   type PersonalRecords,
   type SystemLogEntry,
@@ -46,10 +47,14 @@ import {
   completeDungeonBreak as markDungeonComplete,
   dismissDungeonBreak as markDungeonDismissed,
   completeBonusQuestInState,
+  completeBossQuestInState,
+  dismissBossQuestInState,
   calculateStreakUpdate,
   type DungeonBreak,
+  type BossQuest,
 } from './daily-system';
 import { audioService } from './audio-service';
+import { scheduleNotification } from './notifications';
 import {
   serializeProfileForFirestore,
   deserializeProfileFromFirestore,
@@ -74,6 +79,12 @@ export interface HunterContextType {
   activeDungeon: DungeonBreak | null;
   activeBossQuest: BossQuest | null;
   promotionCelebration: PromotionCelebration | null;
+
+  // Level Up Modal State (1:1 with Flutter HunterProvider)
+  showLevelUpModal: boolean;
+  leveledUpTo: number;
+  newRankAchieved: string;
+  dismissLevelUpModal: () => void;
 
   // Actions
   saveAwakenedProfile: (name: string, primaryStat: string, customUsername?: string) => Promise<Profile>;
@@ -170,6 +181,10 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [showLevelUpModal, setShowLevelUpModal] = useState<boolean>(false);
   const [leveledUpTo, setLeveledUpTo] = useState<number>(1);
   const [newRankAchieved, setNewRankAchieved] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [needsAwakening, setNeedsAwakening] = useState<boolean>(false);
+  const isOnboarded = !!profile && !needsAwakening;
+  const primaryAffinity = profile?.affinity || null;
 
   const isSavingRef = useRef<boolean>(false);
 
@@ -461,6 +476,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setQuests(updatedQuests);
     audioService.playClick();
     if (profile) syncToFirestore(profile, updatedQuests);
+    scheduleNotification({
+      title: 'QUEST EXPUNGED',
+      message: 'The directive has been removed from your active board.',
+      priority: 'low',
+      category: 'system',
+    });
   };
 
   // ============================================================
@@ -521,6 +542,49 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const finalProfile = applyXpToProfile(profile, xpEarned, `Bonus: ${activeBonus.name}`);
     setProfile(finalProfile);
     syncToFirestore(finalProfile, quests);
+  };
+
+  const completeBossQuest = () => {
+    if (!activeBossQuest || !profile) return;
+    completeBossQuestInState();
+
+    const xpEarned = activeBossQuest.xp_reward || 350;
+    const statBoost = 3;
+
+    const updatedStats = { ...profile.stats };
+    Object.keys(updatedStats).forEach((key) => {
+      updatedStats[key] = (updatedStats[key] || 10) + statBoost;
+    });
+
+    const logEntry: SystemLogEntry = {
+      id: `boss-${Date.now()}`,
+      timestamp: Date.now(),
+      event_type: 'dungeon',
+      message: `BOSS SLAIN: ${activeBossQuest.boss_name} (+${xpEarned} XP)`,
+      xp: xpEarned,
+    };
+
+    const updatedProfile: Profile = {
+      ...profile,
+      stats: updatedStats,
+      system_log: [logEntry, ...(profile.system_log || [])].slice(0, 25),
+    };
+
+    setActiveBossQuest(null);
+    audioService.playLevelUp();
+
+    const finalProfile = applyXpToProfile(updatedProfile, xpEarned, 'Boss Quest');
+    setProfile(finalProfile);
+    checkAchievements(finalProfile, quests);
+    syncToFirestore(finalProfile, quests);
+  };
+
+  const dismissBossQuest = () => {
+    if (activeBossQuest) {
+      dismissBossQuestInState();
+      setActiveBossQuest(null);
+      audioService.playClick();
+    }
   };
 
   // ============================================================
@@ -929,51 +993,47 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const deleteQuest = (questId: string) => {
-    setQuests(prev => prev.filter(q => q.id !== questId));
-    scheduleNotification({
-      title: 'QUEST EXPUNGED',
-      message: 'The directive has been removed from your active board.',
-      priority: 'low',
-      category: 'system',
-    });
+  const value: HunterContextType = {
+    profile,
+    quests,
+    dailyQuests,
+    isOnboarded,
+    isLoading,
+    needsAwakening,
+    primaryAffinity,
+    unlockedAchievements,
+    activeBonus,
+    activeDungeon,
+    activeBossQuest,
+    promotionCelebration,
+    showLevelUpModal,
+    leveledUpTo,
+    newRankAchieved,
+    dismissLevelUpModal,
+    saveAwakenedProfile,
+    completeQuest,
+    incrementProgress,
+    addXp,
+    allocateStatPoint,
+    updateProfile,
+    resetHunter,
+    deleteAccount,
+    addCustomQuest,
+    completeBonusQuest,
+    completeDungeonBreak,
+    dismissDungeonBreak,
+    completeBossQuest,
+    dismissBossQuest,
+    dismissPromotionCelebration,
+    updatePersonalRecord,
+    equipTitle,
+    allocateSkillPoint,
+    refreshDaily,
+    acceptLibraryQuest,
+    deleteQuest,
   };
 
-  const value = useMemo(
-    () => ({
-      profile,
-      quests,
-      auth,
-      isOnboarded,
-      primaryAffinity,
-      unlockedAchievements,
-      activeBonus,
-      activeDungeon,
-      activeBossQuest,
-      promotionCelebration,
-      saveAwakenedProfile,
-      completeQuest,
-      incrementProgress,
-      addXp,
-      allocateStatPoint,
-      updateProfile,
-      resetHunter,
-      addCustomQuest,
-      completeBonusQuest,
-      completeDungeonBreak,
-      dismissDungeonBreak,
-      completeBossQuest,
-      dismissBossQuest,
-      dismissPromotionCelebration,
-      updatePersonalRecord,
-      equipTitle,
-      allocateSkillPoint,
-      refreshDaily,
-      acceptLibraryQuest,
-      deleteQuest,
-    }),
-    [profile, quests, auth, isOnboarded, primaryAffinity, unlockedAchievements, activeBonus, activeDungeon, activeBossQuest, promotionCelebration]
-  );
+  return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;
 };
 
 export const useHunter = (): HunterContextType => {

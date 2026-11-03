@@ -53,13 +53,13 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
   const [friendStatus, setFriendStatus] = useState<FriendshipStatus>('none');
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  // If no UID is selected, do not render
-  if (!playerUid) return null;
+  
 
   // Load player details
   useEffect(() => {
     let active = true;
     const fetchPlayer = async () => {
+      if (!playerUid) return;
       if (!initialPlayer) {
         setLoading(true);
         const data = await getPublicPlayer(playerUid);
@@ -77,6 +77,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
   // Subscribe to live online presence
   useEffect(() => {
+    if (!playerUid) return;
     const unsubscribe = subscribeToUserPresence(playerUid, (online) => {
       setIsOnline(online);
     });
@@ -146,6 +147,8 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
   const rankInfo = getRankBadgeInfo(player?.currentRank || 'E-Rank');
   const isSelf = user?.id === playerUid;
+
+  if (!playerUid) return null;
 
   return (
     <div className="modal-backdrop">
