@@ -1,0 +1,38 @@
+name: HUNTR CI Pipeline
+
+on:
+  push:
+    branches: [main, fix/build-errors]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Build, Lint & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Typecheck
+        run: npx tsc -b --noEmit
+
+      - name: Oxlint Static Analysis
+        run: npm run lint
+
+      - name: Game Engine Automated Tests
+        run: npm test
+
+      - name: Production Bundle Build
+        run: npm run build
+

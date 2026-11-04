@@ -33,6 +33,12 @@ import {
 import { NotificationCenterModal } from '@/components/notification-center-modal';
 import { SystemSettingsModal } from '@/components/system-settings-modal';
 import { LevelUpDialog } from '@/components/level-up-dialog';
+import { PromotionCelebrationModal } from '@/components/promotion-celebration-modal';
+import { MobileNavBar, type AppTab } from '@/components/mobile-nav-bar';
+import { CommandPaletteModal } from '@/components/command-palette-modal';
+import { RaphaelAssistantModal } from '@/components/raphael-assistant-modal';
+import { InfoPages, type InfoPageType } from '@/routes/info-pages';
+import { Search, Brain, WifiOff } from 'lucide-react';
 import './index.css';
 import './App.css';
 
@@ -230,7 +236,11 @@ const HunterAppContent: React.FC = () => {
     leveledUpTo,
     newRankAchieved,
     dismissLevelUpModal,
+    promotionCelebration,
+    dismissPromotionCelebration,
+    isOnline,
   } = useHunter();
+  const [showRaphael, setShowRaphael] = useState(false);
   const { logout } = useAuth();
 
   const [replayAwakening, setReplayAwakening] = useState(false);
@@ -238,6 +248,20 @@ const HunterAppContent: React.FC = () => {
   const [isNotFound, setIsNotFound] = useState<boolean>(false);
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [infoPage, setInfoPage] = useState<InfoPageType | null>(null);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // Global Ctrl+K Command Palette Shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // URL Routing & Custom 404 Interceptor
   useEffect(() => {
@@ -263,6 +287,9 @@ const HunterAppContent: React.FC = () => {
         setIsNotFound(false);
       } else if (path === 'settings') {
         setActiveTab('settings');
+        setIsNotFound(false);
+      } else if (['about', 'help', 'faq', 'feedback', 'changelog'].includes(path)) {
+        setInfoPage(path as InfoPageType);
         setIsNotFound(false);
       } else {
         setIsNotFound(true);
@@ -338,6 +365,12 @@ const HunterAppContent: React.FC = () => {
   return (
     <div className="hunter-system-app">
       <SystemNotificationOverlay />
+      {!isOnline && (
+        <div style={{ backgroundColor: '#e11d48', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '6px 16px', textAlign: 'center', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 9999 }}>
+          <WifiOff style={{ width: '14px', height: '14px' }} />
+          <span>SYSTEM OFFLINE PROTOCOL &bull; Operating from local hunter cache. Directives will synchronize upon network reconnection.</span>
+        </div>
+      )}
 
       {/* Top Application Header when user has awakened */}
       {!isAwakening && (
@@ -433,6 +466,31 @@ const HunterAppContent: React.FC = () => {
           </div>
 
           <div className="app-header-right">
+            {/* Command Palette Trigger */}
+            <button
+              type="button"
+              id="btn-header-raphael"
+              onClick={() => setShowRaphael(true)}
+              className="btn-header-action"
+              title="RAPHAEL System Advisor"
+              aria-label="RAPHAEL"
+            >
+              <Brain className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">RAPHAEL</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-header-cmd"
+              onClick={() => setShowCommandPalette(true)}
+              className="btn-header-action"
+              title="Command Palette (Ctrl+K)"
+              aria-label="Command Palette"
+            >
+              <Search className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">CMD</span>
+            </button>
+
             {/* System Logs Trigger */}
             <button
               type="button"
@@ -504,6 +562,22 @@ const HunterAppContent: React.FC = () => {
               transition={{ duration: 0.3 }}
             >
               <SystemAwakening onComplete={() => setReplayAwakening(false)} />
+            </motion.div>
+          ) : infoPage ? (
+            <motion.div
+              key="info-page-route"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <InfoPages
+                page={infoPage}
+                onReturnToBase={() => {
+                  setInfoPage(null);
+                  window.history.pushState({}, '', '/');
+                }}
+              />
             </motion.div>
           ) : isNotFound ? (
             <motion.div
@@ -622,6 +696,75 @@ const HunterAppContent: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Promotion Celebration Modal */}
+      <AnimatePresence>
+        {promotionCelebration && (
+          <PromotionCelebrationModal
+            celebration={promotionCelebration}
+            onDismiss={dismissPromotionCelebration}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Command Palette Modal */}
+      <AnimatePresence>
+        {showCommandPalette && (
+          <CommandPaletteModal
+            onClose={() => setShowCommandPalette(false)}
+            onSelectTab={(tab) => {
+              setActiveTab(tab as any);
+              setIsNotFound(false);
+              setInfoPage(null);
+            }}
+            onOpenCreateQuest={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenFocusChamber={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenGoalBuilder={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenWorldMap={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenWeeklyReport={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenTimeCapsule={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenRaphael={() => setShowRaphael(true)}
+            toggleTheme={toggleTheme}
+            currentTheme={theme}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* RAPHAEL Assistant Modal */}
+      <RaphaelAssistantModal
+        isOpen={showRaphael}
+        onClose={() => setShowRaphael(false)}
+      />
+
+      {/* Mobile Bottom Navigation */}
+      {!isAwakening && (
+        <MobileNavBar
+          activeTab={activeTab as AppTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab as any);
+            setIsNotFound(false);
+            setInfoPage(null);
+          }}
+        />
+      )}
     </div>
   );
 };

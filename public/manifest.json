@@ -1,0 +1,20 @@
+{
+  "name": "HUNTR // Hunter System",
+  "short_name": "HUNTR",
+  "description": "Solo Leveling Inspired Real-Life RPG Progression Engine. Transform real-world goals, habits, learning, and fitness into measurable hunter progression.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#040714",
+  "theme_color": "#070913",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "games", "lifestyle"]
+}
+

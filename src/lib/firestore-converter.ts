@@ -6,6 +6,8 @@ import {
   type HunterStat,
   type StatXpType,
   type SystemLogEntry,
+  type PersonalRecords,
+  DEFAULT_PERSONAL_RECORDS,
   normalizeUsername,
   generateUniqueHunterId,
 } from './game-engine';
@@ -252,6 +254,9 @@ export function serializeProfileForFirestore(profile: Profile): Record<string, u
       agility: 0,
     },
     availableSkillPoints: profile.available_skill_points || 0,
+    availableStatPoints: profile.available_stat_points || 0,
+    personalRecords: profile.personal_records || { ...DEFAULT_PERSONAL_RECORDS },
+    profileFrame: profile.profile_frame || '',
     systemLog: logs,
   };
 }
@@ -322,7 +327,7 @@ export function deserializeProfileFromFirestore(data: Record<string, unknown>): 
     titles: (data.titles as string[]) || [],
     equipped_title: (data.equippedTitle as string) ?? (data.equipped_title as string) ?? '',
     badges: (data.badges as string[]) || ['first_blood'],
-    profile_frame: '',
+    profile_frame: (data.profileFrame as string) ?? (data.profile_frame as string) ?? '',
     skill_points: (data.skillPoints as Profile['skill_points']) ?? {
       strength: 0,
       intelligence: 0,
@@ -332,7 +337,8 @@ export function deserializeProfileFromFirestore(data: Record<string, unknown>): 
       agility: 0,
     },
     available_skill_points: (data.availableSkillPoints as number) ?? (data.available_skill_points as number) ?? 0,
-    available_stat_points: 0,
+    available_stat_points: (data.availableStatPoints as number) ?? (data.available_stat_points as number) ?? 0,
+    personal_records: (data.personalRecords as PersonalRecords) ?? (data.personal_records as PersonalRecords) ?? { ...DEFAULT_PERSONAL_RECORDS },
     system_log: systemLogs,
   };
 }
