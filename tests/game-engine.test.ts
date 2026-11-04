@@ -121,3 +121,4 @@ test('6. Multi-Streaks & Momentum Multipliers', () => {
   assert.equal(getStreakBonusMultiplier(60), 2.5);
   assert.equal(getStreakBonusMultiplier(100), 3.0);
 });
+

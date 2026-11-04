@@ -288,3 +288,4 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
     </div>
   );
 };
+

@@ -245,3 +245,4 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
     </div>
   );
 };
+

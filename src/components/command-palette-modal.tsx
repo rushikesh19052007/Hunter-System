@@ -335,3 +335,4 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
     </div>
   );
 };
+

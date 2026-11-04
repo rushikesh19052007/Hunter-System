@@ -159,3 +159,4 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
     </div>
   );
 };
+

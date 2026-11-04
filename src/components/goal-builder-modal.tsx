@@ -335,3 +335,4 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
     </div>
   );
 };
+

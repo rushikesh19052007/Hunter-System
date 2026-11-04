@@ -102,3 +102,4 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onSelectT
     </nav>
   );
 };
+

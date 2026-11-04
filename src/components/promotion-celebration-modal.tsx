@@ -216,3 +216,4 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
     </div>
   );
 };
+
