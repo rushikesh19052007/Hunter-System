@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Sparkles, Trophy, Target, TrendingUp, CheckCircle, X, Shield, Calendar } from 'lucide-react';
+import { X, Calendar, Target } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 
 interface WeeklyReportModalProps {
@@ -8,7 +8,7 @@ interface WeeklyReportModalProps {
 }
 
 export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose }) => {
-  const { profile, quests } = useHunter();
+  const { profile } = useHunter();
 
   if (!profile) return null;
 

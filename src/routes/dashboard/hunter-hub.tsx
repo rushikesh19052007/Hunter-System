@@ -6,6 +6,7 @@ import {
   Sliders, Heart, Droplets, Star, Plus, X, BookOpen,
   Dumbbell, Code, GraduationCap, Lightbulb, Activity, Skull,
   Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2,
+  Timer, Globe, FileText, Lock,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
@@ -748,6 +749,57 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             </div>
 
             <div className="quest-board-controls">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowFocusChamber(true)}
+                  className="px-2.5 py-1 bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Open Deep Focus Chamber (Pomodoro & Ambient Audio)"
+                >
+                  <Timer className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">FOCUS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGoalBuilder(true)}
+                  className="px-2.5 py-1 bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Break down long-term goals into directives"
+                >
+                  <Target className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="hidden sm:inline">GOALS</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowLivingWorld(true)}
+                  className="px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Explore Living World territories and HQ rooms"
+                >
+                  <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">WORLD</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowWeeklyReport(true)}
+                  className="px-2.5 py-1 bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="View 7-day performance debrief"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">REPORT</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTimeCapsule(true)}
+                  className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Seal a message for your future awakened self"
+                >
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline">CAPSULE</span>
+                </button>
+              </div>
               <div className="quest-search-bar">
                 <Search className="w-3.5 h-3.5 text-slate-400" />
                 <input
@@ -817,6 +869,30 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               </button>
             ))}
           </div>
+
+          {/* Undo Delete Quest Banner */}
+          <AnimatePresence>
+            {lastDeletedQuest && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-slate-900/95 border border-cyan-500/50 text-cyan-200 px-4 py-3 rounded-lg flex items-center justify-between shadow-xl mb-4"
+              >
+                <div className="flex items-center gap-2.5 text-sm">
+                  <Trash2 className="w-4 h-4 text-rose-400" />
+                  <span>Directive expunged: <span className="text-white font-semibold">"{lastDeletedQuest.name}"</span></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={undoDeleteQuest}
+                  className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/60 rounded text-xs font-bold tracking-wider transition-colors"
+                >
+                  RESTORE
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Quest Cards */}
           <div className="quests-grid">
@@ -975,6 +1051,48 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
       <AnimatePresence>
         {guideQuest && (
           <QuestGuideModal quest={guideQuest} onClose={() => setGuideQuest(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Focus Chamber Modal */}
+      <AnimatePresence>
+        {showFocusChamber && (
+          <FocusChamberModal onClose={() => setShowFocusChamber(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Goal Builder Modal */}
+      <AnimatePresence>
+        {showGoalBuilder && (
+          <GoalBuilderModal onClose={() => setShowGoalBuilder(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Living World Modal */}
+      <AnimatePresence>
+        {showLivingWorld && (
+          <LivingWorldModal onClose={() => setShowLivingWorld(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Weekly Report Modal */}
+      <AnimatePresence>
+        {showWeeklyReport && (
+          <WeeklyReportModal onClose={() => setShowWeeklyReport(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Time Capsule Modal */}
+      <AnimatePresence>
+        {showTimeCapsule && (
+          <TimeCapsuleModal onClose={() => setShowTimeCapsule(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Comeback Modal */}
+      <AnimatePresence>
+        {showComebackModal && (
+          <ComebackModal onClose={() => setShowComebackModal(false)} />
         )}
       </AnimatePresence>
     </div>

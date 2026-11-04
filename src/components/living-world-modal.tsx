@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Globe, Shield, Building, Award, Target, Sparkles, X, ChevronRight, Lock, CheckCircle, Flame, Dumbbell, Brain, Code, BookOpen,
+  Globe, Building, Sparkles, X, Lock, CheckCircle, Flame, Dumbbell, Brain, Code, BookOpen,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import { audioService } from '@/lib/audio-service';

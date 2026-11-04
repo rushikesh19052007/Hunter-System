@@ -285,6 +285,9 @@ const HunterAppContent: React.FC = () => {
       } else if (path === 'settings') {
         setActiveTab('settings');
         setIsNotFound(false);
+      } else if (['about', 'help', 'faq', 'feedback', 'changelog'].includes(path)) {
+        setInfoPage(path as InfoPageType);
+        setIsNotFound(false);
       } else {
         setIsNotFound(true);
       }
@@ -454,6 +457,19 @@ const HunterAppContent: React.FC = () => {
           </div>
 
           <div className="app-header-right">
+            {/* Command Palette Trigger */}
+            <button
+              type="button"
+              id="btn-header-cmd"
+              onClick={() => setShowCommandPalette(true)}
+              className="btn-header-action"
+              title="Command Palette (Ctrl+K)"
+              aria-label="Command Palette"
+            >
+              <Search className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">CMD</span>
+            </button>
+
             {/* System Logs Trigger */}
             <button
               type="button"
@@ -525,6 +541,22 @@ const HunterAppContent: React.FC = () => {
               transition={{ duration: 0.3 }}
             >
               <SystemAwakening onComplete={() => setReplayAwakening(false)} />
+            </motion.div>
+          ) : infoPage ? (
+            <motion.div
+              key="info-page-route"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <InfoPages
+                page={infoPage}
+                onReturnToBase={() => {
+                  setInfoPage(null);
+                  window.history.pushState({}, '', '/');
+                }}
+              />
             </motion.div>
           ) : isNotFound ? (
             <motion.div
@@ -643,6 +675,68 @@ const HunterAppContent: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Promotion Celebration Modal */}
+      <AnimatePresence>
+        {promotionCelebration && (
+          <PromotionCelebrationModal
+            celebration={promotionCelebration}
+            onDismiss={dismissPromotionCelebration}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Command Palette Modal */}
+      <AnimatePresence>
+        {showCommandPalette && (
+          <CommandPaletteModal
+            onClose={() => setShowCommandPalette(false)}
+            onSelectTab={(tab) => {
+              setActiveTab(tab as any);
+              setIsNotFound(false);
+              setInfoPage(null);
+            }}
+            onOpenCreateQuest={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenFocusChamber={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenGoalBuilder={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenWorldMap={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenWeeklyReport={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            onOpenTimeCapsule={() => {
+              setActiveTab('dashboard');
+              setIsNotFound(false);
+            }}
+            toggleTheme={toggleTheme}
+            currentTheme={theme}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Bottom Navigation */}
+      {!isAwakening && (
+        <MobileNavBar
+          activeTab={activeTab as AppTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab as any);
+            setIsNotFound(false);
+            setInfoPage(null);
+          }}
+        />
+      )}
     </div>
   );
 };

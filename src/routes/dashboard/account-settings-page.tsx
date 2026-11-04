@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useHunter } from '@/lib/hunter-store';
 import {
   ShieldAlert,
@@ -18,8 +18,6 @@ import {
   Volume2,
   VolumeX,
   Sparkles,
-  Lock,
-  Mail,
   Shield,
 } from 'lucide-react';
 import { audioService } from '@/lib/audio-service';
@@ -67,13 +65,10 @@ export const AccountSettingsPage: React.FC = () => {
     ? 'Safari'
     : 'Unknown';
 
-  const daysActive = Math.max(
-    1,
-    Math.floor(
-      (Date.now() - new Date(profile.created_at || Date.now()).getTime()) /
-        (1000 * 60 * 60 * 24)
-    )
-  );
+  const daysActive = useMemo(() => {
+    const created = profile.created_at ? new Date(profile.created_at).getTime() : Date.now();
+    return Math.max(1, Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24)));
+  }, [profile.created_at]);
 
   const handleCopyId = () => {
     audioService.playClick();
