@@ -3,7 +3,7 @@ import { useHunter } from '@/lib/hunter-store';
 import { Activity, Brain, Shield, Code, Heart, Users } from 'lucide-react';
 
 export const LifeBalanceRadar: React.FC = () => {
-  const { profile, quests } = useHunter();
+  const { profile } = useHunter();
 
   if (!profile) return null;
 

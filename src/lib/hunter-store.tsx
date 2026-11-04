@@ -110,6 +110,7 @@ export interface HunterContextType {
   deleteQuest: (questId: string) => void;
   lastDeletedQuest: Quest | null;
   undoDeleteQuest: () => void;
+  isOnline: boolean;
 }
 
 export interface PromotionCelebration {
@@ -133,10 +134,10 @@ export const RANK_STAT_POINT_REWARDS: Record<string, number> = {
 
 const HunterContext = createContext<HunterContextType | undefined>(undefined);
 
-// Local Storage Keys
-const STORAGE_PROFILE_KEY = 'hunter_system_profile';
-const STORAGE_QUESTS_KEY = 'hunter_system_quests';
-const STORAGE_ACHIEVEMENTS_KEY = 'hunter_system_achievements';
+// Local Storage Keys (UID-Scoped for Cross-Account Isolation)
+const getStorageProfileKey = (uid?: string) => uid ? `hunter_system_profile_${uid}` : 'hunter_system_profile';
+const getStorageQuestsKey = (uid?: string) => uid ? `hunter_system_quests_${uid}` : 'hunter_system_quests';
+const getStorageAchievementsKey = (uid?: string) => uid ? `hunter_system_achievements_${uid}` : 'hunter_system_achievements';
 
 // ============================================================
 // PROVIDER IMPLEMENTATION
@@ -145,33 +146,10 @@ const STORAGE_ACHIEVEMENTS_KEY = 'hunter_system_achievements';
 export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, deleteAccount: deleteAuthAccount } = useAuth();
 
-  const [profile, setProfile] = useState<Profile | null>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_PROFILE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [quests, setQuests] = useState<Quest[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_QUESTS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [dailyQuests, setDailyQuests] = useState<Quest[]>([]);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_ACHIEVEMENTS_KEY);
-      return saved ? JSON.parse(saved) : ['first_blood'];
-    } catch {
-      return ['first_blood'];
-    }
-  });
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>(['first_blood']);
 
   const [activeBonus, setActiveBonus] = useState<Quest | null>(null);
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
@@ -192,19 +170,74 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const isSavingRef = useRef<boolean>(false);
 
-  // Sync to localStorage as offline fallback cache
+  // Connectivity Status Tracker
+  const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   useEffect(() => {
-    if (profile) localStorage.setItem(STORAGE_PROFILE_KEY, JSON.stringify(profile));
-    else localStorage.removeItem(STORAGE_PROFILE_KEY);
-  }, [profile]);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Account switching & storage isolation by UID
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      setQuests([]);
+      setUnlockedAchievements(['first_blood']);
+      setActiveBonus(null);
+      setActiveDungeon(null);
+      setActiveBossQuest(null);
+      setNeedsAwakening(false);
+      setIsLoading(false);
+      return;
+    }
+
+    // Load scoped cache for this specific user if not yet in state
+    try {
+      const savedProf = localStorage.getItem(getStorageProfileKey(user.id));
+      if (savedProf) {
+        const parsed = JSON.parse(savedProf);
+        if (parsed && parsed.id === user.id) {
+          setProfile(parsed);
+        }
+      }
+      const savedQuests = localStorage.getItem(getStorageQuestsKey(user.id));
+      if (savedQuests) {
+        setQuests(JSON.parse(savedQuests));
+      }
+      const savedAch = localStorage.getItem(getStorageAchievementsKey(user.id));
+      if (savedAch) {
+        setUnlockedAchievements(JSON.parse(savedAch));
+      }
+    } catch {
+      // quiet fallback
+    }
+  }, [user?.id]);
+
+  // Sync to scoped localStorage as offline fallback cache
+  useEffect(() => {
+    if (!user?.id) return;
+    if (profile && profile.id === user.id) {
+      localStorage.setItem(getStorageProfileKey(user.id), JSON.stringify(profile));
+    }
+  }, [profile, user?.id]);
 
   useEffect(() => {
-    if (quests.length > 0) localStorage.setItem(STORAGE_QUESTS_KEY, JSON.stringify(quests));
-  }, [quests]);
+    if (!user?.id) return;
+    if (quests.length > 0) {
+      localStorage.setItem(getStorageQuestsKey(user.id), JSON.stringify(quests));
+    }
+  }, [quests, user?.id]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_ACHIEVEMENTS_KEY, JSON.stringify(unlockedAchievements));
-  }, [unlockedAchievements]);
+    if (!user?.id) return;
+    localStorage.setItem(getStorageAchievementsKey(user.id), JSON.stringify(unlockedAchievements));
+  }, [unlockedAchievements, user?.id]);
 
   // Load daily cycle state on mount
   useEffect(() => {
@@ -332,10 +365,18 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // QUEST ACTIONS
   // ============================================================
 
+  const completingQuestsRef = useRef<Set<string>>(new Set());
+
   const completeQuest = (questId: string) => {
+    if (completingQuestsRef.current.has(questId)) return;
     const quest = quests.find((q) => q.id === questId);
     if (!quest || quest.completed) return;
     if (!profile) return;
+
+    completingQuestsRef.current.add(questId);
+    setTimeout(() => {
+      completingQuestsRef.current.delete(questId);
+    }, 1500);
 
     const baseXp = quest.xp_reward || (DIFFICULTY_XP[quest.difficulty] ?? 25);
     const statXpAmount = quest.stat_xp_reward || (DIFFICULTY_STAT_XP[quest.difficulty] ?? 10);
@@ -948,9 +989,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     try {
-      localStorage.removeItem(STORAGE_PROFILE_KEY);
-      localStorage.removeItem(STORAGE_QUESTS_KEY);
-      localStorage.removeItem(STORAGE_ACHIEVEMENTS_KEY);
+      const currentUid = user?.id;
+      if (currentUid) {
+        localStorage.removeItem(getStorageProfileKey(currentUid));
+        localStorage.removeItem(getStorageQuestsKey(currentUid));
+        localStorage.removeItem(getStorageAchievementsKey(currentUid));
+      }
       localStorage.removeItem('hunter_preferred_affinity');
       localStorage.removeItem('local_hunter_profile');
       localStorage.removeItem('daily_system_state');
@@ -1020,9 +1064,11 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // 7. Clear local storage caches
     try {
-      localStorage.removeItem(STORAGE_PROFILE_KEY);
-      localStorage.removeItem(STORAGE_QUESTS_KEY);
-      localStorage.removeItem(STORAGE_ACHIEVEMENTS_KEY);
+      if (user?.id) {
+        localStorage.removeItem(getStorageProfileKey(user.id));
+        localStorage.removeItem(getStorageQuestsKey(user.id));
+        localStorage.removeItem(getStorageAchievementsKey(user.id));
+      }
       localStorage.removeItem('hunter_preferred_affinity');
       localStorage.removeItem('local_hunter_profile');
       localStorage.removeItem('daily_system_state');
@@ -1082,6 +1128,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     deleteQuest,
     lastDeletedQuest,
     undoDeleteQuest,
+    isOnline,
   };
 
   return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;

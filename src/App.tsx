@@ -36,8 +36,9 @@ import { LevelUpDialog } from '@/components/level-up-dialog';
 import { PromotionCelebrationModal } from '@/components/promotion-celebration-modal';
 import { MobileNavBar, type AppTab } from '@/components/mobile-nav-bar';
 import { CommandPaletteModal } from '@/components/command-palette-modal';
+import { RaphaelAssistantModal } from '@/components/raphael-assistant-modal';
 import { InfoPages, type InfoPageType } from '@/routes/info-pages';
-import { Search } from 'lucide-react';
+import { Search, Brain, WifiOff } from 'lucide-react';
 import './index.css';
 import './App.css';
 
@@ -237,7 +238,9 @@ const HunterAppContent: React.FC = () => {
     dismissLevelUpModal,
     promotionCelebration,
     dismissPromotionCelebration,
+    isOnline,
   } = useHunter();
+  const [showRaphael, setShowRaphael] = useState(false);
   const { logout } = useAuth();
 
   const [replayAwakening, setReplayAwakening] = useState(false);
@@ -362,6 +365,12 @@ const HunterAppContent: React.FC = () => {
   return (
     <div className="hunter-system-app">
       <SystemNotificationOverlay />
+      {!isOnline && (
+        <div style={{ backgroundColor: '#e11d48', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '6px 16px', textAlign: 'center', letterSpacing: '1px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', zIndex: 9999 }}>
+          <WifiOff style={{ width: '14px', height: '14px' }} />
+          <span>SYSTEM OFFLINE PROTOCOL &bull; Operating from local hunter cache. Directives will synchronize upon network reconnection.</span>
+        </div>
+      )}
 
       {/* Top Application Header when user has awakened */}
       {!isAwakening && (
@@ -458,6 +467,18 @@ const HunterAppContent: React.FC = () => {
 
           <div className="app-header-right">
             {/* Command Palette Trigger */}
+            <button
+              type="button"
+              id="btn-header-raphael"
+              onClick={() => setShowRaphael(true)}
+              className="btn-header-action"
+              title="RAPHAEL System Advisor"
+              aria-label="RAPHAEL"
+            >
+              <Brain className="w-4 h-4 text-cyan-400" />
+              <span className="hidden-mobile">RAPHAEL</span>
+            </button>
+
             <button
               type="button"
               id="btn-header-cmd"
@@ -720,11 +741,18 @@ const HunterAppContent: React.FC = () => {
               setActiveTab('dashboard');
               setIsNotFound(false);
             }}
+            onOpenRaphael={() => setShowRaphael(true)}
             toggleTheme={toggleTheme}
             currentTheme={theme}
           />
         )}
       </AnimatePresence>
+
+      {/* RAPHAEL Assistant Modal */}
+      <RaphaelAssistantModal
+        isOpen={showRaphael}
+        onClose={() => setShowRaphael(false)}
+      />
 
       {/* Mobile Bottom Navigation */}
       {!isAwakening && (

@@ -47,6 +47,12 @@ export const AccountSettingsPage: React.FC = () => {
     };
   }, []);
 
+  const daysActive = useMemo(() => {
+    if (!profile?.created_at) return 1;
+    const created = new Date(profile.created_at).getTime();
+    return Math.max(1, Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24)));
+  }, [profile?.created_at]);
+
   if (!profile) return null;
 
   const rankInfo = getRankBadgeInfo(profile.current_rank);
@@ -65,12 +71,7 @@ export const AccountSettingsPage: React.FC = () => {
     ? 'Safari'
     : 'Unknown';
 
-  const daysActive = useMemo(() => {
-    const created = profile.created_at ? new Date(profile.created_at).getTime() : Date.now();
-    return Math.max(1, Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24)));
-  }, [profile.created_at]);
-
-  const handleCopyId = () => {
+    const handleCopyId = () => {
     audioService.playClick();
     navigator.clipboard.writeText(profile.hunter_id);
     setCopiedId(true);

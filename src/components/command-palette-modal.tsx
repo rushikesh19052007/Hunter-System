@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
+  Brain,
   Search,
   LayoutDashboard,
   Shield,
@@ -37,6 +38,7 @@ interface CommandPaletteModalProps {
   onOpenWorldMap: () => void;
   onOpenWeeklyReport: () => void;
   onOpenTimeCapsule: () => void;
+  onOpenRaphael?: () => void;
   toggleTheme: () => void;
   currentTheme: 'dark' | 'light';
 }
@@ -50,6 +52,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenWorldMap,
   onOpenWeeklyReport,
   onOpenTimeCapsule,
+  onOpenRaphael,
   toggleTheme,
   currentTheme,
 }) => {
@@ -119,6 +122,13 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       category: 'Directives',
       icon: <Target className="w-4 h-4 text-cyan-400" />,
       action: () => { onOpenGoalBuilder(); onClose(); },
+    },
+    {
+      id: 'act-raphael',
+      title: 'Open RAPHAEL System Advisor (Tactical Briefing & Calculator)',
+      category: 'Productivity',
+      icon: <Brain className="w-4 h-4 text-cyan-400" />,
+      action: () => { if (onOpenRaphael) onOpenRaphael(); onClose(); },
     },
     {
       id: 'act-focus',

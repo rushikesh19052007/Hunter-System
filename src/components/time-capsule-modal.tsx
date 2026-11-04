@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Compass, Lock, Unlock, X, Sparkles, CheckCircle, Shield } from 'lucide-react';
+import { Compass, Lock, Unlock, X } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import { audioService } from '@/lib/audio-service';
 

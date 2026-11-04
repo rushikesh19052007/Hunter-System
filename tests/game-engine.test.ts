@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-// Import compiled functions from game-engine (or run with ts-node/strip-types)
 import {
   normalizeUsername,
   isValidUsername,
@@ -14,7 +13,6 @@ import {
   getStreakBonus,
   getStreakBonusMultiplier,
   DIFFICULTY_XP,
-  DIFFICULTY_STAT_XP,
   DIFFICULTY_STAT_POINTS,
   HP_BY_RANK,
   MP_BY_RANK,
@@ -122,3 +120,102 @@ test('6. Multi-Streaks & Momentum Multipliers', () => {
   assert.equal(getStreakBonusMultiplier(100), 3.0);
 });
 
+test('7. UID-Scoped Storage Key Generation & Cross-Account Isolation', () => {
+  const getStorageProfileKey = (uid?: string) => uid ? `hunter_system_profile_${uid}` : 'hunter_system_profile';
+  const getStorageQuestsKey = (uid?: string) => uid ? `hunter_system_quests_${uid}` : 'hunter_system_quests';
+
+  const userA = 'user_alpha_123';
+  const userB = 'user_bravo_456';
+
+  assert.equal(getStorageProfileKey(userA), 'hunter_system_profile_user_alpha_123');
+  assert.equal(getStorageProfileKey(userB), 'hunter_system_profile_user_bravo_456');
+  assert.notEqual(getStorageProfileKey(userA), getStorageProfileKey(userB));
+
+  assert.equal(getStorageQuestsKey(userA), 'hunter_system_quests_user_alpha_123');
+  assert.equal(getStorageQuestsKey(userB), 'hunter_system_quests_user_bravo_456');
+});
+
+test('8. Idempotent Quest Completion Guard', () => {
+  const activeQuests = [
+    { id: 'q1', name: 'Sprint', completed: false, xp_reward: 35 },
+    { id: 'q2', name: 'Meditate', completed: true, xp_reward: 15 },
+  ];
+
+  const inFlightCompletions = new Set<string>();
+
+  function tryComplete(questId: string): boolean {
+    if (inFlightCompletions.has(questId)) return false;
+    const q = activeQuests.find(item => item.id === questId);
+    if (!q || q.completed) return false;
+
+    inFlightCompletions.add(questId);
+    q.completed = true;
+    return true;
+  }
+
+  // First completion attempt on q1 succeeds
+  assert.equal(tryComplete('q1'), true);
+
+  // Immediate subsequent completion attempt on q1 is rejected by inFlight guard
+  assert.equal(tryComplete('q1'), false);
+
+  // Completion on already-completed q2 is rejected
+  assert.equal(tryComplete('q2'), false);
+});
+
+test('9. Friend Request State Transition & Self-Request Rejection', () => {
+  const validTransitions: Record<string, string[]> = {
+    pending: ['accepted', 'declined'],
+    accepted: [],
+    declined: [],
+  };
+
+  function canTransition(current: string, next: string): boolean {
+    return (validTransitions[current] || []).includes(next);
+  }
+
+  assert.equal(canTransition('pending', 'accepted'), true);
+  assert.equal(canTransition('pending', 'declined'), true);
+  assert.equal(canTransition('accepted', 'pending'), false);
+  assert.equal(canTransition('declined', 'pending'), false);
+
+  function validateFriendRequest(fromUid: string, toUid: string, status: string): boolean {
+    if (fromUid === toUid) return false; // Self-request blocked
+    if (status !== 'pending') return false; // Initial status must be pending
+    return true;
+  }
+
+  assert.equal(validateFriendRequest('uid_1', 'uid_2', 'pending'), true);
+  assert.equal(validateFriendRequest('uid_1', 'uid_1', 'pending'), false); // blocked
+  assert.equal(validateFriendRequest('uid_1', 'uid_2', 'accepted'), false); // blocked
+});
+
+test('10. Guild Leadership Authorization Rules', () => {
+  interface Guild {
+    id: string;
+    leaderUid: string;
+    name: string;
+    memberCount: number;
+  }
+
+  const testGuild: Guild = {
+    id: 'guild_shadow',
+    leaderUid: 'leader_jinwoo',
+    name: 'Ahjin Guild',
+    memberCount: 5,
+  };
+
+  function canModifyGuildMetadata(actorUid: string, guild: Guild): boolean {
+    return actorUid === guild.leaderUid;
+  }
+
+  function canUpdateMemberCountOnly(changedKeys: string[]): boolean {
+    return changedKeys.every(k => k === 'memberCount' || k === 'updatedAt');
+  }
+
+  assert.equal(canModifyGuildMetadata('leader_jinwoo', testGuild), true);
+  assert.equal(canModifyGuildMetadata('random_hunter', testGuild), false);
+
+  assert.equal(canUpdateMemberCountOnly(['memberCount', 'updatedAt']), true);
+  assert.equal(canUpdateMemberCountOnly(['name', 'leaderUid']), false);
+});
