@@ -108,6 +108,8 @@ export interface HunterContextType {
   refreshDaily: () => void;
   acceptLibraryQuest: (quest: LibraryQuest) => void;
   deleteQuest: (questId: string) => void;
+  lastDeletedQuest: Quest | null;
+  undoDeleteQuest: () => void;
 }
 
 export interface PromotionCelebration {
@@ -175,6 +177,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeDungeon, setActiveDungeon] = useState<DungeonBreak | null>(null);
   const [activeBossQuest, setActiveBossQuest] = useState<BossQuest | null>(null);
   const [promotionCelebration, setPromotionCelebration] = useState<PromotionCelebration | null>(null);
+  const [lastDeletedQuest, setLastDeletedQuest] = useState<Quest | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissPromotionCelebration = () => setPromotionCelebration(null);
 
   // Level Up Modal State
@@ -472,13 +476,38 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const deleteQuest = (questId: string) => {
+    const questToDelete = quests.find((q) => q.id === questId);
+    if (questToDelete) {
+      setLastDeletedQuest(questToDelete);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => {
+        setLastDeletedQuest(null);
+      }, 7000);
+    }
     const updatedQuests = quests.filter((q) => q.id !== questId);
     setQuests(updatedQuests);
     audioService.playClick();
     if (profile) syncToFirestore(profile, updatedQuests);
     scheduleNotification({
       title: 'QUEST EXPUNGED',
-      message: 'The directive has been removed from your active board.',
+      message: 'The directive has been removed from your active board. Click Undo to restore.',
+      priority: 'low',
+      category: 'system',
+    });
+  };
+
+  const undoDeleteQuest = () => {
+    if (!lastDeletedQuest) return;
+    const restored = lastDeletedQuest;
+    setLastDeletedQuest(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const updated = [...quests, restored];
+    setQuests(updated);
+    audioService.playSuccess();
+    if (profile) syncToFirestore(profile, updated);
+    scheduleNotification({
+      title: 'QUEST RESTORED',
+      message: `Directive "${restored.name}" has been restored to your active board.`,
       priority: 'low',
       category: 'system',
     });
@@ -723,10 +752,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const rankChanged = newRank !== prevRank;
 
     let updatedSP = current.available_skill_points || 0;
+    let updatedStatPoints = current.available_stat_points ?? current.available_skill_points ?? 0;
     const updatedTitles = [...(current.titles || [])];
 
     if (levelsGained > 0) {
       updatedSP += levelsGained * 3;
+      updatedStatPoints += levelsGained * 2;
       setLeveledUpTo(newLevel);
       setNewRankAchieved(rankChanged ? newRank : '');
       setShowLevelUpModal(true);
@@ -734,9 +765,25 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     if (rankChanged) {
+      const rankBonusStats = RANK_STAT_POINT_REWARDS[newRank] || 0;
+      updatedStatPoints += rankBonusStats;
       const titlesForRank = RANK_TITLES[newRank] || [];
       titlesForRank.forEach((t) => {
         if (!updatedTitles.includes(t)) updatedTitles.push(t);
+      });
+      const newFrame = PROFILE_FRAMES[newRank] || current.profile_frame;
+      const hpBonus = (HP_BY_RANK[newRank] || 100) - (HP_BY_RANK[prevRank] || 100);
+      const mpBonus = (MP_BY_RANK[newRank] || 100) - (MP_BY_RANK[prevRank] || 100);
+
+      setPromotionCelebration({
+        prevRank,
+        newRank,
+        statPointsGranted: rankBonusStats,
+        skillPointsGranted: 5,
+        unlockedTitles: titlesForRank,
+        frameUnlocked: newFrame,
+        hpBonus: Math.max(0, hpBonus),
+        mpBonus: Math.max(0, mpBonus),
       });
     }
 
@@ -746,7 +793,9 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       current_level: newLevel,
       current_rank: newRank,
       available_skill_points: updatedSP,
+      available_stat_points: updatedStatPoints,
       titles: updatedTitles,
+      profile_frame: rankChanged && PROFILE_FRAMES[newRank] ? PROFILE_FRAMES[newRank] : current.profile_frame,
       max_hp: calculateMaxHp(current.physical_xp, newRank),
       max_mp: calculateMaxMp(current.mental_xp, newRank),
     };
@@ -1031,6 +1080,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     refreshDaily,
     acceptLibraryQuest,
     deleteQuest,
+    lastDeletedQuest,
+    undoDeleteQuest,
   };
 
   return <HunterContext.Provider value={value}>{children}</HunterContext.Provider>;

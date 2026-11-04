@@ -33,6 +33,11 @@ import {
 import { NotificationCenterModal } from '@/components/notification-center-modal';
 import { SystemSettingsModal } from '@/components/system-settings-modal';
 import { LevelUpDialog } from '@/components/level-up-dialog';
+import { PromotionCelebrationModal } from '@/components/promotion-celebration-modal';
+import { MobileNavBar, type AppTab } from '@/components/mobile-nav-bar';
+import { CommandPaletteModal } from '@/components/command-palette-modal';
+import { InfoPages, type InfoPageType } from '@/routes/info-pages';
+import { Search } from 'lucide-react';
 import './index.css';
 import './App.css';
 
@@ -230,6 +235,8 @@ const HunterAppContent: React.FC = () => {
     leveledUpTo,
     newRankAchieved,
     dismissLevelUpModal,
+    promotionCelebration,
+    dismissPromotionCelebration,
   } = useHunter();
   const { logout } = useAuth();
 
@@ -238,6 +245,20 @@ const HunterAppContent: React.FC = () => {
   const [isNotFound, setIsNotFound] = useState<boolean>(false);
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [infoPage, setInfoPage] = useState<InfoPageType | null>(null);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // Global Ctrl+K Command Palette Shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // URL Routing & Custom 404 Interceptor
   useEffect(() => {

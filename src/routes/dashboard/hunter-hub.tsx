@@ -27,6 +27,13 @@ import { playSystemChime } from '@/lib/notifications';
 import { QuestCodexModal } from '@/components/quest-codex-modal';
 import { QuestGuideModal } from '@/components/quest-guide-modal';
 import { HiddenQuestsWidget } from '@/components/hidden-quests-widget';
+import { LifeBalanceRadar } from '@/components/life-balance-radar';
+import { FocusChamberModal } from '@/components/focus-chamber-modal';
+import { GoalBuilderModal } from '@/components/goal-builder-modal';
+import { LivingWorldModal } from '@/components/living-world-modal';
+import { WeeklyReportModal } from '@/components/weekly-report-modal';
+import { TimeCapsuleModal } from '@/components/time-capsule-modal';
+import { ComebackModal } from '@/components/comeback-modal';
 
 interface HunterHubProps {
   onReplayAwakening: () => void;
@@ -436,12 +443,31 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
     unlockedAchievements,
     refreshDaily,
     deleteQuest,
+    lastDeletedQuest,
+    undoDeleteQuest,
   } = useHunter();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [showQuestCreator, setShowQuestCreator] = useState(false);
   const [showCodex, setShowCodex] = useState(false);
   const [guideQuest, setGuideQuest] = useState<Quest | null>(null);
+  const [showFocusChamber, setShowFocusChamber] = useState(false);
+  const [showGoalBuilder, setShowGoalBuilder] = useState(false);
+  const [showLivingWorld, setShowLivingWorld] = useState(false);
+  const [showWeeklyReport, setShowWeeklyReport] = useState(false);
+  const [showTimeCapsule, setShowTimeCapsule] = useState(false);
+  const [showComebackModal, setShowComebackModal] = useState(false);
+
+  // Check for comeback challenge (if inactive > 3 days)
+  useEffect(() => {
+    if (profile?.last_quest_date) {
+      const last = new Date(profile.last_quest_date).getTime();
+      const diffDays = (Date.now() - last) / (1000 * 60 * 60 * 24);
+      if (diffDays >= 3) {
+        setShowComebackModal(true);
+      }
+    }
+  }, [profile?.last_quest_date]);
   const [questFilter, setQuestFilter] = useState<'active' | 'all'>('active');
   const [questSearch, setQuestSearch] = useState('');
 
@@ -674,6 +700,10 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
             <HiddenQuestsWidget />
 
+            <div style={{ marginTop: '16px' }}>
+              <LifeBalanceRadar />
+            </div>
+
 
           </div>
         </aside>
@@ -847,7 +877,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                     <div className="quest-actions-row">
                       <div className="flex items-center gap-2">
                         <span className="stat-reward-hint">STAT: {quest.stat}</span>
-                        {quest.id.startsWith('custom-') && (
+                        {(quest.id.startsWith('custom-') || quest.id.startsWith('custom_') || quest.quest_type === 'normal') && (
                           <button
                             type="button"
                             onClick={() => {
