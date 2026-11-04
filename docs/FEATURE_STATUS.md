@@ -79,3 +79,4 @@ Legend:
 | Automated Unit Tests | **WORKING** | Node.js built-in test runner validating game engine & rules |
 | Vercel Deployment & Preview | **WORKING** | Preview verified HTTP 200 OK |
 | Production Rule Deployment | **BLOCKED** | Requires owner granting IAM Editor on `hunter-x-guild` to CLI account |
+

@@ -99,3 +99,4 @@ Local test suite in `tests/game-engine.test.ts` validates:
 3. Quest completion idempotency and in-flight deduplication.
 4. Friend request identity equality checks (`fromUid != toUid`).
 5. Scoped storage key generation preventing cross-account state leakage.
+

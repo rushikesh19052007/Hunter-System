@@ -99,3 +99,4 @@ Hunters allocate earned stat points into five primary combat parameters:
 | 30 – 59 Days | 2.0x | +100% bonus (Double XP) |
 | 60 – 99 Days | 2.5x | +150% bonus |
 | 100+ Days | 3.0x | +200% bonus (Triple XP) |
+
