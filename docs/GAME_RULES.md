@@ -62,7 +62,7 @@ Hunters allocate earned stat points into five primary combat parameters:
 2. **AGI (Agility)**: Cardiovascular speed, reflexes, swift habit initiation.
 3. **INT (Intelligence)**: Cognitive retention, analytical problem solving, programming capability.
 4. **VIT (Vitality)**: Recovery rate, sleep hygiene, nutritional fortitude, maximum HP pool.
-5. **SEN (Perception)**: Situational awareness, mindfulness, meditation, focus chamber endurance.
+5. **PERC (Perception)**: Situational awareness, mindfulness, meditation, focus chamber endurance.
 
 ---
 

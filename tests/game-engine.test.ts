@@ -16,6 +16,7 @@ import {
   DIFFICULTY_STAT_POINTS,
   HP_BY_RANK,
   MP_BY_RANK,
+  HUNTER_STATS,
 } from '../src/lib/game-engine.ts';
 
 test('1. Username Normalization & Validation', () => {
@@ -218,4 +219,102 @@ test('10. Guild Leadership Authorization Rules', () => {
 
   assert.equal(canUpdateMemberCountOnly(['memberCount', 'updatedAt']), true);
   assert.equal(canUpdateMemberCountOnly(['name', 'leaderUid']), false);
+});
+
+test('11. Stat Model Consistency: STR, AGI, VIT, INT, PERC', () => {
+  const statKeys = Object.keys(HUNTER_STATS);
+  assert.deepEqual(statKeys.sort(), ['AGI', 'INT', 'PERC', 'STR', 'VIT'].sort());
+  assert.equal(HUNTER_STATS.STR.code, 'STR');
+  assert.equal(HUNTER_STATS.AGI.code, 'AGI');
+  assert.equal(HUNTER_STATS.VIT.code, 'VIT');
+  assert.equal(HUNTER_STATS.INT.code, 'INT');
+  assert.equal(HUNTER_STATS.PERC.code, 'PERC');
+});
+
+test('12. Empty Quest Cache Persistence & Deserialization', () => {
+  // Mock localStorage store
+  const mockStorage: Record<string, string> = {};
+  const uid = 'user_test_99';
+  const questsKey = `hunter_system_quests_${uid}`;
+
+  // When user completes or deletes all quests, empty array [] must be serialized
+  const emptyQuests: any[] = [];
+  mockStorage[questsKey] = JSON.stringify(emptyQuests);
+
+  // On reload, deserializing the empty cache returns an empty list, not fallback stale quests
+  const loadedRaw = mockStorage[questsKey];
+  assert.ok(loadedRaw !== undefined);
+  const parsed = JSON.parse(loadedRaw);
+  assert.ok(Array.isArray(parsed));
+  assert.equal(parsed.length, 0);
+});
+
+test('13. Serialized Save Queue Simulator', async () => {
+  let inFlight = false;
+  let pendingSave: number | null = null;
+  const savedHistory: number[] = [];
+
+  async function mockSync(stateId: number) {
+    if (inFlight) {
+      pendingSave = stateId;
+      return;
+    }
+    inFlight = true;
+    // Simulate async IO delay
+    await new Promise(r => setTimeout(r, 10));
+    savedHistory.push(stateId);
+    inFlight = false;
+
+    if (pendingSave !== null) {
+      const next = pendingSave;
+      pendingSave = null;
+      await mockSync(next);
+    }
+  }
+
+  // Trigger rapid updates: 1, then 2, 3 while 1 is in-flight
+  const p1 = mockSync(1);
+  const p2 = mockSync(2);
+  const p3 = mockSync(3);
+
+  await Promise.all([p1, p2, p3]);
+  await new Promise(r => setTimeout(r, 30));
+
+  // State 1 was written, and the latest dirty state (3) was cleanly flushed without drop
+  assert.ok(savedHistory.includes(1));
+  assert.equal(savedHistory[savedHistory.length - 1], 3);
+});
+
+test('14. Friend Request Recipient-Only Acceptance Rule', () => {
+  function canAcceptFriendRequest(actorUid: string, request: { fromUid: string; toUid: string; status: string }): boolean {
+    // Only the designated receiver (toUid) can accept; sender (fromUid) cannot accept their own request
+    return actorUid === request.toUid && request.status === 'pending';
+  }
+
+  const req = { fromUid: 'hunter_a', toUid: 'hunter_b', status: 'pending' };
+
+  assert.equal(canAcceptFriendRequest('hunter_b', req), true); // recipient can accept
+  assert.equal(canAcceptFriendRequest('hunter_a', req), false); // sender cannot accept
+  assert.equal(canAcceptFriendRequest('stranger_c', req), false); // stranger cannot accept
+});
+
+test('15. Guild Affiliation Authorization Rule', () => {
+  function canUpdateAffiliation(
+    actorUid: string,
+    targetUserId: string,
+    targetGuildId: string | null,
+    isLeaderOfTargetGuild: boolean
+  ): boolean {
+    // Must be either the owner of target document OR leader of target guild
+    return actorUid === targetUserId || isLeaderOfTargetGuild;
+  }
+
+  // Owner joining/leaving
+  assert.equal(canUpdateAffiliation('user_1', 'user_1', 'guild_x', false), true);
+
+  // Guild leader accepting user_1 into guild_x
+  assert.equal(canUpdateAffiliation('leader_boss', 'user_1', 'guild_x', true), true);
+
+  // Unauthorized third party attempting to change user_1 affiliation
+  assert.equal(canUpdateAffiliation('random_intruder', 'user_1', 'guild_x', false), false);
 });

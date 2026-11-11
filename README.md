@@ -18,7 +18,7 @@
 - **Quest System** — Accept, create, and complete quests across 13+ categories (Physical, Coding, Study, Mental, Health, Discipline, and more)
 - **Difficulty Grades** — E-Class through S-Class quests with scaling XP and stat point rewards
 - **XP & Leveling** — Earn experience from every completed quest and watch your level climb
-- **Stat Allocation** — Distribute earned skill points across six core stats: STR, AGI, INT, END, DSC, FOC
+- **Stat Allocation** — Distribute earned stat points across five core parameters: STR, AGI, VIT, INT, PERC
 - **HP & MP Progression** — Max HP grows with physical XP; Max MP grows with mental XP
 
 ### 🏆 Ranking & Progression
@@ -189,14 +189,13 @@ npm run lint
 
 ### Hunter Stats
 
-| Stat | Full Name    | Description                        |
-| ---- | ------------ | ---------------------------------- |
-| STR  | Strength     | Physical power & raw force         |
-| AGI  | Agility      | Speed, reflexes & coordination     |
-| INT  | Intelligence | Knowledge, logic & problem-solving |
-| END  | Endurance    | Stamina, resilience & willpower    |
-| DSC  | Discipline   | Consistency, focus & self-control  |
-| FOC  | Focus        | Concentration & mental clarity     |
+| Stat | Full Name    | Description                                                    |
+| ---- | ------------ | -------------------------------------------------------------- |
+| STR  | Strength     | Physical power, resistance to fatigue & resistance training    |
+| AGI  | Agility      | Cardiovascular speed, reflexes & swift habit initiation        |
+| VIT  | Vitality     | Recovery rate, sleep hygiene, nutritional fortitude & HP pool  |
+| INT  | Intelligence | Cognitive retention, analytical problem-solving & programming  |
+| PERC | Perception   | Situational awareness, mindfulness, meditation & deep focus    |
 
 ### HP / MP System
 
