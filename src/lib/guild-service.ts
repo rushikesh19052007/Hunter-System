@@ -40,7 +40,7 @@ export interface GuildMember {
   displayName: string;
   level: number;
   rank: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'commander' | 'member';
   joinedAt?: any;
 }
 
@@ -410,6 +410,35 @@ export async function removeGuildMember(guildId: string, memberUid: string): Pro
   batch.set(playerRef, clearUpdates, { merge: true });
   batch.set(hunterRef, clearUpdates, { merge: true });
   batch.set(lbRef, clearUpdates, { merge: true });
+
+  await batch.commit();
+}
+
+/**
+ * Guild Owner updates a member's role (e.g. promoting to 'commander' or demoting to 'member').
+ * Multiple commanders can be created by the owner.
+ */
+export async function setGuildMemberRole(
+  guildId: string,
+  targetUid: string,
+  newRole: 'commander' | 'member'
+): Promise<void> {
+  const batch = writeBatch(firestore);
+
+  const memberRef = doc(firestore, 'guilds', guildId, 'members', targetUid);
+  const playerRef = doc(firestore, 'players', targetUid);
+  const hunterRef = doc(firestore, 'hunters', targetUid);
+  const lbRef = doc(firestore, 'leaderboard', targetUid);
+
+  batch.update(memberRef, { role: newRole });
+  const roleUpdates = {
+    guildRole: newRole,
+    updatedAt: serverTimestamp(),
+  };
+
+  batch.set(playerRef, roleUpdates, { merge: true });
+  batch.set(hunterRef, roleUpdates, { merge: true });
+  batch.set(lbRef, roleUpdates, { merge: true });
 
   await batch.commit();
 }

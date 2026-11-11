@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
+  ShieldAlert,
   Users,
   Plus,
   Crown,
@@ -30,6 +31,7 @@ import {
   acceptGuildJoinRequest,
   rejectGuildJoinRequest,
   removeGuildMember,
+  setGuildMemberRole,
   leaveGuild,
   updateGuildSettings,
   subscribeToGuild,
@@ -74,6 +76,8 @@ export const GuildsPage: React.FC = () => {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const isLeader = activeGuild?.leaderUid === user?.id;
+  const myMember = guildMembers.find(m => m.uid === user?.id);
+  const isCommander = myMember?.role === 'commander';
 
   // 1. Subscribe to Active Guild if user has guild_id
   useEffect(() => {
@@ -304,7 +308,7 @@ export const GuildsPage: React.FC = () => {
     }
   };
 
-  // Leader: Remove Member
+  // Leader / Commander: Remove Member
   const handleRemoveMember = async (memberUid: string, memberName: string) => {
     if (!activeGuild) return;
     if (confirm(`Expel ${memberName} from the guild?`)) {
@@ -312,6 +316,24 @@ export const GuildsPage: React.FC = () => {
         await removeGuildMember(activeGuild.id, memberUid);
       } catch (err: any) {
         alert(err.message || 'Failed to remove member');
+      }
+    }
+  };
+
+  // Owner/Leader: Promote or Demote Commander
+  const handleToggleCommander = async (member: GuildMember) => {
+    if (!activeGuild || !isLeader) return;
+    const isCurrentlyCommander = member.role === 'commander';
+    const newRole = isCurrentlyCommander ? 'member' : 'commander';
+    const confirmMessage = isCurrentlyCommander
+      ? `Revoke Commander rank for ${member.displayName}? They will return to Member status.`
+      : `Promote ${member.displayName} to Syndicate Commander? You can appoint multiple Commanders to help lead the guild.`;
+
+    if (confirm(confirmMessage)) {
+      try {
+        await setGuildMemberRole(activeGuild.id, member.uid, newRole);
+      } catch (err: any) {
+        alert(err.message || 'Failed to update member role');
       }
     }
   };
@@ -372,16 +394,16 @@ export const GuildsPage: React.FC = () => {
                   width: '64px',
                   height: '64px',
                   borderRadius: '16px',
-                  background: 'rgba(168, 85, 247, 0.15)',
-                  border: '2px solid #a855f7',
+                  background: 'rgba(255, 26, 64, 0.15)',
+                  border: '2px solid #ff1a40',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#d8b4fe',
+                  color: '#ff1a40',
                   fontSize: '1.5rem',
                   fontWeight: 900,
                   fontFamily: 'var(--font-tech)',
-                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.35)',
+                  boxShadow: '0 0 20px rgba(255, 26, 64, 0.35)',
                   flexShrink: 0,
                 }}
               >
@@ -410,8 +432,8 @@ export const GuildsPage: React.FC = () => {
                   <span>•</span>
                   <span>{activeGuild.memberCount} Members</span>
                   <span>•</span>
-                  <span style={{ color: '#c084fc', fontWeight: 'bold' }}>
-                    {isLeader ? '★ Syndicate Master' : 'Pledged Member'}
+                  <span style={{ color: '#ff1a40', fontWeight: 'bold' }}>
+                    {isLeader ? '★ Syndicate Master' : isCommander ? '⚔️ Syndicate Commander' : 'Pledged Member'}
                   </span>
                 </div>
               </div>
@@ -443,8 +465,8 @@ export const GuildsPage: React.FC = () => {
           {isLeader && guildRequests.length > 0 && (
             <div
               style={{
-                background: 'rgba(12, 18, 40, 0.85)',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
+                background: 'rgba(14, 3, 6, 0.95)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
                 borderRadius: '12px',
                 padding: '16px',
                 marginBottom: '20px',
@@ -459,8 +481,8 @@ export const GuildsPage: React.FC = () => {
                   <div
                     key={req.id}
                     style={{
-                      background: 'rgba(6, 10, 24, 0.8)',
-                      border: '1px solid rgba(56, 189, 248, 0.2)',
+                      background: 'rgba(8, 2, 4, 0.95)',
+                      border: '1px solid rgba(255, 26, 64, 0.25)',
                       borderRadius: '8px',
                       padding: '10px 14px',
                       display: 'flex',
@@ -511,66 +533,112 @@ export const GuildsPage: React.FC = () => {
             <div className="member-list">
               {guildMembers.map((member) => {
                 const isMemberLeader = member.role === 'leader';
+                const isMemberCommander = member.role === 'commander';
                 const badge = getRankBadgeInfo(member.rank);
+                const canKick = !isMemberLeader && (isLeader || (isCommander && !isMemberCommander));
 
                 return (
                   <div key={member.uid} className="member-item-row">
                     <div className="member-info-col">
                       <div
+                        className="member-avatar-box"
                         style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
-                          background: isMemberLeader ? 'rgba(168, 85, 247, 0.2)' : 'rgba(56, 189, 248, 0.1)',
-                          border: isMemberLeader ? '1px solid #a855f7' : '1px solid rgba(56, 189, 248, 0.25)',
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '10px',
+                          background: isMemberLeader
+                            ? 'rgba(245, 158, 11, 0.15)'
+                            : isMemberCommander
+                            ? 'rgba(255, 26, 64, 0.18)'
+                            : 'rgba(255, 26, 64, 0.08)',
+                          border: isMemberLeader
+                            ? '1.5px solid #f59e0b'
+                            : isMemberCommander
+                            ? '1.5px solid #ff1a40'
+                            : '1px solid rgba(255, 26, 64, 0.25)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: isMemberLeader ? '#d8b4fe' : 'var(--cyan-primary)',
+                          color: isMemberLeader ? '#fbbf24' : isMemberCommander ? '#ff1a40' : 'var(--text-muted)',
                           fontWeight: 'bold',
                           fontFamily: 'var(--font-tech)',
+                          flexShrink: 0,
                         }}
                       >
-                        {isMemberLeader ? <Crown size={16} color="#f59e0b" /> : member.displayName.charAt(0).toUpperCase()}
+                        {isMemberLeader ? (
+                          <Crown size={18} color="#f59e0b" />
+                        ) : isMemberCommander ? (
+                          <Shield size={18} color="#ff1a40" />
+                        ) : (
+                          member.displayName.charAt(0).toUpperCase()
+                        )}
                       </div>
 
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '0.88rem', color: '#fff' }}>{member.displayName}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--cyan-primary)', fontFamily: 'var(--font-tech)' }}>
+                      <div className="member-details-col">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '0.92rem', color: '#fff' }}>
+                            {member.displayName}
+                          </span>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--cyan-primary)', fontFamily: 'var(--font-tech)' }}>
                             @{member.username}
                           </span>
-                          {isMemberLeader && (
+                          {isMemberLeader ? (
                             <span className="tag-pill-leader">
                               <Crown size={11} color="#f59e0b" /> Master
                             </span>
+                          ) : isMemberCommander ? (
+                            <span className="tag-pill-commander">
+                              <Shield size={11} color="#ff1a40" /> Commander
+                            </span>
+                          ) : (
+                            <span className="tag-pill-member">Member</span>
                           )}
                         </div>
 
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontFamily: 'var(--font-tech)', marginTop: '2px' }}>
-                          {member.hunterId} • LVL {member.level} • <span style={{ color: badge.color, fontWeight: 'bold' }}>{member.rank}</span>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'var(--font-tech)', marginTop: '2px' }}>
+                          <span style={{ color: '#64748b' }}>{member.hunterId}</span> &bull; LVL {member.level} &bull;{' '}
+                          <span style={{ color: badge.color, fontWeight: 'bold' }}>{member.rank}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="member-actions-col">
                       <button
                         type="button"
                         onClick={() => setSelectedPlayerUid(member.uid)}
                         className="btn-hologram-ghost btn-sm"
-                        title="View Dossier"
+                        title="View Hunter Dossier & Stats"
                       >
-                        <Search size={13} /> Dossier
+                        <Search size={13} /> Info
                       </button>
 
                       {isLeader && !isMemberLeader && (
                         <button
                           type="button"
+                          onClick={() => handleToggleCommander(member)}
+                          className={isMemberCommander ? 'btn-hologram-secondary btn-sm' : 'btn-hologram-cyan btn-sm'}
+                          title={isMemberCommander ? 'Revoke Commander rank' : 'Promote to Syndicate Commander'}
+                        >
+                          {isMemberCommander ? (
+                            <>
+                              <ShieldAlert size={13} /> Demote
+                            </>
+                          ) : (
+                            <>
+                              <Shield size={13} /> Make Commander
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {canKick && (
+                        <button
+                          type="button"
                           onClick={() => handleRemoveMember(member.uid, member.displayName)}
                           className="btn-hologram-danger btn-sm"
-                          title="Expel Member"
+                          title="Expel Member from Syndicate"
                         >
-                          <UserX size={13} /> Expel
+                          <UserX size={13} /> Kick
                         </button>
                       )}
                     </div>
@@ -660,12 +728,12 @@ export const GuildsPage: React.FC = () => {
                             width: '46px',
                             height: '46px',
                             borderRadius: '12px',
-                            background: 'rgba(168, 85, 247, 0.15)',
-                            border: '1.5px solid rgba(168, 85, 247, 0.4)',
+                            background: 'rgba(255, 26, 64, 0.15)',
+                            border: '1.5px solid rgba(255, 26, 64, 0.45)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#d8b4fe',
+                            color: '#ff1a40',
                             fontWeight: 900,
                             fontSize: '1.1rem',
                             fontFamily: 'var(--font-tech)',
