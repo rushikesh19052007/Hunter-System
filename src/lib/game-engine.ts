@@ -410,8 +410,8 @@ export const HUNTER_STATS: Record<HunterStat, StatDefinition> = {
     name: 'Agility',
     title: 'Speed & Reflexes',
     description: 'Enhances reaction time, cardiovascular endurance, flexibility, and swift execution.',
-    color: '#06b6d4',
-    accentGlow: 'rgba(6, 182, 212, 0.4)',
+    color: '#ff1a40',
+    accentGlow: 'rgba(255, 26, 64, 0.4)',
   },
   VIT: {
     code: 'VIT',
@@ -476,7 +476,7 @@ export const getRankBadgeInfo = (rank: string) => {
     case 'B-Rank':
       return { label: 'B-RANK', color: '#a855f7', border: 'border-purple-500', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.5)]' };
     case 'C-Rank':
-      return { label: 'C-RANK', color: '#3b82f6', border: 'border-blue-500', glow: 'shadow-[0_0_18px_rgba(59,130,246,0.5)]' };
+      return { label: 'C-RANK', color: '#e11d48', border: 'border-rose-500', glow: 'shadow-[0_0_18px_rgba(225,29,72,0.5)]' };
     case 'D-Rank':
       return { label: 'D-RANK', color: '#10b981', border: 'border-emerald-500', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.4)]' };
     default:
@@ -553,7 +553,7 @@ export function getDifficultyColor(difficulty: DifficultyGrade | string): string
   const colors: Record<string, string> = {
     E: '#94a3b8',
     D: '#10b981',
-    C: '#3b82f6',
+    C: '#e11d48',
     B: '#a855f7',
     A: '#eab308',
     S: '#ec4899',

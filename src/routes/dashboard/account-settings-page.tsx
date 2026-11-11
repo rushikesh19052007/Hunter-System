@@ -19,6 +19,8 @@ import {
   VolumeX,
   Sparkles,
   Shield,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { audioService } from '@/lib/audio-service';
 import { getRankBadgeInfo } from '@/lib/game-engine';
@@ -33,6 +35,29 @@ export const AccountSettingsPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState(false);
   const [isMuted, setIsMuted] = useState(audioService.isMuted());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem('hunter_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const handleSelectTheme = (newTheme: 'dark' | 'light') => {
+    audioService.playClick();
+    setCurrentTheme(newTheme);
+    try {
+      localStorage.setItem('hunter_theme', newTheme);
+      if (newTheme === 'light') {
+        document.documentElement.classList.add('light-mode');
+        document.body.classList.add('light-mode');
+      } else {
+        document.documentElement.classList.remove('light-mode');
+        document.body.classList.remove('light-mode');
+      }
+      window.dispatchEvent(new Event('theme-change'));
+    } catch {}
+  };
 
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -92,16 +117,18 @@ export const AccountSettingsPage: React.FC = () => {
     audioService.playClick();
     const quests = (() => {
       try {
-        return JSON.parse(localStorage.getItem('hunter_system_quests') || '[]');
+        const key = profile?.id ? `hunter_system_quests_${profile.id}` : 'hunter_system_quests';
+        return JSON.parse(localStorage.getItem(key) || localStorage.getItem('hunter_system_quests') || '[]');
       } catch {
         return [];
       }
     })();
     const achievements = (() => {
       try {
-        return JSON.parse(localStorage.getItem('hunter_system_achievements') || '[]');
+        const key = profile?.id ? `hunter_system_achievements_${profile.id}` : 'hunter_system_achievements';
+        return JSON.parse(localStorage.getItem(key) || localStorage.getItem('hunter_system_achievements') || '[]');
       } catch {
-        return [];
+        return profile?.badges || [];
       }
     })();
 
@@ -137,11 +164,15 @@ export const AccountSettingsPage: React.FC = () => {
         const raw = ev.target?.result as string;
         const data = JSON.parse(raw);
         if (!data.profile || !data.profile.id) throw new Error('Invalid backup format');
+        const uid = data.profile.id;
+        localStorage.setItem(`hunter_system_profile_${uid}`, JSON.stringify(data.profile));
         localStorage.setItem('hunter_system_profile', JSON.stringify(data.profile));
         if (Array.isArray(data.quests)) {
+          localStorage.setItem(`hunter_system_quests_${uid}`, JSON.stringify(data.quests));
           localStorage.setItem('hunter_system_quests', JSON.stringify(data.quests));
         }
         if (Array.isArray(data.achievements)) {
+          localStorage.setItem(`hunter_system_achievements_${uid}`, JSON.stringify(data.achievements));
           localStorage.setItem('hunter_system_achievements', JSON.stringify(data.achievements));
         }
         setImportStatus('success');
@@ -196,12 +227,13 @@ export const AccountSettingsPage: React.FC = () => {
 
   return (
     <div
+      className="settings-page-wrapper"
       style={{
         width: '100%',
         maxWidth: '1100px',
         margin: '0 auto',
         padding: '28px 20px 80px',
-        color: '#fff',
+        color: 'var(--text-main)',
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -212,11 +244,11 @@ export const AccountSettingsPage: React.FC = () => {
           alignItems: 'center',
           gap: '12px',
           paddingBottom: '20px',
-          borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
+          borderBottom: '1px solid rgba(255, 26, 64, 0.2)',
           marginBottom: '28px',
         }}
       >
-        <Sparkles className="w-7 h-7 text-cyan-400" />
+        <Sparkles className="w-7 h-7 text-rose-500" />
         <div>
           <h1
             style={{
@@ -225,7 +257,7 @@ export const AccountSettingsPage: React.FC = () => {
               letterSpacing: '2px',
               margin: 0,
               textTransform: 'uppercase',
-              textShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+              textShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
             }}
           >
             ACCOUNT & SYSTEM SETTINGS
@@ -248,9 +280,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 1: Account Identity */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -265,7 +297,7 @@ export const AccountSettingsPage: React.FC = () => {
               borderBottom: '1px solid #1a233a',
             }}
           >
-            <User className="w-5 h-5 text-cyan-400" />
+            <User className="w-5 h-5 text-rose-500" />
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '1px' }}>
               HUNTER IDENTITY
             </h2>
@@ -287,7 +319,7 @@ export const AccountSettingsPage: React.FC = () => {
                   style={{
                     fontFamily: 'monospace',
                     fontWeight: 700,
-                    color: '#00e5ff',
+                    color: '#ff1a40',
                     fontSize: '13px',
                   }}
                 >
@@ -299,10 +331,10 @@ export const AccountSettingsPage: React.FC = () => {
                   title="Copy Hunter ID"
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    border: '1px solid rgba(255, 26, 64, 0.3)',
                     borderRadius: '6px',
                     padding: '4px 6px',
-                    color: copiedId ? '#10b981' : '#00e5ff',
+                    color: copiedId ? '#10b981' : '#ff1a40',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -385,7 +417,7 @@ export const AccountSettingsPage: React.FC = () => {
                   fontSize: '13px',
                 }}
               >
-                <Calendar className="w-3.5 h-3.5 text-cyan-400" /> {daysActive} Days Active
+                <Calendar className="w-3.5 h-3.5 text-rose-500" /> {daysActive} Days Active
               </span>
             </div>
           </div>
@@ -394,9 +426,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 2: Data & Storage */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -473,8 +505,8 @@ export const AccountSettingsPage: React.FC = () => {
                   minWidth: '140px',
                   padding: '11px 14px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(0, 229, 255, 0.4)',
-                  backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                  border: '1px solid rgba(255, 26, 64, 0.4)',
+                  backgroundColor: 'rgba(255, 26, 64, 0.1)',
                   color: '#67e8f9',
                   fontWeight: 800,
                   fontSize: '12px',
@@ -487,7 +519,7 @@ export const AccountSettingsPage: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Download className="w-4 h-4 text-cyan-400" />
+                <Download className="w-4 h-4 text-rose-500" />
                 <span>EXPORT BACKUP</span>
               </button>
 
@@ -569,9 +601,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 3: System Vitals & Diagnostics */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -628,7 +660,7 @@ export const AccountSettingsPage: React.FC = () => {
               }}
             >
               <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Monitor className="w-4 h-4 text-cyan-400" /> Display
+                <Monitor className="w-4 h-4 text-rose-500" /> Display
               </span>
               <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#cbd5e1' }}>
                 {screenRes} ({viewportSize})
@@ -691,7 +723,7 @@ export const AccountSettingsPage: React.FC = () => {
               }}
             >
               <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
+                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-rose-500" />}
                 Audio Feedback
               </span>
               <button
@@ -700,9 +732,9 @@ export const AccountSettingsPage: React.FC = () => {
                 style={{
                   padding: '6px 14px',
                   borderRadius: '8px',
-                  border: isMuted ? '1px solid #334155' : '1px solid #00e5ff',
-                  backgroundColor: isMuted ? 'transparent' : 'rgba(0, 229, 255, 0.1)',
-                  color: isMuted ? '#64748b' : '#00e5ff',
+                  border: isMuted ? '1px solid #334155' : '1px solid #ff1a40',
+                  backgroundColor: isMuted ? 'transparent' : 'rgba(255, 26, 64, 0.1)',
+                  color: isMuted ? '#64748b' : '#ff1a40',
                   fontWeight: 800,
                   fontSize: '12px',
                   cursor: 'pointer',
@@ -712,13 +744,65 @@ export const AccountSettingsPage: React.FC = () => {
                 {isMuted ? 'SOUND MUTED' : 'SOUND ACTIVE'}
               </button>
             </div>
+
+            {/* Interface Theme Switcher */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '10px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {currentTheme === 'light' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-rose-500" />}
+                Interface Theme
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTheme('dark')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: currentTheme === 'dark' ? '1px solid #ff1a40' : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: currentTheme === 'dark' ? '#ff1a40' : 'rgba(15, 23, 42, 0.6)',
+                    color: currentTheme === 'dark' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  DARK (PITCH BLACK)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTheme('light')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: currentTheme === 'light' ? '1px solid #dc2626' : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: currentTheme === 'light' ? '#dc2626' : 'rgba(15, 23, 42, 0.6)',
+                    color: currentTheme === 'light' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  LIGHT (PURE WHITE)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Card 4: Danger Zone */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
             border: '1px solid rgba(239, 68, 68, 0.4)',
             padding: '24px',

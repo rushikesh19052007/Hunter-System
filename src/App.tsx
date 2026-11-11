@@ -35,10 +35,9 @@ import { SystemSettingsModal } from '@/components/system-settings-modal';
 import { LevelUpDialog } from '@/components/level-up-dialog';
 import { PromotionCelebrationModal } from '@/components/promotion-celebration-modal';
 import { MobileNavBar, type AppTab } from '@/components/mobile-nav-bar';
-import { CommandPaletteModal } from '@/components/command-palette-modal';
 import { RaphaelAssistantModal } from '@/components/raphael-assistant-modal';
 import { InfoPages, type InfoPageType } from '@/routes/info-pages';
-import { Search, Brain, WifiOff } from 'lucide-react';
+import { Brain, WifiOff } from 'lucide-react';
 import './index.css';
 import './App.css';
 
@@ -75,7 +74,7 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
         <div
           style={{
             minHeight: '100vh',
-            backgroundColor: '#040714',
+            backgroundColor: '#000000',
             color: '#fff',
             display: 'flex',
             flexDirection: 'column',
@@ -91,7 +90,7 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
               maxWidth: '480px',
               width: '100%',
               padding: '32px 24px',
-              backgroundColor: '#0a0e20',
+              backgroundColor: '#050203',
               borderRadius: '16px',
               border: '1.5px solid rgba(239, 68, 68, 0.4)',
               boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)',
@@ -118,10 +117,10 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
                   fontSize: '11px',
                   display: 'inline-block',
                   marginTop: '8px',
-                  backgroundColor: '#050814',
+                  backgroundColor: '#000000',
                   padding: '6px 12px',
                   borderRadius: '6px',
-                  border: '1px solid #1f293d',
+                  border: '1px solid rgba(255, 26, 64, 0.25)',
                 }}
               >
                 {this.state.error?.message || 'Unknown runtime error'}
@@ -137,8 +136,8 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
               }}
               style={{
                 padding: '12px 24px',
-                backgroundColor: '#00e5ff',
-                color: '#040714',
+                backgroundColor: '#ff1a40',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 800,
@@ -198,7 +197,7 @@ const SystemNotificationOverlay: React.FC = () => {
                 ) : isUrgent ? (
                   <ShieldAlert className="w-5 h-5 text-amber-400 animate-pulse" />
                 ) : (
-                  <Bell className="w-5 h-5 text-cyan-400" />
+                  <Bell className="w-5 h-5 text-rose-500" />
                 )}
               </div>
 
@@ -249,19 +248,6 @@ const HunterAppContent: React.FC = () => {
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [infoPage, setInfoPage] = useState<InfoPageType | null>(null);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-
-  // Global Ctrl+K Command Palette Shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // URL Routing & Custom 404 Interceptor
   useEffect(() => {
@@ -310,17 +296,31 @@ const HunterAppContent: React.FC = () => {
     }
   });
 
-  // Apply theme class to document body
+  // Apply theme class to document root and body
   useEffect(() => {
     if (theme === 'light') {
+      document.documentElement.classList.add('light-mode');
       document.body.classList.add('light-mode');
     } else {
+      document.documentElement.classList.remove('light-mode');
       document.body.classList.remove('light-mode');
     }
     try {
       localStorage.setItem('hunter_theme', theme);
     } catch {}
   }, [theme]);
+
+  // Synchronize theme across components if changed from settings
+  useEffect(() => {
+    const onThemeChange = () => {
+      try {
+        const saved = localStorage.getItem('hunter_theme');
+        setTheme(saved === 'light' ? 'light' : 'dark');
+      } catch {}
+    };
+    window.addEventListener('theme-change', onThemeChange);
+    return () => window.removeEventListener('theme-change', onThemeChange);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
@@ -332,12 +332,12 @@ const HunterAppContent: React.FC = () => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#040714',
+          backgroundColor: '#000000',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#00e5ff',
+          color: '#ff1a40',
           fontFamily: "'Orbitron', 'Inter', sans-serif",
           gap: '16px',
         }}
@@ -347,8 +347,8 @@ const HunterAppContent: React.FC = () => {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            border: '3px solid rgba(0, 229, 255, 0.2)',
-            borderTopColor: '#00e5ff',
+            border: '3px solid rgba(255, 26, 64, 0.2)',
+            borderTopColor: '#ff1a40',
             animation: 'spin 1s linear infinite',
           }}
         />
@@ -377,96 +377,17 @@ const HunterAppContent: React.FC = () => {
         <header className="app-main-header">
           <div className="app-header-left">
             <div className="app-brand">
-              <Sparkles className="w-5 h-5 text-cyan-400 animate-spin-slow" />
+              <Sparkles className="w-5 h-5 text-rose-500 animate-spin-slow" />
               <span className="brand-text">HUNTER SYSTEM</span>
               {profile?.current_rank && (
                 <span className="header-rank-tag">{profile.current_rank}</span>
               )}
             </div>
 
-            {/* Navigation Tabs */}
-            <nav className="header-nav-tabs" aria-label="Main Navigation">
-              <button
-                type="button"
-                id="nav-tab-dashboard"
-                onClick={() => { setActiveTab('dashboard'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'dashboard' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'dashboard' ? 'page' : undefined}
-              >
-                <LayoutDashboard className="w-4 h-4 mr-1.5" />
-                <span>DASHBOARD</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-guilds"
-                onClick={() => { setActiveTab('guilds'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'guilds' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'guilds' ? 'page' : undefined}
-              >
-                <Shield className="w-4 h-4 mr-1.5 text-purple-400" />
-                <span>GUILDS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-friends"
-                onClick={() => { setActiveTab('friends'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'friends' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'friends' ? 'page' : undefined}
-              >
-                <Users className="w-4 h-4 mr-1.5 text-cyan-400" />
-                <span>FRIENDS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-stats"
-                onClick={() => setActiveTab('stats')}
-                className={`header-tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-                aria-current={activeTab === 'stats' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-cyan-400" />
-                <span>STATS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-profile"
-                onClick={() => setActiveTab('profile')}
-                className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-                aria-current={activeTab === 'profile' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
-                <span>PROFILE</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-leaderboard"
-                onClick={() => setActiveTab('leaderboard')}
-                className={`header-tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
-                aria-current={activeTab === 'leaderboard' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-pink-400" />
-                <span>LEADERBOARD</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-settings"
-                onClick={() => setActiveTab('settings')}
-                className={`header-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                aria-current={activeTab === 'settings' ? 'page' : undefined}
-              >
-                <Settings className="w-4 h-4 mr-1.5 text-slate-300" />
-                <span>SETTINGS</span>
-              </button>
-            </nav>
           </div>
 
           <div className="app-header-right">
-            {/* Command Palette Trigger */}
+            {/* RAPHAEL Trigger */}
             <button
               type="button"
               id="btn-header-raphael"
@@ -475,20 +396,8 @@ const HunterAppContent: React.FC = () => {
               title="RAPHAEL System Advisor"
               aria-label="RAPHAEL"
             >
-              <Brain className="w-4 h-4 text-cyan-400" />
+              <Brain className="w-4 h-4 text-rose-500" />
               <span className="hidden-mobile">RAPHAEL</span>
-            </button>
-
-            <button
-              type="button"
-              id="btn-header-cmd"
-              onClick={() => setShowCommandPalette(true)}
-              className="btn-header-action"
-              title="Command Palette (Ctrl+K)"
-              aria-label="Command Palette"
-            >
-              <Search className="w-4 h-4 text-cyan-400" />
-              <span className="hidden-mobile">CMD</span>
             </button>
 
             {/* System Logs Trigger */}
@@ -500,7 +409,7 @@ const HunterAppContent: React.FC = () => {
               title="System Transmissions Archive"
               aria-label="Transmissions"
             >
-              <Bell className="w-4 h-4 text-cyan-400" />
+              <Bell className="w-4 h-4 text-rose-500" />
               <span className="hidden-mobile">LOGS</span>
             </button>
 
@@ -529,7 +438,7 @@ const HunterAppContent: React.FC = () => {
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <Moon className="w-4 h-4 text-cyan-500" />
+                <Moon className="w-4 h-4 text-rose-500" />
               )}
               <span className="hidden-mobile">{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
             </button>
@@ -707,46 +616,6 @@ const HunterAppContent: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Command Palette Modal */}
-      <AnimatePresence>
-        {showCommandPalette && (
-          <CommandPaletteModal
-            onClose={() => setShowCommandPalette(false)}
-            onSelectTab={(tab) => {
-              setActiveTab(tab as any);
-              setIsNotFound(false);
-              setInfoPage(null);
-            }}
-            onOpenCreateQuest={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenFocusChamber={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenGoalBuilder={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenWorldMap={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenWeeklyReport={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenTimeCapsule={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenRaphael={() => setShowRaphael(true)}
-            toggleTheme={toggleTheme}
-            currentTheme={theme}
-          />
-        )}
-      </AnimatePresence>
 
       {/* RAPHAEL Assistant Modal */}
       <RaphaelAssistantModal
@@ -754,14 +623,17 @@ const HunterAppContent: React.FC = () => {
         onClose={() => setShowRaphael(false)}
       />
 
-      {/* Mobile Bottom Navigation */}
+      {/* Primary Bottom Navigation */}
       {!isAwakening && (
         <MobileNavBar
-          activeTab={activeTab as AppTab}
+          activeTab={activeTab}
           onSelectTab={(tab) => {
-            setActiveTab(tab as any);
+            setActiveTab(tab);
             setIsNotFound(false);
             setInfoPage(null);
+            try {
+              window.history.pushState(null, '', tab === 'dashboard' ? '/' : `/${tab}`);
+            } catch {}
           }}
         />
       )}
@@ -778,12 +650,12 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#040714',
+          backgroundColor: '#000000',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#00e5ff',
+          color: '#ff1a40',
           fontFamily: "'Orbitron', 'Inter', sans-serif",
           gap: '16px',
         }}
@@ -793,8 +665,8 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            border: '3px solid rgba(0, 229, 255, 0.2)',
-            borderTopColor: '#00e5ff',
+            border: '3px solid rgba(255, 26, 64, 0.2)',
+            borderTopColor: '#ff1a40',
             animation: 'spin 1s linear infinite',
           }}
         />

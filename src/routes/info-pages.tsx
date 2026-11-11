@@ -37,7 +37,7 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#040714',
+        backgroundColor: '#000000',
         color: '#e2e8f0',
         padding: '32px 20px 80px',
         fontFamily: "'Inter', sans-serif",
@@ -55,8 +55,8 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
             padding: '8px 16px',
             borderRadius: '8px',
             backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(0, 229, 255, 0.3)',
-            color: '#00e5ff',
+            border: '1px solid rgba(255, 26, 64, 0.3)',
+            color: '#ff1a40',
             fontSize: '12px',
             fontWeight: 800,
             cursor: 'pointer',
@@ -70,12 +70,12 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
         {page === 'about' && (
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-              <Info style={{ width: '28px', height: '28px', color: '#00e5ff' }} />
+              <Info style={{ width: '28px', height: '28px', color: '#ff1a40' }} />
               <h1 style={{ fontSize: '28px', fontWeight: 900, fontFamily: "'Orbitron', sans-serif", color: '#fff' }}>
                 ABOUT HUNTR
               </h1>
             </div>
-            <div style={{ fontSize: '13px', color: '#00e5ff', fontWeight: 800, letterSpacing: '2px', marginBottom: '24px' }}>
+            <div style={{ fontSize: '13px', color: '#ff1a40', fontWeight: 800, letterSpacing: '2px', marginBottom: '24px' }}>
               [SYSTEM DIRECTIVE // AWAKEN YOUR POTENTIAL]
             </div>
 
@@ -83,7 +83,7 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
               <p>
                 <strong style={{ color: '#fff' }}>HUNTR</strong> is a gamified RPG productivity operating system inspired by the aesthetic and progression feeling of modern power-fantasy lore. It transforms real-world habits, training, study, and algorithmic craft into character attributes, ranks, and dungeon encounters.
               </p>
-              <div style={{ padding: '20px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '14px', borderLeft: '4px solid #00e5ff' }}>
+              <div style={{ padding: '20px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '14px', borderLeft: '4px solid #ff1a40' }}>
                 <h4 style={{ color: '#fff', fontWeight: 900, marginBottom: '6px' }}>CORE ETHOS</h4>
                 <p style={{ margin: 0 }}>
                   Progress is irrevocable. Missing a day resets active momentum, but XP and rank earned never decrease. The system encourages consistent, sovereign mastery without guilt-driven mechanics or overwork.
@@ -113,7 +113,7 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
                 { title: '4. FOCUS CHAMBER', desc: 'Dedicated Pomodoro timer with synthesized offline brown noise to ensure deep work focus.' },
               ].map((item, idx) => (
                 <div key={idx} style={{ padding: '16px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.15)' }}>
-                  <h4 style={{ color: '#00e5ff', fontSize: '13px', fontWeight: 900, marginBottom: '4px' }}>{item.title}</h4>
+                  <h4 style={{ color: '#ff1a40', fontSize: '13px', fontWeight: 900, marginBottom: '4px' }}>{item.title}</h4>
                   <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{item.desc}</p>
                 </div>
               ))}
@@ -221,7 +221,7 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
                     padding: '14px',
                     borderRadius: '12px',
                     backgroundColor: '#f59e0b',
-                    color: '#060912',
+                    color: '#000000',
                     fontWeight: 900,
                     fontSize: '13px',
                     letterSpacing: '1.5px',
@@ -264,9 +264,9 @@ export const InfoPages: React.FC<InfoPagesProps> = ({ page, onReturnToBase }) =>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ padding: '20px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '14px', borderLeft: '4px solid #00e5ff' }}>
+              <div style={{ padding: '20px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '14px', borderLeft: '4px solid #ff1a40' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 900, color: '#00e5ff' }}>v2.0.0 — Unified Hunter Operating System</span>
+                  <span style={{ fontSize: '15px', fontWeight: 900, color: '#ff1a40' }}>v2.0.0 — Unified Hunter Operating System</span>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>November 2026</span>
                 </div>
                 <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8', fontSize: '13px', lineHeight: 1.8 }}>

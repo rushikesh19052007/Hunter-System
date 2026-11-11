@@ -62,11 +62,11 @@ export const ComebackModal: React.FC<ComebackModalProps> = ({ onClose }) => {
         style={{
           width: '100%',
           maxWidth: '480px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
-          border: '1.5px solid rgba(0, 229, 255, 0.4)',
+          border: '1.5px solid rgba(255, 26, 64, 0.4)',
           padding: '28px',
-          boxShadow: '0 0 40px rgba(0, 229, 255, 0.2)',
+          boxShadow: '0 0 40px rgba(255, 26, 64, 0.2)',
           color: '#fff',
           textAlign: 'center',
         }}
@@ -78,12 +78,12 @@ export const ComebackModal: React.FC<ComebackModalProps> = ({ onClose }) => {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'rgba(0, 229, 255, 0.15)', border: '1px solid #00e5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(0, 229, 255, 0.3)' }}>
-            <Flame style={{ width: '28px', height: '28px', color: '#00e5ff' }} />
+          <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'rgba(255, 26, 64, 0.15)', border: '1px solid #ff1a40', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(255, 26, 64, 0.3)' }}>
+            <Flame style={{ width: '28px', height: '28px', color: '#ff1a40' }} />
           </div>
         </div>
 
-        <div style={{ fontSize: '11px', color: '#00e5ff', fontWeight: 900, letterSpacing: '2.5px', marginBottom: '6px' }}>
+        <div style={{ fontSize: '11px', color: '#ff1a40', fontWeight: 900, letterSpacing: '2.5px', marginBottom: '6px' }}>
           [SYSTEM SYNCHRONIZATION DETECTED]
         </div>
 
@@ -102,14 +102,14 @@ export const ComebackModal: React.FC<ComebackModalProps> = ({ onClose }) => {
             style={{
               padding: '14px 20px',
               borderRadius: '12px',
-              backgroundColor: '#00e5ff',
-              color: '#060912',
+              backgroundColor: '#ff1a40',
+              color: '#000000',
               fontWeight: 900,
               fontSize: '13px',
               letterSpacing: '1px',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(0, 229, 255, 0.35)',
+              boxShadow: '0 0 20px rgba(255, 26, 64, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',

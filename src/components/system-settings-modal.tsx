@@ -96,7 +96,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
       >
         <div className="modal-header">
           <div className="modal-title-row">
-            <Settings className="w-5 h-5 text-cyan-400" />
+            <Settings className="w-5 h-5 text-rose-500" />
             <div>
               <h3>SYSTEM CONTROL PANEL</h3>
               <p className="modal-subtitle">Audio harmonics, quiet hours, activity logs, and data configuration.</p>
@@ -148,7 +148,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
             <div className="settings-section-stack">
               <div className="settings-group-card">
                 <div className="settings-card-title">
-                  <Volume2 className="w-4 h-4 text-cyan-400" />
+                  <Volume2 className="w-4 h-4 text-rose-500" />
                   <span>ACOUSTIC SYNTHESIZER (AUDIO)</span>
                 </div>
 
@@ -322,7 +322,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
             <div className="settings-section-stack">
               <div className="settings-group-card">
                 <div className="settings-card-title">
-                  <Download className="w-4 h-4 text-cyan-400" />
+                  <Download className="w-4 h-4 text-rose-500" />
                   <span>BACKUP HUNTER PROFILE</span>
                 </div>
                 <p className="setting-desc mb-3">

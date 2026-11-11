@@ -37,7 +37,7 @@ export const StatAllocationPage: React.FC = () => {
 
   const statIcons: Record<HunterStat, React.ReactNode> = {
     STR: <Flame className="w-5 h-5 text-red-400" />,
-    AGI: <Zap className="w-5 h-5 text-cyan-400" />,
+    AGI: <Zap className="w-5 h-5 text-rose-500" />,
     VIT: <Shield className="w-5 h-5 text-emerald-400" />,
     INT: <Brain className="w-5 h-5 text-purple-400" />,
     PERC: <Eye className="w-5 h-5 text-amber-400" />,
@@ -77,13 +77,13 @@ export const StatAllocationPage: React.FC = () => {
           alignItems: 'center',
           gap: '20px',
           paddingBottom: '24px',
-          borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
+          borderBottom: '1px solid rgba(255, 26, 64, 0.2)',
           marginBottom: '24px',
         }}
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <Sparkles className="w-6 h-6 text-cyan-400" />
+            <Sparkles className="w-6 h-6 text-rose-500" />
             <h1
               style={{
                 fontSize: '1.9rem',
@@ -91,7 +91,7 @@ export const StatAllocationPage: React.FC = () => {
                 letterSpacing: '2px',
                 margin: 0,
                 textTransform: 'uppercase',
-                textShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+                textShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
               }}
             >
               STAT ALLOCATION DIRECTIVE
@@ -126,7 +126,7 @@ export const StatAllocationPage: React.FC = () => {
               fontSize: '11px',
               fontWeight: 800,
               letterSpacing: '1.5px',
-              color: availablePoints > 0 ? '#fbbf24' : '#00e5ff',
+              color: availablePoints > 0 ? '#fbbf24' : '#ff1a40',
               marginBottom: '4px',
             }}
           >
@@ -179,8 +179,8 @@ export const StatAllocationPage: React.FC = () => {
       ) : (
         <div
           style={{
-            backgroundColor: 'rgba(0, 229, 255, 0.1)',
-            border: '1.5px solid rgba(0, 229, 255, 0.6)',
+            backgroundColor: 'rgba(255, 26, 64, 0.1)',
+            border: '1.5px solid rgba(255, 26, 64, 0.6)',
             borderRadius: '12px',
             padding: '14px 18px',
             display: 'flex',
@@ -189,10 +189,10 @@ export const StatAllocationPage: React.FC = () => {
             marginBottom: '28px',
             color: '#67e8f9',
             fontSize: '0.9rem',
-            boxShadow: '0 0 20px rgba(0, 229, 255, 0.25)',
+            boxShadow: '0 0 20px rgba(255, 26, 64, 0.25)',
           }}
         >
-          <Sparkles className="w-5 h-5 flex-shrink-0 text-cyan-400 animate-pulse" />
+          <Sparkles className="w-5 h-5 flex-shrink-0 text-rose-500 animate-pulse" />
           <span>
             <strong>{availablePoints} UNASSIGNED POINT{availablePoints > 1 ? 'S' : ''} DETECTED!</strong> Allocate points to boost attributes and maximize Combat Power rating.
           </span>
@@ -494,7 +494,7 @@ export const StatAllocationPage: React.FC = () => {
             STR: <strong style={{ color: '#ef4444' }}>{profile.stats.STR || 10} (×12)</strong>
           </div>
           <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-            AGI: <strong style={{ color: '#00e5ff' }}>{profile.stats.AGI || 10} (×11)</strong>
+            AGI: <strong style={{ color: '#ff1a40' }}>{profile.stats.AGI || 10} (×11)</strong>
           </div>
           <div style={{ fontSize: '12px', color: '#94a3b8' }}>
             VIT: <strong style={{ color: '#10b981' }}>{profile.stats.VIT || 10} (×10)</strong>

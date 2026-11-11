@@ -24,14 +24,16 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
   const [message, setMessage] = useState('');
   const [targetRank, setTargetRank] = useState('B-Rank');
 
+  const storageKey = profile?.id ? `${STORAGE_CAPSULE_KEY}_${profile.id}` : STORAGE_CAPSULE_KEY;
+
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_CAPSULE_KEY);
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem(STORAGE_CAPSULE_KEY);
       if (saved) {
         setCapsule(JSON.parse(saved));
       }
     } catch {}
-  }, []);
+  }, [storageKey]);
 
   const handleSealCapsule = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +49,12 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
     };
 
     setCapsule(newCapsule);
-    localStorage.setItem(STORAGE_CAPSULE_KEY, JSON.stringify(newCapsule));
+    localStorage.setItem(storageKey, JSON.stringify(newCapsule));
   };
 
   const handleClearCapsule = () => {
     audioService.playClick();
+    localStorage.removeItem(storageKey);
     localStorage.removeItem(STORAGE_CAPSULE_KEY);
     setCapsule(null);
     setMessage('');
@@ -70,7 +73,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(4, 7, 20, 0.92)',
+        backgroundColor: 'rgba(0, 0, 0, 0.96)',
         backdropFilter: 'blur(12px)',
         padding: '20px',
       }}
@@ -84,7 +87,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
         style={{
           width: '100%',
           maxWidth: '520px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
           border: '1.5px solid rgba(129, 140, 248, 0.4)',
           padding: '28px',
@@ -167,7 +170,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
                 padding: '14px',
                 borderRadius: '12px',
                 backgroundColor: '#818cf8',
-                color: '#060912',
+                color: '#ffffff',
                 fontWeight: 900,
                 fontSize: '14px',
                 letterSpacing: '1.5px',

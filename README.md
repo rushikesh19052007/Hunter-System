@@ -2,7 +2,7 @@
 
 > *"You have been chosen. The System has awakened."*
 
-**HUNTR** is a gamified self-improvement web app inspired by *Solo Leveling*. Turn your real-life goals into quests, level up your stats, climb the ranks from **E-Rank** to **S-Rank**, and compete on a global leaderboard — all wrapped in a cinematic, anime-styled interface.
+**HUNTR** is a personal productivity RPG web application inspired by *Solo Leveling*. Turn real-world habits into directives, allocate stat points, climb ranks from **E-Rank** to **S-Rank**, lead hunter syndicates, and compete on the global leaderboard.
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)
@@ -14,49 +14,40 @@
 
 ## ✨ Features
 
-### 🎮 Core Gameplay Loop
-- **Quest System** — Accept, create, and complete quests across 13+ categories (Physical, Coding, Study, Mental, Health, Discipline, and more)
-- **Difficulty Grades** — E-Class through S-Class quests with scaling XP and stat point rewards
-- **XP & Leveling** — Earn experience from every completed quest and watch your level climb
-- **Stat Allocation** — Distribute earned skill points across six core stats: STR, AGI, INT, END, DSC, FOC
-- **HP & MP Progression** — Max HP grows with physical XP; Max MP grows with mental XP
+### 🎮 Core Gameplay & Progression
+- **Directive & Quest System** — Create, track, and clear quests across 13+ categories (Physical, Coding, Study, Mental, Health, Discipline).
+- **Difficulty Grades** — E-Class through S-Class directives with scaling XP and stat point rewards.
+- **Stat Point Allocation** — Distribute attribute points into five core parameters: `STR`, `AGI`, `VIT`, `INT`, and `PERC`.
+- **HP & MP Pools** — Max HP scales with physical training; Max MP expands through mental focus and deep work.
+- **Hunter Ranking** — Progression through E-Rank → D-Rank → C-Rank → B-Rank → A-Rank → S-Rank.
 
-### 🏆 Ranking & Progression
-- **Hunter Ranks** — Progress through E-Rank → D-Rank → C-Rank → B-Rank → A-Rank → S-Rank
-- **Achievement System** — Unlock achievements for milestones and special feats
-- **Daily Quest System** — Streak-based daily challenges with bonus rewards
-- **Hidden Quests** — Discover secret quests for rare bonus XP
+### 🛡️ Guilds & Social Syndicate
+- **Hunter Syndicates** — Form or join guilds with open enrollment or request-to-join permissions.
+- **Guild Roles** — Syndicate Master role with authority to promote unlimited Commanders or expel members.
+- **Hunter Dossiers** — Inspect allied hunter profiles, stat distributions, equipped titles, and achievements.
+- **Friend Network** — Send friend requests, accept alliances, and observe real-time status.
 
-### 🌐 Social & Competitive
-- **Global Leaderboard** — Compete against other Hunters worldwide
-- **Hunter Profiles** — Unique Hunter IDs, display names, and rank badges
+### 🏛️ Competitive & Analytics
+- **Global Leaderboard** — Live worldwide standings filterable by rank tier (S, A, B, C) and sorted by XP, level, or streak.
+- **Training Library // Hunter Codex** — Search and discover 179+ curated directives and challenges.
+- **Hunter Profile & Telemetry** — Interactive life balance radar, attribute matrix, and title mastery.
 
-### 🎬 Immersive Experience
-- **System Awakening** — Cinematic onboarding sequence with a 90-second countdown timer
-- **Level-Up Celebrations** — Confetti and animated rank-up dialogs
-- **System Notifications** — In-app toast notifications styled as "System Transmissions"
-- **Audio System** — Sound effects and system chimes for key events
-- **Dark & Light Themes** — Toggle between dark (default) and light mode
-- **Framer Motion Animations** — Smooth page transitions and micro-interactions throughout
-
-### 🔒 Auth & Data
-- **Firebase Authentication** — Email/password and Google Sign-In
-- **Cloud Firestore** — Real-time data sync across devices
-- **Error Boundary** — Graceful error handling prevents blank screens
+### 🧠 Tactical System Modules
+- **RAPHAEL // System Advisor** — Deterministic, offline tactical intelligence delivering comeback plans and goal deconstruction.
+- **Focus Chamber** — Integrated Pomodoro focus sessions paired with synthetic ambient brown/white noise generator.
+- **System Awakened Visuals** — Pitch-black backdrop, Monarch Blood Red / Crimson palette, and a pure-white light mode.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer        | Technology                                                |
-| ------------ | --------------------------------------------------------- |
-| **Frontend** | React 19, TypeScript 6, Vite 8                           |
-| **Styling**  | Custom CSS with CSS Variables, Framer Motion              |
-| **Backend**  | Firebase (Auth, Firestore, Analytics)                     |
-| **Icons**    | Lucide React                                              |
-| **Effects**  | Canvas Confetti                                           |
-| **Linting**  | Oxlint                                                    |
-| **Hosting**  | Vercel (with SPA rewrite rules)                           |
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 19, TypeScript 6, Vite 8 |
+| **Styling** | Modular CSS, Design Tokens, Framer Motion |
+| **Backend & Auth** | Firebase Authentication, Cloud Firestore |
+| **Icons & Audio** | Lucide React, Web Audio API |
+| **Hosting** | Vercel (SPA configuration) |
 
 ---
 
@@ -64,50 +55,41 @@
 
 ```
 Hunter-System/
-├── public/                     # Static assets (favicon, icons)
+├── public/                     # Static assets, web app manifest, service worker
 ├── src/
-│   ├── assets/                 # Images (hero, logos)
-│   ├── components/             # Reusable UI components
-│   │   ├── hidden-quests-widget.tsx
+│   ├── components/             # Reusable modal and interface components
+│   │   ├── focus-chamber-modal.tsx
+│   │   ├── goal-builder-modal.tsx
 │   │   ├── hunter-auth-screen.tsx
 │   │   ├── leaderboard.tsx
-│   │   ├── level-up-dialog.tsx
-│   │   ├── notification-center-modal.tsx
+│   │   ├── mobile-nav-bar.tsx
+│   │   ├── player-profile-modal.tsx
 │   │   ├── quest-codex-modal.tsx
-│   │   ├── quest-guide-modal.tsx
+│   │   ├── raphael-assistant-modal.tsx
 │   │   └── system-settings-modal.tsx
-│   ├── lib/                    # Core logic & services
-│   │   ├── achievements.ts     # Achievement definitions & triggers
-│   │   ├── analytics.ts        # Event tracking
-│   │   ├── audio-service.ts    # Sound effects engine
-│   │   ├── auth.tsx            # Firebase Auth context & hooks
-│   │   ├── daily-system.ts     # Daily quest & streak logic
-│   │   ├── default-quests.ts   # Built-in quest catalog
-│   │   ├── firebase.ts         # Firebase app initialization
-│   │   ├── firestore-converter.ts
-│   │   ├── game-engine.ts      # XP, ranks, stats, HP/MP, profiles
-│   │   ├── hunter-store.tsx    # Global state (React Context)
-│   │   ├── notifications.ts   # In-app notification system
-│   │   └── quest-library.ts   # Quest templates & categories
+│   ├── lib/                    # Game engine and service modules
+│   │   ├── audio-service.ts    # Web Audio synth and SFX
+│   │   ├── auth.tsx            # Firebase Auth provider
+│   │   ├── game-engine.ts      # XP curves, ranks, HP/MP calculations
+│   │   ├── guild-service.ts    # Syndicate operations and role management
+│   │   ├── hunter-store.tsx    # State management and offline persistence
+│   │   └── quest-library.ts    # Codex directive database
 │   ├── routes/
 │   │   ├── dashboard/
-│   │   │   ├── hunter-hub.tsx          # Main dashboard (quest board)
-│   │   │   ├── profile-page.tsx        # Hunter profile & achievements
-│   │   │   ├── stat-allocation-page.tsx # Stat point distribution
-│   │   │   └── account-settings-page.tsx
+│   │   │   ├── account-settings-page.tsx
+│   │   │   ├── friends-page.tsx
+│   │   │   ├── guilds-page.tsx
+│   │   │   ├── hunter-hub.tsx
+│   │   │   └── profile-page.tsx
 │   │   └── onboarding/
-│   │       └── system-awakening.tsx    # First-time cinematic onboarding
-│   ├── App.tsx                 # Root component, routing, error boundary
-│   ├── App.css                 # App-level styles
-│   ├── index.css               # Global styles & CSS variables
-│   └── main.tsx                # Entry point
-├── docs/                       # Design & migration documentation
-├── firestore.rules             # Firestore security rules
-├── storage.rules               # Firebase Storage security rules
-├── firebase.json               # Firebase project configuration
-├── vercel.json                 # Vercel SPA rewrite rules
-├── vite.config.ts              # Vite configuration with path aliases
-└── package.json
+│   │       └── system-awakening.tsx
+│   ├── App.tsx                 # Root application container & tab router
+│   ├── App.css                 # Base dashboard layouts & responsive rules
+│   ├── index.css               # Design system variables & component themes
+│   └── main.tsx                # Client entrypoint
+├── tests/                      # Automated game engine verification suite
+├── package.json
+└── vite.config.ts
 ```
 
 ---
@@ -115,134 +97,48 @@ Hunter-System/
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-- **Node.js** ≥ 18
-- **npm** (comes with Node.js)
-- A **Firebase** project ([create one here](https://console.firebase.google.com/))
+- Node.js ≥ 18
+- npm ≥ 9
 
 ### Installation
-
 ```bash
-# Clone the repository
 git clone https://github.com/rushikesh19052007/Hunter-System.git
-cd Hunter-System
-
-# Install dependencies
+cd Hunter-System/WEB
 npm install
 ```
 
-### Environment Setup
-
-Create a `.env` file in the project root with your Firebase credentials:
-
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
-```
-
-> See [`.env.example`](.env.example) for a reference template.
-
 ### Development
-
 ```bash
-# Start the dev server with HMR
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
-
-### Build & Preview
-
+### Verification & Testing
 ```bash
-# Type-check and build for production
+npm test
 npm run build
-
-# Preview the production build locally
-npm run preview
-```
-
-### Lint
-
-```bash
-npm run lint
 ```
 
 ---
 
 ## 🎯 Game Mechanics
 
-### Difficulty Grades & XP Rewards
+### Difficulty & Reward Scaling
 
-| Grade   | Label     | XP Earned | Stat XP | Stat Points |
-| ------- | --------- | --------- | ------- | ----------- |
-| **E**   | E-Class   | 15        | 10      | 1           |
-| **D**   | D-Class   | 35        | 20      | 2           |
-| **C**   | C-Class   | 60        | 35      | 3           |
-| **B**   | B-Class   | 100       | 60      | 4           |
-| **A**   | A-Class   | 150       | 100     | 5           |
-| **S**   | S-Class   | 250       | 180     | 8           |
+| Grade | Label | Base XP | Stat XP | Stat Points |
+|---|---|---|---|---|
+| **E** | E-Class | 15 | 10 | 1 |
+| **D** | D-Class | 35 | 20 | 2 |
+| **C** | C-Class | 60 | 35 | 3 |
+| **B** | B-Class | 100 | 60 | 4 |
+| **A** | A-Class | 150 | 100 | 5 |
+| **S** | S-Class | 250 | 180 | 8 |
 
-### Hunter Stats
-
-| Stat | Full Name    | Description                        |
-| ---- | ------------ | ---------------------------------- |
-| STR  | Strength     | Physical power & raw force         |
-| AGI  | Agility      | Speed, reflexes & coordination     |
-| INT  | Intelligence | Knowledge, logic & problem-solving |
-| END  | Endurance    | Stamina, resilience & willpower    |
-| DSC  | Discipline   | Consistency, focus & self-control  |
-| FOC  | Focus        | Concentration & mental clarity     |
-
-### HP / MP System
-
-- **HP** (Health Points) — Increases every 500 physical XP earned. Base HP scales with rank.
-- **MP** (Mana Points) — Increases every 500 mental XP earned. Base MP scales with rank.
-
----
-
-## 🚢 Deployment
-
-The project is configured for **Vercel** with SPA rewrite rules. Push to `main` to trigger auto-deployment, or deploy manually:
-
-```bash
-npx vercel --prod
-```
-
-Firebase services (Auth, Firestore) are configured via the `.firebaserc` and `firebase.json` files.
-
----
-
-## 📄 Documentation
-
-Additional design and migration docs are available in the [`docs/`](docs/) directory:
-
-- **Feature Parity Matrix** — Cross-platform feature comparison
-- **Firebase Migration Plan** — Backend migration strategy
-- **Firestore Schema** — Data model documentation
-- **Flutter Audit** — Mobile app audit notes
-- **UI/UX Mapping** — Design system reference
-- **Web Audit** — Web platform audit
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📜 License
-
-This project is private. All rights reserved.
+### Hunter Attributes
+- **STR (Strength)**: Physical endurance, resistance workouts, raw power.
+- **AGI (Agility)**: Cardiovascular performance, reflexes, habit speed.
+- **VIT (Vitality)**: Recovery capacity, sleep hygiene, total HP pool.
+- **INT (Intelligence)**: Mental acuity, deep work, logic, cognitive expansion, total MP pool.
+- **PERC (Perception)**: Focus retention, situational awareness, mindfulness.
 
 ---
 

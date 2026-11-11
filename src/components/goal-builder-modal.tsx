@@ -143,17 +143,17 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
           maxWidth: '560px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
-          border: '1.5px solid rgba(0, 229, 255, 0.4)',
+          border: '1.5px solid rgba(255, 26, 64, 0.4)',
           padding: '28px',
-          boxShadow: '0 0 40px rgba(0, 229, 255, 0.2)',
+          boxShadow: '0 0 40px rgba(255, 26, 64, 0.2)',
           color: '#fff',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Target style={{ width: '22px', height: '22px', color: '#00e5ff' }} />
+            <Target style={{ width: '22px', height: '22px', color: '#ff1a40' }} />
             <h3 style={{ fontSize: '18px', fontWeight: 900, fontFamily: "'Orbitron', sans-serif", letterSpacing: '1px' }}>
               GOAL-TO-MISSION BUILDER
             </h3>
@@ -170,7 +170,7 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
         {!generatedPlan ? (
           <form onSubmit={handleDeconstruct}>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#00e5ff', letterSpacing: '1.5px', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#ff1a40', letterSpacing: '1.5px', marginBottom: '6px' }}>
                 PRIMARY ASPIRATION / OBJECTIVE
               </label>
               <input
@@ -206,9 +206,9 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
                       flex: 1,
                       padding: '10px',
                       borderRadius: '8px',
-                      backgroundColor: targetDays === days ? 'rgba(0, 229, 255, 0.2)' : 'rgba(15, 23, 42, 0.6)',
-                      border: targetDays === days ? '1px solid #00e5ff' : '1px solid rgba(56, 189, 248, 0.15)',
-                      color: targetDays === days ? '#00e5ff' : '#94a3b8',
+                      backgroundColor: targetDays === days ? 'rgba(255, 26, 64, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                      border: targetDays === days ? '1px solid #ff1a40' : '1px solid rgba(56, 189, 248, 0.15)',
+                      color: targetDays === days ? '#ff1a40' : '#94a3b8',
                       fontWeight: 800,
                       fontSize: '12px',
                       cursor: 'pointer',
@@ -226,14 +226,14 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
                 width: '100%',
                 padding: '14px',
                 borderRadius: '12px',
-                backgroundColor: '#00e5ff',
-                color: '#060912',
+                backgroundColor: '#ff1a40',
+                color: '#000000',
                 fontWeight: 900,
                 fontSize: '14px',
                 letterSpacing: '1.5px',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 0 20px rgba(0, 229, 255, 0.35)',
+                boxShadow: '0 0 20px rgba(255, 26, 64, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -246,8 +246,8 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
           </form>
         ) : (
           <div>
-            <div style={{ padding: '12px 16px', backgroundColor: 'rgba(0, 229, 255, 0.08)', borderRadius: '10px', border: '1px solid rgba(0, 229, 255, 0.25)', marginBottom: '16px' }}>
-              <div style={{ fontSize: '11px', color: '#00e5ff', fontWeight: 800 }}>OBJECTIVE INITIALIZED</div>
+            <div style={{ padding: '12px 16px', backgroundColor: 'rgba(255, 26, 64, 0.08)', borderRadius: '10px', border: '1px solid rgba(255, 26, 64, 0.25)', marginBottom: '16px' }}>
+              <div style={{ fontSize: '11px', color: '#ff1a40', fontWeight: 800 }}>OBJECTIVE INITIALIZED</div>
               <div style={{ fontSize: '15px', fontWeight: 900, color: '#fff', marginTop: '2px' }}>{generatedPlan.goal}</div>
             </div>
 
@@ -258,8 +258,8 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {generatedPlan.phases.map((p, idx) => (
-                  <div key={idx} style={{ padding: '10px 12px', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', borderLeft: '3px solid #00e5ff' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#00e5ff' }}>{p.title}</div>
+                  <div key={idx} style={{ padding: '10px 12px', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', borderLeft: '3px solid #ff1a40' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#ff1a40' }}>{p.title}</div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>{p.desc}</div>
                   </div>
                 ))}
@@ -278,7 +278,7 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
                       <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{m.name}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{m.description}</div>
                     </div>
-                    <span style={{ fontSize: '11px', fontWeight: 900, padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(0, 229, 255, 0.15)', color: '#00e5ff' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 900, padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(255, 26, 64, 0.15)', color: '#ff1a40' }}>
                       {m.difficulty}-RANK
                     </span>
                   </div>
@@ -311,14 +311,14 @@ export const GoalBuilderModal: React.FC<GoalBuilderModalProps> = ({ onClose }) =
                   flex: 2,
                   padding: '12px',
                   borderRadius: '10px',
-                  backgroundColor: '#00e5ff',
-                  color: '#060912',
+                  backgroundColor: '#ff1a40',
+                  color: '#000000',
                   border: 'none',
                   fontWeight: 900,
                   fontSize: '13px',
                   letterSpacing: '1px',
                   cursor: 'pointer',
-                  boxShadow: '0 0 20px rgba(0, 229, 255, 0.35)',
+                  boxShadow: '0 0 20px rgba(255, 26, 64, 0.35)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
