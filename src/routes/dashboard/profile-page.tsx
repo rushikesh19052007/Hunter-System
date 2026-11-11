@@ -71,7 +71,6 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="profile-page">
-      <div className="profile-bg-mesh" />
 
       {/* Profile Hero Card */}
       <div className="profile-hero-card">

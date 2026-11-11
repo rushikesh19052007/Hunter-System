@@ -500,7 +500,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
   return (
     <div className="hub-container">
-      <div className="hub-bg-mesh" />
 
       {/* Dungeon Break Banner */}
       <AnimatePresence>

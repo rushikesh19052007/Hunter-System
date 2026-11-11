@@ -296,17 +296,31 @@ const HunterAppContent: React.FC = () => {
     }
   });
 
-  // Apply theme class to document body
+  // Apply theme class to document root and body
   useEffect(() => {
     if (theme === 'light') {
+      document.documentElement.classList.add('light-mode');
       document.body.classList.add('light-mode');
     } else {
+      document.documentElement.classList.remove('light-mode');
       document.body.classList.remove('light-mode');
     }
     try {
       localStorage.setItem('hunter_theme', theme);
     } catch {}
   }, [theme]);
+
+  // Synchronize theme across components if changed from settings
+  useEffect(() => {
+    const onThemeChange = () => {
+      try {
+        const saved = localStorage.getItem('hunter_theme');
+        setTheme(saved === 'light' ? 'light' : 'dark');
+      } catch {}
+    };
+    window.addEventListener('theme-change', onThemeChange);
+    return () => window.removeEventListener('theme-change', onThemeChange);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));

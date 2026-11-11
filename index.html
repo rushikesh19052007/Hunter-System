@@ -15,6 +15,14 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
     rel="stylesheet">
+  <script>
+    try {
+      if (localStorage.getItem('hunter_theme') === 'light') {
+        document.documentElement.classList.add('light-mode');
+        document.body.classList.add('light-mode');
+      }
+    } catch (e) {}
+  </script>
   <title>Hunter System // Awakening Protocol</title>
 </head>
 

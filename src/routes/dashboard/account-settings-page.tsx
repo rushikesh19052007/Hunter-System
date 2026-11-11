@@ -19,6 +19,8 @@ import {
   VolumeX,
   Sparkles,
   Shield,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { audioService } from '@/lib/audio-service';
 import { getRankBadgeInfo } from '@/lib/game-engine';
@@ -33,6 +35,29 @@ export const AccountSettingsPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState(false);
   const [isMuted, setIsMuted] = useState(audioService.isMuted());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem('hunter_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const handleSelectTheme = (newTheme: 'dark' | 'light') => {
+    audioService.playClick();
+    setCurrentTheme(newTheme);
+    try {
+      localStorage.setItem('hunter_theme', newTheme);
+      if (newTheme === 'light') {
+        document.documentElement.classList.add('light-mode');
+        document.body.classList.add('light-mode');
+      } else {
+        document.documentElement.classList.remove('light-mode');
+        document.body.classList.remove('light-mode');
+      }
+      window.dispatchEvent(new Event('theme-change'));
+    } catch {}
+  };
 
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -202,12 +227,13 @@ export const AccountSettingsPage: React.FC = () => {
 
   return (
     <div
+      className="settings-page-wrapper"
       style={{
         width: '100%',
         maxWidth: '1100px',
         margin: '0 auto',
         padding: '28px 20px 80px',
-        color: '#fff',
+        color: 'var(--text-main)',
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -254,9 +280,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 1: Account Identity */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -400,9 +426,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 2: Data & Storage */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -575,9 +601,9 @@ export const AccountSettingsPage: React.FC = () => {
         {/* Card 3: System Vitals & Diagnostics */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid #1c253d',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
           }}
@@ -718,13 +744,65 @@ export const AccountSettingsPage: React.FC = () => {
                 {isMuted ? 'SOUND MUTED' : 'SOUND ACTIVE'}
               </button>
             </div>
+
+            {/* Interface Theme Switcher */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '10px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {currentTheme === 'light' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-rose-500" />}
+                Interface Theme
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTheme('dark')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: currentTheme === 'dark' ? '1px solid #ff1a40' : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: currentTheme === 'dark' ? '#ff1a40' : 'rgba(15, 23, 42, 0.6)',
+                    color: currentTheme === 'dark' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  DARK (PITCH BLACK)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTheme('light')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: currentTheme === 'light' ? '1px solid #dc2626' : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: currentTheme === 'light' ? '#dc2626' : 'rgba(15, 23, 42, 0.6)',
+                    color: currentTheme === 'light' ? '#ffffff' : '#94a3b8',
+                    fontWeight: 800,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  LIGHT (PURE WHITE)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Card 4: Danger Zone */}
         <div
           style={{
-            backgroundColor: '#0c1020',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
             border: '1px solid rgba(239, 68, 68, 0.4)',
             padding: '24px',

@@ -234,7 +234,7 @@
   justify-content: center;
   padding: 1.5rem;
   position: relative;
-  background: radial-gradient(circle at 50% 30%, #1a0408 0%, #000000 85%);
+  background: #000000;
   overflow: hidden;
 }
 

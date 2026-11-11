@@ -262,32 +262,6 @@ export const HunterAuthScreen: React.FC = () => {
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
-      {/* Ambient Cyber Orbs */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-100px',
-          right: '-100px',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255, 26, 64, 0.16) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '-80px',
-          left: '-80px',
-          width: '300px',
-          height: '300px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(147, 51, 234, 0.16) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
       <div style={{ maxWidth: '440px', width: '100%', zIndex: 10 }}>
         {/* Animated System Directive Badge */}
         <div style={{ textAlign: 'center', marginBottom: '18px' }}>
