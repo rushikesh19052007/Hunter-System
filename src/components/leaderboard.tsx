@@ -421,7 +421,7 @@ export const Leaderboard: React.FC = () => {
           </div>
 
           <div className="global-stat-card">
-            <div className="global-stat-icon-wrapper text-emerald-400">
+            <div className="global-stat-icon-wrapper text-rose-500">
               <Zap className="w-4 h-4" />
             </div>
             <div className="global-stat-details">
@@ -445,7 +445,7 @@ export const Leaderboard: React.FC = () => {
           </div>
 
           <div className="global-stat-card">
-            <div className="global-stat-icon-wrapper text-purple-400">
+            <div className="global-stat-icon-wrapper text-rose-400">
               <Shield className="w-4 h-4" />
             </div>
             <div className="global-stat-details">
@@ -462,14 +462,15 @@ export const Leaderboard: React.FC = () => {
           <div
             className="current-user-standing-card"
             style={{
-              background: 'linear-gradient(135deg, #162544, #131c36)',
+              background: 'linear-gradient(135deg, rgba(32, 4, 8, 0.96), rgba(12, 2, 4, 0.98))',
               borderColor: 'rgba(255, 26, 64, 0.6)',
+              boxShadow: '0 0 25px rgba(255, 26, 64, 0.25)',
             }}
           >
             <div className="standing-left">
               <div
                 className="standing-rank-badge"
-                style={{ backgroundColor: '#ff1a40', color: '#000' }}
+                style={{ backgroundColor: '#ff1a40', color: '#fff' }}
               >
                 #{currentUserRank || 1}
               </div>
@@ -479,7 +480,7 @@ export const Leaderboard: React.FC = () => {
                   {profile.display_name} <span className="you-badge">(YOU)</span>
                   <span className="standing-hunter-id"> • {profile.hunter_id}</span>
                 </div>
-                <div style={{ color: '#67e8f9', fontSize: '0.85rem', fontWeight: 600 }}>
+                <div style={{ color: '#ff1a40', fontSize: '0.85rem', fontWeight: 600 }}>
                   Level {profile.current_level} • {profile.current_rank}
                 </div>
               </div>
@@ -497,7 +498,7 @@ export const Leaderboard: React.FC = () => {
                 </span>
               </div>
               <div className="stat-pill">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                <TrendingUp className="w-3.5 h-3.5 text-rose-400" />
                 <span>{profile.clean_days}d STREAK</span>
               </div>
             </div>
@@ -518,9 +519,9 @@ export const Leaderboard: React.FC = () => {
                 setRankFilter(rf);
               }}
               style={{
-                backgroundColor: isSel ? '#ff1a40' : '#131828',
-                color: isSel ? '#000' : '#fff',
-                borderColor: isSel ? '#ff1a40' : '#222c42',
+                backgroundColor: isSel ? '#ff1a40' : 'rgba(18, 4, 8, 0.85)',
+                color: isSel ? '#ffffff' : '#94a3b8',
+                borderColor: isSel ? '#ff1a40' : 'rgba(255, 26, 64, 0.25)',
                 borderRadius: '10px',
                 padding: '8px 16px',
                 fontWeight: 'bold',
@@ -528,6 +529,7 @@ export const Leaderboard: React.FC = () => {
                 border: '1px solid',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                boxShadow: isSel ? '0 0 12px rgba(255, 26, 64, 0.35)' : 'none',
               }}
             >
               {rf}
@@ -571,7 +573,7 @@ export const Leaderboard: React.FC = () => {
             }}
             className={`filter-tab-btn ${filter === 'clean_days' ? 'active' : ''}`}
           >
-            <TrendingUp className="w-4 h-4 mr-1 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 mr-1 text-rose-400" />
             <span>SORT BY STREAK</span>
           </button>
         </div>

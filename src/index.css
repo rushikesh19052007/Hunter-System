@@ -178,6 +178,55 @@ body.light-mode .member-item-row:hover {
   border-color: rgba(220, 38, 38, 0.45) !important;
 }
 
+body.light-mode .current-user-standing-card {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%) !important;
+  border-color: rgba(220, 38, 38, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.1) !important;
+}
+
+body.light-mode .standing-user-name,
+body.light-mode .hunter-name-text,
+body.light-mode .xp-val {
+  color: #0f172a !important;
+}
+
+body.light-mode .leaderboard-table-wrapper {
+  background: #ffffff !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+body.light-mode .leaderboard-table-header {
+  background: #f8fafc !important;
+  border-bottom-color: rgba(220, 38, 38, 0.2) !important;
+  color: #64748b !important;
+}
+
+body.light-mode .leaderboard-row {
+  border-bottom-color: rgba(220, 38, 38, 0.1) !important;
+}
+
+body.light-mode .leaderboard-row:hover {
+  background: rgba(220, 38, 38, 0.05) !important;
+}
+
+body.light-mode .leaderboard-row.current-user-row {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border-color: #dc2626 !important;
+}
+
+body.light-mode .stat-pill,
+body.light-mode .filter-tab-btn,
+body.light-mode .search-input-wrapper,
+body.light-mode .btn-refresh {
+  background: #ffffff !important;
+  border-color: rgba(220, 38, 38, 0.25) !important;
+  color: #0f172a !important;
+}
+
+body.light-mode .leaderboard-search-input {
+  color: #0f172a !important;
+}
+
 body.light-mode .codex-controls-bar,
 body.light-mode .codex-category-tabs {
   background: #f8fafc !important;
