@@ -16,6 +16,7 @@ import {
 } from '@/lib/game-engine';
 import { ACHIEVEMENTS, HIDDEN_QUESTS, getBadgeLabel } from '@/lib/achievements';
 import { playSystemChime } from '@/lib/notifications';
+import { LifeBalanceRadar } from '@/components/life-balance-radar';
 
 export const ProfilePage: React.FC = () => {
   const {
@@ -303,6 +304,11 @@ export const ProfilePage: React.FC = () => {
                 <div><Brain className="w-4 h-4 text-purple-400" /><span>Mental</span><strong>{profile.mental_quests_completed}</strong></div>
                 <div><Code className="w-4 h-4 text-cyan-400" /><span>Coding</span><strong>{profile.coding_quests_completed}</strong></div>
               </div>
+            </div>
+
+            {/* Life Balance Hexagon Radar */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '16px' }}>
+              <LifeBalanceRadar />
             </div>
           </div>
         )}

@@ -8,16 +8,13 @@ import {
   Compass,
   CheckCircle,
   Plus,
-  AlertTriangle,
   X,
-  ChevronRight,
   Shield,
   Zap,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
   getXpProgress,
-  calculateRank,
   getXpForLevel,
   DIFFICULTY_XP,
   DIFFICULTY_STAT_POINTS,
@@ -105,68 +102,68 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
         },
         {
           name: 'Core Implementation Sprint',
-          description: 'Ship 90 minutes of focused code without distractions.',
-          difficulty: 'B',
-          category: 'coding',
-          stat: 'per',
-          target: 90,
-        },
-        {
-          name: 'Verification & Code Review',
-          description: 'Write automated unit tests and verify 0 compiler/lint warnings.',
-          difficulty: 'D',
+          description: '45 minutes uninterrupted development on core logic.',
+          difficulty: 'C',
           category: 'coding',
           stat: 'int',
-          target: 1,
-        },
-      ];
-    } else if (term.includes('run') || term.includes('gym') || term.includes('workout') || term.includes('fitness') || term.includes('health') || term.includes('weight')) {
-      generated = [
-        {
-          name: `Conditioning: ${goalInput.slice(0, 30)}`,
-          description: 'Warm-up stretching, mobility drills, and cardiovascular priming.',
-          difficulty: 'E',
-          category: 'physical',
-          stat: 'agi',
-          target: 15,
-        },
-        {
-          name: 'High Intensity Core Progression',
-          description: 'Execute planned sets/intervals with strict biomechanical form.',
-          difficulty: 'C',
-          category: 'physical',
-          stat: 'str',
           target: 45,
         },
         {
-          name: 'Recovery & Hydration Protocol',
-          description: 'Consume post-workout nutrition and minimum 1.5L clean water.',
-          difficulty: 'E',
-          category: 'physical',
-          stat: 'vit',
+          name: 'Test & Verification Phase',
+          description: 'Write unit tests, verify edge cases, and run linting.',
+          difficulty: 'D',
+          category: 'coding',
+          stat: 'per',
           target: 1,
         },
       ];
-    } else if (term.includes('book') || term.includes('read') || term.includes('study') || term.includes('exam') || term.includes('learn')) {
+    } else if (term.includes('fitness') || term.includes('workout') || term.includes('run') || term.includes('gym') || term.includes('muscle')) {
       generated = [
         {
-          name: `Deep Study: ${goalInput.slice(0, 30)}`,
-          description: 'Focused chapter analysis with margin annotations and key concept extraction.',
+          name: `Phase 1: ${goalInput.slice(0, 30)}`,
+          description: 'Primary compound or resistance conditioning session.',
+          difficulty: 'D',
+          category: 'fitness',
+          stat: 'str',
+          target: 30,
+        },
+        {
+          name: 'Cardio & Aerobic Threshold',
+          description: '20 minutes elevated heart-rate endurance protocol.',
+          difficulty: 'E',
+          category: 'physical',
+          stat: 'agi',
+          target: 20,
+        },
+        {
+          name: 'Recovery & Mobility Stretch',
+          description: 'Full-body fascial release and static stretching.',
+          difficulty: 'E',
+          category: 'health',
+          stat: 'vit',
+          target: 15,
+        },
+      ];
+    } else if (term.includes('read') || term.includes('book') || term.includes('study') || term.includes('learn')) {
+      generated = [
+        {
+          name: `Focused Study: ${goalInput.slice(0, 30)}`,
+          description: 'Active reading with margin annotations and note synthesis.',
           difficulty: 'D',
           category: 'study',
           stat: 'int',
           target: 30,
         },
         {
-          name: 'Feynman Concept Articulation',
-          description: 'Summarize the core theorem or narrative in your own concise notes.',
-          difficulty: 'C',
-          category: 'study',
+          name: 'Core Synthesis & Summary',
+          description: 'Summarize key mental models and write actionable takeaways.',
+          difficulty: 'E',
+          category: 'knowledge',
           stat: 'per',
           target: 1,
         },
         {
-          name: 'Flash Review Session',
+          name: 'Concept Recall Practice',
           description: 'Spaced repetition review of prior lesson material.',
           difficulty: 'E',
           category: 'study',
@@ -175,7 +172,6 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
         },
       ];
     } else {
-      // General productivity breakdown
       generated = [
         {
           name: `Scope & Clarify: ${goalInput.slice(0, 30)}`,
@@ -228,33 +224,34 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="raphael-backdrop" onClick={onClose}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-2xl bg-slate-950 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[90vh]"
+          className="raphael-modal-card"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-cyan-500/20 bg-slate-900/60">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
+          <div className="raphael-header">
+            <div className="raphael-brand">
+              <div className="raphael-icon-box">
                 <Brain className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black tracking-wider text-white font-mono">RAPHAEL // SYSTEM ADVISOR</h2>
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <div className="raphael-title-row">
+                  <h2 className="raphael-title-text">RAPHAEL // SYSTEM ADVISOR</h2>
+                  <span className="raphael-engine-badge">
                     Deterministic OS
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">Tactical Productivity Intelligence // Zero Cloud APIs // Local Engine</p>
+                <p className="raphael-subtitle">Tactical Productivity Intelligence // Zero Cloud APIs // Local Engine</p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="modal-close-btn"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -262,15 +259,11 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-slate-800 bg-slate-900/30 px-5 gap-2 text-xs font-semibold overflow-x-auto">
+          <div className="raphael-tabs-bar">
             <button
               type="button"
               onClick={() => setActiveTab('briefing')}
-              className={`py-3 px-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                activeTab === 'briefing'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              className={`raphael-tab-btn ${activeTab === 'briefing' ? 'active' : ''}`}
             >
               <Compass className="w-3.5 h-3.5" />
               TACTICAL BRIEFING
@@ -278,11 +271,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             <button
               type="button"
               onClick={() => setActiveTab('calculator')}
-              className={`py-3 px-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                activeTab === 'calculator'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              className={`raphael-tab-btn ${activeTab === 'calculator' ? 'active' : ''}`}
             >
               <Calculator className="w-3.5 h-3.5" />
               PROGRESSION MATH
@@ -290,11 +279,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             <button
               type="button"
               onClick={() => setActiveTab('deconstruct')}
-              className={`py-3 px-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                activeTab === 'deconstruct'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              className={`raphael-tab-btn ${activeTab === 'deconstruct' ? 'active' : ''}`}
             >
               <Target className="w-3.5 h-3.5" />
               GOAL DECONSTRUCTOR
@@ -302,11 +287,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             <button
               type="button"
               onClick={() => setActiveTab('manual')}
-              className={`py-3 px-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                activeTab === 'manual'
-                  ? 'border-cyan-400 text-cyan-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
+              className={`raphael-tab-btn ${activeTab === 'manual' ? 'active' : ''}`}
             >
               <Shield className="w-3.5 h-3.5" />
               SYSTEM CODEX
@@ -314,54 +295,52 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          <div className="raphael-body">
             {/* TACTICAL BRIEFING */}
             {activeTab === 'briefing' && (
-              <div className="space-y-5">
-                <div className="p-4 rounded-xl bg-slate-900/80 border border-cyan-500/20 flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                  <div className="text-xs leading-relaxed text-slate-300 space-y-1">
-                    <p className="font-semibold text-white">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="raphael-info-card">
+                  <Sparkles className="w-5 h-5 text-cyan-400" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#cbd5e1' }}>
+                    <p style={{ fontWeight: 700, color: '#fff', fontSize: '13px' }}>
                       Hunter Status: {profile?.display_name || 'Hunter'} // {profile?.current_rank || 'E-Rank'} (Level {profile?.current_level || 1})
                     </p>
-                    <p>
-                      Active trials on board: <span className="text-cyan-300 font-bold">{activeQuests.length}</span>.
-                      Cleared today: <span className="text-emerald-300 font-bold">{completedToday.length}</span>.
-                      Momentum streak: <span className="text-amber-300 font-bold">{profile?.streak || 1} Days</span>.
+                    <p style={{ marginTop: '4px' }}>
+                      Active trials on board: <strong style={{ color: '#00d9ff' }}>{activeQuests.length}</strong> &bull; Cleared today: <strong style={{ color: '#22d3a6' }}>{completedToday.length}</strong> &bull; Momentum streak: <strong style={{ color: '#f5b942' }}>{profile?.streak || 1} Days</strong>
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                  <h3 style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: '#8899aa', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
                     Recommended Priority Directives For Today
                   </h3>
                   {recommendedPriorities.length === 0 ? (
-                    <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs">
-                      All directives cleared or no trials active. Create a new quest or inspect the Codex.
+                    <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed rgba(255, 255, 255, 0.15)', borderRadius: '12px', color: '#64748b', fontSize: '12px' }}>
+                      All directives cleared or no trials active. Create a new quest or inspect the Training Library.
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {recommendedPriorities.map((q, idx) => (
                         <div
                           key={q.id}
-                          className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-3 hover:border-cyan-500/30 transition-colors"
+                          className="raphael-priority-card"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-slate-800 text-cyan-400 font-mono text-xs flex items-center justify-center font-bold">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0, 217, 255, 0.15)', border: '1px solid rgba(0, 217, 255, 0.4)', color: '#00d9ff', fontSize: '11px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {idx + 1}
                             </span>
                             <div>
-                              <div className="text-sm font-bold text-white">{q.name}</div>
-                              <div className="text-xs text-slate-400 line-clamp-1">{q.description}</div>
+                              <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{q.name}</div>
+                              <div style={{ fontSize: '11px', color: '#8899aa', maxWidth: '380px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.description}</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                            <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 185, 66, 0.12)', border: '1px solid rgba(245, 185, 66, 0.4)', color: '#f5b942' }}>
                               {q.difficulty}-Rank
                             </span>
-                            <span className="text-xs text-cyan-300 font-mono font-bold">
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#00d9ff', fontFamily: 'monospace' }}>
                               +{q.xp_reward} XP
                             </span>
                           </div>
@@ -371,8 +350,8 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
                   )}
                 </div>
 
-                <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
-                  <span className="font-bold text-amber-400">RAPHAEL ADVISORY: </span>
+                <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(245, 185, 66, 0.08)', border: '1px solid rgba(245, 185, 66, 0.25)', fontSize: '11px', color: '#fde68a', lineHeight: 1.5 }}>
+                  <strong style={{ color: '#f5b942' }}>RAPHAEL ADVISORY: </strong>
                   Maintain your daily streak to trigger momentum XP multipliers (+20% at 7d, +50% at 14d, +100% at 30d). Avoid letting your board exceed 8 active trials to mitigate focus fragmentation.
                 </div>
               </div>
@@ -380,47 +359,47 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
 
             {/* PROGRESSION MATH */}
             {activeTab === 'calculator' && (
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Next Level Gate</span>
-                    <div className="text-xl font-black text-cyan-300 mt-1">Level {(profile?.current_level || 1) + 1}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-mono">Need {remainingXpForLevel} XP more</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#8899aa', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Next Level Gate</span>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#00d9ff', marginTop: '4px', fontFamily: "'Orbitron', sans-serif" }}>Level {(profile?.current_level || 1) + 1}</div>
+                    <div style={{ fontSize: '11px', color: '#8899aa', marginTop: '4px', fontFamily: 'monospace' }}>Need {remainingXpForLevel} XP more</div>
                   </div>
-                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">Next Rank Gate</span>
-                    <div className="text-xl font-black text-amber-300 mt-1">{nextRankInfo?.nextRank || 'Supreme Hunter'}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-mono">{levelsUntilNextRank} levels / {xpUntilNextRank} XP</div>
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(245, 185, 66, 0.2)' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#8899aa', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Next Rank Gate</span>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#f5b942', marginTop: '4px', fontFamily: "'Orbitron', sans-serif" }}>{nextRankInfo?.nextRank || 'Supreme Hunter'}</div>
+                    <div style={{ fontSize: '11px', color: '#8899aa', marginTop: '4px', fontFamily: 'monospace' }}>{levelsUntilNextRank} levels / {xpUntilNextRank} XP</div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  <h3 style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: '#8899aa', marginBottom: '8px' }}>
                     Trials Required to Level Up ({remainingXpForLevel} XP needed)
                   </h3>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', textAlign: 'center' }}>
                     {(['E', 'D', 'C', 'B', 'A', 'S'] as DifficultyGrade[]).map((grade) => {
                       const xp = DIFFICULTY_XP[grade] || 25;
                       const needed = Math.ceil(remainingXpForLevel / xp);
                       return (
-                        <div key={grade} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-                          <span className="font-bold text-white">{grade}-Rank</span>
-                          <div className="text-cyan-400 font-mono font-bold text-base mt-1">{needed}</div>
-                          <span className="text-[10px] text-slate-500">trials ({xp} XP ea)</span>
+                        <div key={grade} style={{ padding: '10px 4px', borderRadius: '8px', background: 'rgba(11, 19, 40, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                          <span style={{ fontWeight: 800, fontSize: '11px', color: '#fff' }}>{grade}</span>
+                          <div style={{ color: '#00d9ff', fontFamily: 'monospace', fontWeight: 900, fontSize: '16px', margin: '2px 0' }}>{needed}</div>
+                          <span style={{ fontSize: '9px', color: '#64748b' }}>{xp} XP</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs">
-                  <div className="font-bold text-white flex items-center gap-1.5">
+                <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)', fontSize: '12px', lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                     <Calculator className="w-3.5 h-3.5 text-cyan-400" />
                     Stat Points Rewards Matrix
                   </div>
-                  <p className="text-slate-400">
+                  <p style={{ color: '#8899aa', margin: 0 }}>
                     E: +1 pt &bull; D: +2 pts &bull; C: +3 pts &bull; B: +4 pts &bull; A: +5 pts &bull; S: +8 pts.
-                    Use points to elevate Strength (STR), Agility (AGI), Intelligence (INT), Vitality (VIT), and Perception (SEN).
+                    Use points to elevate Strength (STR), Agility (AGI), Intelligence (INT), Vitality (VIT), and Perception (PERC).
                   </p>
                 </div>
               </div>
@@ -428,64 +407,66 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
 
             {/* GOAL DECONSTRUCTOR */}
             {activeTab === 'deconstruct' && (
-              <div className="space-y-5">
-                <form onSubmit={handleDeconstruct} className="space-y-3">
-                  <label htmlFor="goal-input-field" className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <form onSubmit={handleDeconstruct} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label htmlFor="goal-input-field" style={{ fontSize: '11px', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     Enter Real-World Goal / Skill / Project
                   </label>
-                  <div className="flex gap-2">
+                  <div className="raphael-input-row">
                     <input
                       id="goal-input-field"
                       type="text"
                       placeholder="e.g. Master TypeScript, Run 10k, Read Clean Code..."
                       value={goalInput}
                       onChange={(e) => setGoalInput(e.target.value)}
-                      className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400"
+                      className="raphael-text-input"
                     />
                     <button
                       type="submit"
-                      className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs tracking-wider uppercase transition-colors shrink-0 flex items-center gap-1.5"
+                      className="btn-system-primary"
+                      style={{ padding: '10px 18px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.9px' }}
                     >
-                      <Brain className="w-4 h-4" />
-                      Deconstruct
+                      <Brain className="w-4 h-4 mr-1.5" />
+                      DECONSTRUCT
                     </button>
                   </div>
                 </form>
 
                 {committedNotice && (
-                  <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(34, 211, 166, 0.15)', border: '1px solid rgba(34, 211, 166, 0.5)', color: '#22d3a6', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CheckCircle className="w-4 h-4 shrink-0" />
                     <span>{committedNotice}</span>
                   </div>
                 )}
 
                 {deconstructedQuests.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.9px', color: '#8899aa' }}>
                       Generated Trial Directives (Review Before Adding)
                     </h3>
-                    <div className="space-y-2.5">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {deconstructedQuests.map((q, idx) => (
                         <div
                           key={idx}
-                          className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3"
+                          className="raphael-priority-card"
                         >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-white">{q.name}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700">
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{q.name}</span>
+                              <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: 'rgba(245, 185, 66, 0.12)', border: '1px solid rgba(245, 185, 66, 0.4)', color: '#f5b942' }}>
                                 {q.difficulty}-Rank
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400">{q.description}</p>
+                            <p style={{ fontSize: '11px', color: '#8899aa', margin: '4px 0 0' }}>{q.description}</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleCommitQuest(q)}
-                            className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors shrink-0"
+                            className="btn-hologram-cyan"
+                            style={{ padding: '6px 14px', fontSize: '11px', fontWeight: 800, whiteSpace: 'nowrap' }}
                           >
-                            <Plus className="w-3.5 h-3.5" />
-                            Commit
+                            <Plus className="w-3.5 h-3.5 mr-1" />
+                            COMMIT
                           </button>
                         </div>
                       ))}
@@ -497,16 +478,16 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
 
             {/* SYSTEM CODEX */}
             {activeTab === 'manual' && (
-              <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
-                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-                  <h4 className="font-bold text-white text-sm">Autonomous Productivity Architecture</h4>
-                  <p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>
+                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                  <h4 style={{ fontWeight: 800, color: '#fff', fontSize: '13px', margin: '0 0 6px' }}>Autonomous Productivity Architecture</h4>
+                  <p style={{ margin: 0 }}>
                     HUNTR converts genuine daily discipline into quantifiable RPG progression. Every directive completed advances your level, awards stat points, and increases momentum.
                   </p>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-                  <h4 className="font-bold text-white text-sm">Transparency & Security Policy</h4>
-                  <p>
+                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                  <h4 style={{ fontWeight: 800, color: '#fff', fontSize: '13px', margin: '0 0 6px' }}>Transparency & Security Policy</h4>
+                  <p style={{ margin: 0 }}>
                     RAPHAEL operates strictly in-browser via deterministic rule engines. No user prompts, personal habits, or private quest names are transmitted to third-party language model endpoints.
                   </p>
                 </div>
@@ -515,14 +496,15 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-800 bg-slate-900/40 flex items-center justify-between text-xs text-slate-500">
+          <div className="raphael-footer">
             <span>RAPHAEL Tactical Engine v2.5</span>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg transition-colors"
+              className="btn-system-secondary"
+              style={{ padding: '6px 16px', fontSize: '11px', fontWeight: 800 }}
             >
-              Dismiss Interface
+              DISMISS INTERFACE
             </button>
           </div>
         </motion.div>

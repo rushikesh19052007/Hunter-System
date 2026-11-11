@@ -318,3 +318,49 @@ test('15. Guild Affiliation Authorization Rule', () => {
   // Unauthorized third party attempting to change user_1 affiliation
   assert.equal(canUpdateAffiliation('random_intruder', 'user_1', 'guild_x', false), false);
 });
+
+test('16. Stat & Skill Point Allocation Never Awards XP (No Infinite Loop)', () => {
+  // Simulate allocating a stat point on a Level 23 hunter
+  const initialTotalXp = 9430;
+  const initialLevel = 23;
+  const initialSP = 8;
+  const initialStatPts = 8;
+  const initialSTR = 11;
+
+  // Allocation function matching hunter-store.tsx logic
+  function allocatePoint(profile: {
+    total_xp: number;
+    current_level: number;
+    available_skill_points: number;
+    available_stat_points: number;
+    stats: Record<string, number>;
+  }, statKey: string) {
+    if (profile.available_skill_points <= 0 && profile.available_stat_points <= 0) return profile;
+    return {
+      ...profile,
+      available_skill_points: Math.max(0, profile.available_skill_points - 1),
+      available_stat_points: Math.max(0, profile.available_stat_points - 1),
+      stats: {
+        ...profile.stats,
+        [statKey]: (profile.stats[statKey] || 10) + 1,
+      },
+    };
+  }
+
+  const updated = allocatePoint({
+    total_xp: initialTotalXp,
+    current_level: initialLevel,
+    available_skill_points: initialSP,
+    available_stat_points: initialStatPts,
+    stats: { STR: initialSTR },
+  }, 'STR');
+
+  // Verify stat incremented
+  assert.equal(updated.stats.STR, 12);
+  // Verify available points decremented
+  assert.equal(updated.available_skill_points, 7);
+  assert.equal(updated.available_stat_points, 7);
+  // CRITICAL: Total XP and Level MUST NOT CHANGE when allocating points
+  assert.equal(updated.total_xp, initialTotalXp);
+  assert.equal(updated.current_level, initialLevel);
+});

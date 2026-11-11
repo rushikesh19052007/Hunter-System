@@ -35,10 +35,9 @@ import { SystemSettingsModal } from '@/components/system-settings-modal';
 import { LevelUpDialog } from '@/components/level-up-dialog';
 import { PromotionCelebrationModal } from '@/components/promotion-celebration-modal';
 import { MobileNavBar, type AppTab } from '@/components/mobile-nav-bar';
-import { CommandPaletteModal } from '@/components/command-palette-modal';
 import { RaphaelAssistantModal } from '@/components/raphael-assistant-modal';
 import { InfoPages, type InfoPageType } from '@/routes/info-pages';
-import { Search, Brain, WifiOff } from 'lucide-react';
+import { Brain, WifiOff } from 'lucide-react';
 import './index.css';
 import './App.css';
 
@@ -249,19 +248,6 @@ const HunterAppContent: React.FC = () => {
   const [showNotifCenter, setShowNotifCenter] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [infoPage, setInfoPage] = useState<InfoPageType | null>(null);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-
-  // Global Ctrl+K Command Palette Shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // URL Routing & Custom 404 Interceptor
   useEffect(() => {
@@ -384,89 +370,10 @@ const HunterAppContent: React.FC = () => {
               )}
             </div>
 
-            {/* Navigation Tabs */}
-            <nav className="header-nav-tabs" aria-label="Main Navigation">
-              <button
-                type="button"
-                id="nav-tab-dashboard"
-                onClick={() => { setActiveTab('dashboard'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'dashboard' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'dashboard' ? 'page' : undefined}
-              >
-                <LayoutDashboard className="w-4 h-4 mr-1.5" />
-                <span>DASHBOARD</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-guilds"
-                onClick={() => { setActiveTab('guilds'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'guilds' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'guilds' ? 'page' : undefined}
-              >
-                <Shield className="w-4 h-4 mr-1.5 text-purple-400" />
-                <span>GUILDS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-friends"
-                onClick={() => { setActiveTab('friends'); setIsNotFound(false); }}
-                className={`header-tab-btn ${activeTab === 'friends' && !isNotFound ? 'active' : ''}`}
-                aria-current={activeTab === 'friends' ? 'page' : undefined}
-              >
-                <Users className="w-4 h-4 mr-1.5 text-cyan-400" />
-                <span>FRIENDS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-stats"
-                onClick={() => setActiveTab('stats')}
-                className={`header-tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-                aria-current={activeTab === 'stats' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-cyan-400" />
-                <span>STATS</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-profile"
-                onClick={() => setActiveTab('profile')}
-                className={`header-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-                aria-current={activeTab === 'profile' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-amber-400" />
-                <span>PROFILE</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-leaderboard"
-                onClick={() => setActiveTab('leaderboard')}
-                className={`header-tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
-                aria-current={activeTab === 'leaderboard' ? 'page' : undefined}
-              >
-                <Sparkles className="w-4 h-4 mr-1.5 text-pink-400" />
-                <span>LEADERBOARD</span>
-              </button>
-
-              <button
-                type="button"
-                id="nav-tab-settings"
-                onClick={() => setActiveTab('settings')}
-                className={`header-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                aria-current={activeTab === 'settings' ? 'page' : undefined}
-              >
-                <Settings className="w-4 h-4 mr-1.5 text-slate-300" />
-                <span>SETTINGS</span>
-              </button>
-            </nav>
           </div>
 
           <div className="app-header-right">
-            {/* Command Palette Trigger */}
+            {/* RAPHAEL Trigger */}
             <button
               type="button"
               id="btn-header-raphael"
@@ -477,18 +384,6 @@ const HunterAppContent: React.FC = () => {
             >
               <Brain className="w-4 h-4 text-cyan-400" />
               <span className="hidden-mobile">RAPHAEL</span>
-            </button>
-
-            <button
-              type="button"
-              id="btn-header-cmd"
-              onClick={() => setShowCommandPalette(true)}
-              className="btn-header-action"
-              title="Command Palette (Ctrl+K)"
-              aria-label="Command Palette"
-            >
-              <Search className="w-4 h-4 text-cyan-400" />
-              <span className="hidden-mobile">CMD</span>
             </button>
 
             {/* System Logs Trigger */}
@@ -707,46 +602,6 @@ const HunterAppContent: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Command Palette Modal */}
-      <AnimatePresence>
-        {showCommandPalette && (
-          <CommandPaletteModal
-            onClose={() => setShowCommandPalette(false)}
-            onSelectTab={(tab) => {
-              setActiveTab(tab as any);
-              setIsNotFound(false);
-              setInfoPage(null);
-            }}
-            onOpenCreateQuest={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenFocusChamber={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenGoalBuilder={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenWorldMap={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenWeeklyReport={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenTimeCapsule={() => {
-              setActiveTab('dashboard');
-              setIsNotFound(false);
-            }}
-            onOpenRaphael={() => setShowRaphael(true)}
-            toggleTheme={toggleTheme}
-            currentTheme={theme}
-          />
-        )}
-      </AnimatePresence>
 
       {/* RAPHAEL Assistant Modal */}
       <RaphaelAssistantModal
@@ -754,14 +609,17 @@ const HunterAppContent: React.FC = () => {
         onClose={() => setShowRaphael(false)}
       />
 
-      {/* Mobile Bottom Navigation */}
+      {/* Primary Bottom Navigation */}
       {!isAwakening && (
         <MobileNavBar
-          activeTab={activeTab as AppTab}
+          activeTab={activeTab}
           onSelectTab={(tab) => {
-            setActiveTab(tab as any);
+            setActiveTab(tab);
             setIsNotFound(false);
             setInfoPage(null);
+            try {
+              window.history.pushState(null, '', tab === 'dashboard' ? '/' : `/${tab}`);
+            } catch {}
           }}
         />
       )}

@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Zap, Flame, Brain, Eye, Award, CheckCircle,
-  RotateCcw, Sparkles, Clock, Target, ChevronRight, TrendingUp,
-  Sliders, Heart, Droplets, Star, Plus, X, BookOpen,
+  Sparkles, Clock, Target, ChevronRight, TrendingUp,
+  Heart, Droplets, Star, Plus, X, BookOpen,
   Dumbbell, Code, GraduationCap, Lightbulb, Activity, Skull,
   Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2,
   Timer, Globe, FileText, Lock, Compass,
@@ -28,7 +28,6 @@ import { playSystemChime } from '@/lib/notifications';
 import { QuestCodexModal } from '@/components/quest-codex-modal';
 import { QuestGuideModal } from '@/components/quest-guide-modal';
 import { HiddenQuestsWidget } from '@/components/hidden-quests-widget';
-import { LifeBalanceRadar } from '@/components/life-balance-radar';
 import { FocusChamberModal } from '@/components/focus-chamber-modal';
 import { GoalBuilderModal } from '@/components/goal-builder-modal';
 import { LivingWorldModal } from '@/components/living-world-modal';
@@ -434,15 +433,12 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
     quests,
     completeQuest,
     incrementProgress,
-    allocateStatPoint,
-    resetHunter,
     activeBonus,
     activeDungeon,
     completeBonusQuest,
     completeDungeonBreak,
     dismissDungeonBreak,
     unlockedAchievements,
-    refreshDaily,
     deleteQuest,
     lastDeletedQuest,
     undoDeleteQuest,
@@ -494,14 +490,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
 
   const hpPct = Math.round((profile.hp / (profile.max_hp || 100)) * 100);
   const mpPct = Math.round((profile.mp / (profile.max_mp || 100)) * 100);
-
-  const statIcons: Record<HunterStat, React.ReactNode> = {
-    STR: <Flame className="w-4 h-4 text-red-500" />,
-    AGI: <Zap className="w-4 h-4 text-cyan-400" />,
-    VIT: <Shield className="w-4 h-4 text-emerald-400" />,
-    INT: <Brain className="w-4 h-4 text-purple-400" />,
-    PERC: <Eye className="w-4 h-4 text-amber-400" />,
-  };
 
   const completedCount = quests.filter(q => q.completed).length;
   const activeCount = quests.filter(q => !q.completed).length;
@@ -614,47 +602,29 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="stats-section">
-              <div className="section-title-row">
-                <Sliders className="w-4 h-4 text-cyan-400" />
-                <h3>ATTRIBUTES</h3>
-                {(profile.available_stat_points || 0) > 0 && (
-                  <span className="ml-auto text-xs font-bold bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 px-2 py-0.5 rounded-full animate-pulse">
-                    {profile.available_stat_points} pts
-                  </span>
-                )}
+            {/* Unassigned Points Alert */}
+            {((profile.available_skill_points || 0) > 0 || (profile.available_stat_points || 0) > 0) && (
+              <div
+                style={{
+                  margin: '12px 0 16px',
+                  padding: '10px 14px',
+                  background: 'linear-gradient(135deg, rgba(133, 77, 14, 0.4), rgba(202, 138, 4, 0.2))',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  borderRadius: '10px',
+                  color: '#fbbf24',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 0 15px rgba(245, 158, 11, 0.15)',
+                }}
+              >
+                <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>{(profile.available_skill_points || 0) + (profile.available_stat_points || 0)} UNASSIGNED STAT POINTS (ALLOCATE IN PROFILE)</span>
               </div>
-              <div className="stats-list">
-                {(Object.keys(HUNTER_STATS) as HunterStat[]).map(statKey => {
-                  const statDef = HUNTER_STATS[statKey];
-                  const value = (profile.stats && profile.stats[statKey]) || 10;
-                  const hasPoints = (profile.available_stat_points || 0) > 0;
-                  return (
-                    <div key={statKey} className="stat-row-item">
-                      <div className="stat-left">
-                        <div className="stat-icon-wrapper">{statIcons[statKey]}</div>
-                        <div>
-                          <span className="stat-code" style={{ color: statDef.color }}>{statDef.code}</span>
-                          <span className="stat-subname">({statDef.name})</span>
-                        </div>
-                      </div>
-                      <div className="stat-right">
-                        <span className="stat-val">{value}</span>
-                        <button
-                          type="button"
-                          onClick={() => { if (hasPoints) { allocateStatPoint(statKey, 1); playSystemChime('quest'); } }}
-                          className="btn-stat-plus"
-                          title={hasPoints ? 'Allocate Stat Point' : 'No stat points available'}
-                          disabled={!hasPoints}
-                          style={{ opacity: hasPoints ? 1 : 0.3, cursor: hasPoints ? 'pointer' : 'not-allowed' }}
-                        >+1</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            )}
 
 
             {/* Quick Metrics */}
@@ -704,7 +674,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 onClick={() => setShowMobileModules(!showMobileModules)}
                 className="btn-system-secondary mobile-modules-toggle"
               >
-                <span>{showMobileModules ? '▲ HIDE SYSTEM TELEMETRY' : '▼ VIEW SYSTEM LOG, TRIALS & RADAR'}</span>
+                <span>{showMobileModules ? '▲ HIDE SYSTEM TELEMETRY' : '▼ VIEW SYSTEM LOGS & HIDDEN TRIALS'}</span>
               </button>
             </div>
 
@@ -713,10 +683,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               <SystemLogPanel />
 
               <HiddenQuestsWidget />
-
-              <div style={{ marginTop: '16px' }}>
-                <LifeBalanceRadar />
-              </div>
             </div>
 
           </div>
@@ -754,28 +720,6 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             )}
           </AnimatePresence>
 
-          {/* Daily Cycle Status Card */}
-          <div className="daily-cycle-banner">
-            <div className="daily-cycle-info">
-              <Sparkles className="w-4 h-4 text-cyan-400 animate-spin-slow" />
-              <div>
-                <span className="daily-cycle-label">SYSTEM DAILY DIRECTIVE CYCLE</span>
-                <span className="daily-cycle-sub">
-                  Dynamic gates & daily quests recalibrate at 00:00 UTC // Streak active
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={refreshDaily}
-              className="btn-refresh-daily"
-              title="Recalibrate Daily Directives and check for Gates"
-            >
-              <RotateCcw className="w-3.5 h-3.5 mr-1" />
-              <span>RECALIBRATE DIRECTIVES</span>
-            </button>
-          </div>
-
           {/* Quest Board Header */}
           <div className="quest-board-header">
             <div className="quest-header-title">
@@ -785,55 +729,55 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
             </div>
 
             <div className="quest-board-controls">
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="quest-utility-strip">
                 <button
                   type="button"
                   onClick={() => setShowFocusChamber(true)}
-                  className="px-2.5 py-1 bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="btn-utility-chip chip-focus"
                   title="Open Deep Focus Chamber (Pomodoro & Ambient Audio)"
                 >
-                  <Timer className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="hidden sm:inline">FOCUS</span>
+                  <Timer className="w-3.5 h-3.5" />
+                  <span>FOCUS</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowGoalBuilder(true)}
-                  className="px-2.5 py-1 bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="btn-utility-chip chip-goals"
                   title="Break down long-term goals into directives"
                 >
-                  <Target className="w-3.5 h-3.5 text-purple-400" />
-                  <span className="hidden sm:inline">GOALS</span>
+                  <Target className="w-3.5 h-3.5" />
+                  <span>GOALS</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowLivingWorld(true)}
-                  className="px-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="btn-utility-chip chip-world"
                   title="Explore Living World territories and HQ rooms"
                 >
-                  <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">WORLD</span>
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>WORLD</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowWeeklyReport(true)}
-                  className="px-2.5 py-1 bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="btn-utility-chip chip-report"
                   title="View 7-day performance debrief"
                 >
-                  <FileText className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">REPORT</span>
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>REPORT</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowTimeCapsule(true)}
-                  className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="btn-utility-chip chip-capsule"
                   title="Seal a message for your future awakened self"
                 >
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="hidden sm:inline">CAPSULE</span>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>CAPSULE</span>
                 </button>
               </div>
               <div className="quest-search-bar">

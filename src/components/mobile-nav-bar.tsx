@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Shield,
   Users,
-  Sparkles,
+  Trophy,
   Award,
   Settings,
 } from 'lucide-react';
@@ -11,7 +11,7 @@ import {
 export type AppTab = 'dashboard' | 'guilds' | 'friends' | 'leaderboard' | 'stats' | 'profile' | 'settings';
 
 interface MobileNavBarProps {
-  activeTab: AppTab;
+  activeTab: string;
   onSelectTab: (tab: AppTab) => void;
 }
 
@@ -20,85 +20,96 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onSelectT
     { id: 'dashboard', label: 'HUB', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'guilds', label: 'GUILDS', icon: <Shield className="w-5 h-5" /> },
     { id: 'friends', label: 'FRIENDS', icon: <Users className="w-5 h-5" /> },
-    { id: 'stats', label: 'STATS', icon: <Sparkles className="w-5 h-5" /> },
+    { id: 'leaderboard', label: 'LEADERBOARD', icon: <Trophy className="w-5 h-5" /> },
     { id: 'profile', label: 'PROFILE', icon: <Award className="w-5 h-5" /> },
     { id: 'settings', label: 'SETTINGS', icon: <Settings className="w-5 h-5" /> },
   ];
 
   return (
     <nav
-      className="mobile-bottom-nav md:hidden"
-      aria-label="Mobile Navigation"
+      className="hunter-system-bottom-nav"
+      aria-label="Primary Navigation"
       style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        height: '62px',
-        backgroundColor: 'rgba(6, 9, 18, 0.94)',
-        backdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(0, 229, 255, 0.2)',
+        height: '66px',
+        backgroundColor: 'rgba(6, 10, 22, 0.96)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(0, 217, 255, 0.25)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-around',
-        zIndex: 50,
+        justifyContent: 'center',
+        zIndex: 100,
         paddingBottom: 'env(safe-area-inset-bottom)',
-        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.6)',
+        boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.75)',
       }}
     >
-      {navItems.map((item) => {
-        const isActive = activeTab === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelectTab(item.id)}
-            aria-label={item.label}
-            aria-current={isActive ? 'page' : undefined}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'none',
-              border: 'none',
-              color: isActive ? '#00e5ff' : '#64748b',
-              cursor: 'pointer',
-              padding: '6px 8px',
-              minWidth: '48px',
-              minHeight: '48px',
-              transition: 'all 0.2s ease',
-              position: 'relative',
-            }}
-          >
-            {item.icon}
-            <span
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '780px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          padding: '0 12px',
+        }}
+      >
+        {navItems.map((item) => {
+          const isActive = activeTab === item.id || (item.id === 'profile' && activeTab === 'stats');
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelectTab(item.id)}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
               style={{
-                fontSize: '9px',
-                fontWeight: isActive ? 900 : 700,
-                letterSpacing: '0.8px',
-                marginTop: '3px',
-                fontFamily: "'Rajdhani', sans-serif",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                color: isActive ? '#00e5ff' : '#64748b',
+                cursor: 'pointer',
+                padding: '6px 12px',
+                minWidth: '56px',
+                minHeight: '52px',
+                transition: 'all 0.2s ease',
+                position: 'relative',
               }}
             >
-              {item.label}
-            </span>
-            {isActive && (
-              <div
+              {item.icon}
+              <span
                 style={{
-                  position: 'absolute',
-                  top: '0px',
-                  width: '20px',
-                  height: '2px',
-                  backgroundColor: '#00e5ff',
-                  boxShadow: '0 0 8px #00e5ff',
-                  borderRadius: '2px',
+                  fontSize: '10px',
+                  fontWeight: isActive ? 900 : 700,
+                  letterSpacing: '0.9px',
+                  marginTop: '4px',
+                  fontFamily: "'Rajdhani', sans-serif",
                 }}
-              />
-            )}
-          </button>
-        );
-      })}
+              >
+                {item.label}
+              </span>
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    width: '28px',
+                    height: '3px',
+                    backgroundColor: '#00e5ff',
+                    boxShadow: '0 0 10px #00e5ff',
+                    borderRadius: '3px',
+                  }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 };

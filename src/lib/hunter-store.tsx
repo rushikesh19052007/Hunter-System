@@ -322,8 +322,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setQuests(remoteQuests);
           }
 
-          if (Array.isArray(rawData.badges)) {
-            setUnlockedAchievements(rawData.badges);
+          if (Array.isArray(rawData.badges) || Array.isArray(rawData.achievements)) {
+            setUnlockedAchievements(prev => {
+              const remoteBadges = Array.isArray(rawData.badges) ? rawData.badges : [];
+              const remoteAch = Array.isArray(rawData.achievements) ? rawData.achievements : [];
+              return Array.from(new Set([...prev, ...remoteBadges, ...remoteAch]));
+            });
           }
         } else {
           // No profile in cloud yet: user needs to go through System Awakening
@@ -366,6 +370,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         hunterDocRef,
         {
           ...serializedProfile,
+          achievements: unlockedAchievements,
           activeQuests: serializedQuests,
         },
         { merge: true }
@@ -695,12 +700,15 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const allocateStatPoint = (statKey: string) => {
     if (!profile) return;
-    if ((profile.available_skill_points || 0) <= 0) return;
+    const currentSP = profile.available_skill_points ?? 0;
+    const currentStatPts = profile.available_stat_points ?? currentSP;
+    if (currentSP <= 0 && currentStatPts <= 0) return;
 
     const currentVal = profile.stats[statKey] || 10;
     const updatedProfile: Profile = {
       ...profile,
-      available_skill_points: profile.available_skill_points - 1,
+      available_skill_points: Math.max(0, currentSP - 1),
+      available_stat_points: Math.max(0, currentStatPts - 1),
       stats: {
         ...profile.stats,
         [statKey]: currentVal + 1,
@@ -709,18 +717,20 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setProfile(updatedProfile);
     audioService.playClick();
-    checkAchievements(updatedProfile, quests);
+    // Do NOT check achievements or award XP here to completely prevent runaway level-up loops
     syncToFirestore(updatedProfile, quests);
   };
 
   const allocateSkillPoint = (skillKey: keyof Profile['skill_points']) => {
     if (!profile) return;
-    if ((profile.available_skill_points || 0) <= 0) return;
+    const currentSP = profile.available_skill_points ?? 0;
+    if (currentSP <= 0) return;
 
     const currentVal = profile.skill_points[skillKey] || 0;
     const updatedProfile: Profile = {
       ...profile,
-      available_skill_points: profile.available_skill_points - 1,
+      available_skill_points: Math.max(0, currentSP - 1),
+      available_stat_points: Math.max(0, (profile.available_stat_points ?? currentSP) - 1),
       skill_points: {
         ...profile.skill_points,
         [skillKey]: currentVal + 1,
@@ -879,8 +889,11 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (newUnlocks.length === 0) return;
 
     const newIds = newUnlocks.map((u) => u.id);
-    const allUnlocked = [...unlockedAchievements, ...newIds];
+    const allUnlocked = Array.from(new Set([...unlockedAchievements, ...newIds]));
     setUnlockedAchievements(allUnlocked);
+    if (user?.id) {
+      localStorage.setItem(getStorageAchievementsKey(user.id), JSON.stringify(allUnlocked));
+    }
 
     let updatedProf = { ...currentProf };
     newUnlocks.forEach((unlock: NewUnlock) => {
@@ -890,7 +903,12 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (unlock.badge_id && !updatedProf.badges.includes(unlock.badge_id)) {
         updatedProf.badges = [...updatedProf.badges, unlock.badge_id];
       }
-      updatedProf = applyXpToProfile(updatedProf, unlock.xp_reward, `Achievement: ${unlock.name}`);
+      if (!updatedProf.badges.includes(unlock.id)) {
+        updatedProf.badges = [...updatedProf.badges, unlock.id];
+      }
+      if (unlock.xp_reward > 0) {
+        updatedProf = applyXpToProfile(updatedProf, unlock.xp_reward, `Achievement: ${unlock.name}`);
+      }
     });
 
     setProfile(updatedProf);

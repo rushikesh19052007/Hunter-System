@@ -245,6 +245,7 @@ export function serializeProfileForFirestore(profile: Profile): Record<string, u
     titles: profile.titles || [],
     equippedTitle: profile.equipped_title || '',
     badges: profile.badges || ['first_blood'],
+    achievements: profile.badges || ['first_blood'],
     skillPoints: profile.skill_points || {
       strength: 0,
       intelligence: 0,
@@ -326,7 +327,7 @@ export function deserializeProfileFromFirestore(data: Record<string, unknown>): 
     last_quest_date: (data.lastQuestDate as string) ?? (data.last_quest_date as string) ?? undefined,
     titles: (data.titles as string[]) || [],
     equipped_title: (data.equippedTitle as string) ?? (data.equipped_title as string) ?? '',
-    badges: (data.badges as string[]) || ['first_blood'],
+    badges: Array.from(new Set([...((data.badges as string[]) || ['first_blood']), ...((data.achievements as string[]) || [])])),
     profile_frame: (data.profileFrame as string) ?? (data.profile_frame as string) ?? '',
     skill_points: (data.skillPoints as Profile['skill_points']) ?? {
       strength: 0,
