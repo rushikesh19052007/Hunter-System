@@ -24,14 +24,16 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
   const [message, setMessage] = useState('');
   const [targetRank, setTargetRank] = useState('B-Rank');
 
+  const storageKey = profile?.id ? `${STORAGE_CAPSULE_KEY}_${profile.id}` : STORAGE_CAPSULE_KEY;
+
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_CAPSULE_KEY);
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem(STORAGE_CAPSULE_KEY);
       if (saved) {
         setCapsule(JSON.parse(saved));
       }
     } catch {}
-  }, []);
+  }, [storageKey]);
 
   const handleSealCapsule = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +49,12 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
     };
 
     setCapsule(newCapsule);
-    localStorage.setItem(STORAGE_CAPSULE_KEY, JSON.stringify(newCapsule));
+    localStorage.setItem(storageKey, JSON.stringify(newCapsule));
   };
 
   const handleClearCapsule = () => {
     audioService.playClick();
+    localStorage.removeItem(storageKey);
     localStorage.removeItem(STORAGE_CAPSULE_KEY);
     setCapsule(null);
     setMessage('');

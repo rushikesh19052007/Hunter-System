@@ -19,14 +19,23 @@ service cloud.firestore {
     }
 
     function isGuildLeader(guildId) {
-      return isAuthenticated() &&
+      return isAuthenticated() && guildId != null &&
         get(/databases/$(database)/documents/guilds/$(guildId)).data.leaderUid == request.auth.uid;
     }
 
-    // Guild update permitted for members/system only on specific guild affiliation fields
-    function isGuildAffiliationUpdateOnly() {
+    // Guild update permitted for owner OR guild leader of target guild on specific guild affiliation fields
+    function isGuildAffiliationUpdateOnly(userId) {
       return isAuthenticated() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['guildId', 'guildRole', 'guildName', 'guildTag', 'updatedAt']);
+        (isOwner(userId) ||
+         (request.resource.data.guildId != null && isGuildLeader(request.resource.data.guildId)) ||
+         (resource.data.guildId != null && isGuildLeader(resource.data.guildId)) ||
+         (request.resource.data.guild_id != null && isGuildLeader(request.resource.data.guild_id)) ||
+         (resource.data.guild_id != null && isGuildLeader(resource.data.guild_id))) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'guildId', 'guildRole', 'guildName', 'guildTag',
+          'guild_id', 'guild_role', 'guild_name', 'guild_tag',
+          'updatedAt'
+        ]);
     }
 
     // ===============================================================
@@ -59,7 +68,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
       // Owner can update, or guild affiliation sync when joining/leaving
-      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly();
+      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly(userId);
       allow delete: if isOwner(userId);
     }
 
@@ -69,7 +78,7 @@ service cloud.firestore {
     match /hunters/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly();
+      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly(userId);
       allow delete: if isOwner(userId);
 
       // Friends Subcollection (Mutual friendship confirmation)
@@ -84,7 +93,9 @@ service cloud.firestore {
     // 5. Friend Requests (Validated Sender/Receiver & State Transitions)
     // ===============================================================
     match /friendRequests/{requestId} {
-      allow read: if isAuthenticated();
+      // Only sender or receiver can read the request - prevents broad eavesdropping
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == resource.data.fromUid || request.auth.uid == resource.data.toUid);
 
       // Sender can create, must not be self-request, initial status must be pending
       allow create: if isAuthenticated() &&
@@ -92,9 +103,10 @@ service cloud.firestore {
         request.resource.data.fromUid != request.resource.data.toUid &&
         request.resource.data.status == 'pending';
 
-      // Updates: only sender or receiver; identities cannot be altered; status must be valid
+      // Updates: ONLY intended recipient (toUid) can accept; either party can decline/cancel
+      // Identities must remain strictly immutable
       allow update: if isAuthenticated() &&
-        (request.auth.uid == resource.data.fromUid || request.auth.uid == resource.data.toUid) &&
+        (request.auth.uid == resource.data.toUid || (request.auth.uid == resource.data.fromUid && request.resource.data.status == 'declined')) &&
         request.resource.data.fromUid == resource.data.fromUid &&
         request.resource.data.toUid == resource.data.toUid &&
         request.resource.data.status in ['pending', 'accepted', 'declined'];
@@ -122,10 +134,12 @@ service cloud.firestore {
       // Creator must be the designated leader
       allow create: if isAuthenticated() && request.resource.data.leaderUid == request.auth.uid;
 
-      // Update: Guild leader can edit details; other authenticated members can only update memberCount during join/leave
+      // Update: Guild leader can edit details; other authenticated members can only update memberCount during join/leave (+1/-1 only)
       allow update: if isAuthenticated() && (
         resource.data.leaderUid == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'updatedAt'])
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'updatedAt']) &&
+         (request.resource.data.memberCount == resource.data.memberCount + 1 ||
+          request.resource.data.memberCount == resource.data.memberCount - 1))
       );
 
       // Delete: Strictly the guild leader
@@ -134,9 +148,9 @@ service cloud.firestore {
       // Guild Members Subcollection
       match /members/{memberUid} {
         allow read: if isAuthenticated();
-        // A member can add themselves (join open guild), or the leader can add
+        // A member can add themselves (join open guild only), or the leader can add
         allow create: if isAuthenticated() && (
-          request.auth.uid == memberUid ||
+          (request.auth.uid == memberUid && get(/databases/$(database)/documents/guilds/$(guildId)).data.joinType == 'open') ||
           isGuildLeader(guildId)
         );
         // Leader can update roles
@@ -172,7 +186,7 @@ service cloud.firestore {
     match /leaderboard/{userId} {
       allow read: if isAuthenticated();
       allow create, delete: if isOwner(userId);
-      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly();
+      allow update: if isOwner(userId) || isGuildAffiliationUpdateOnly(userId);
     }
 
     // Default deny for all other unmatched documents

@@ -2,7 +2,7 @@
 // Storing strictly public static assets (HTML/CSS/JS/Fonts/SVG)
 // NEVER caching authenticated Firestore or Firebase Auth API responses
 
-const CACHE_NAME = 'huntr-static-v1';
+const CACHE_NAME = 'huntr-static-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -23,7 +23,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        // Delete only caches owned by this application, never touch foreign caches
+        keys.filter((key) => key.startsWith('huntr-') && key !== CACHE_NAME).map((key) => caches.delete(key))
       );
     })
   );
@@ -31,10 +32,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   const url = new URL(event.request.url);
 
-  // Bypass service worker entirely for Firebase Auth, Firestore, and WebSocket traffic
+  // Bypass service worker entirely for Firebase Auth, Firestore, and external APIs
   if (
+    url.origin !== self.location.origin ||
     url.hostname.includes('firestore.googleapis.com') ||
     url.hostname.includes('identitytoolkit.googleapis.com') ||
     url.hostname.includes('securetoken.googleapis.com') ||
@@ -71,11 +78,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for generic requests
+  // Stale-while-revalidate for local same-origin static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse.status === 200 && event.request.method === 'GET') {
+        if (networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }

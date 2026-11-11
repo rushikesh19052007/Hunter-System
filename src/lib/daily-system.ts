@@ -1,10 +1,14 @@
 // Hunter System — Daily Quest Pool, Bonus Quests & Dungeon Breaks
 
-import type { Quest, Profile, DifficultyGrade, QuestCategory } from './game-engine';
+import type { Quest, Profile, DifficultyGrade } from './game-engine';
 import { DIFFICULTY_XP, DIFFICULTY_STAT_XP, getStatXpType } from './game-engine';
 import QUEST_LIBRARY from './quest-library';
 
-const STORAGE_KEY_DAILY = 'hunter_daily_state';
+export const STORAGE_KEY_DAILY = 'hunter_daily_state';
+
+export function getStorageDailyKey(uid?: string): string {
+  return uid ? `hunter_daily_state_${uid}` : STORAGE_KEY_DAILY;
+}
 
 interface DailyState {
   date: string; // ISO date string YYYY-MM-DD
@@ -48,18 +52,18 @@ function getTodayString(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-function loadDailyState(): DailyState | null {
+function loadDailyState(uid?: string): DailyState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_DAILY);
+    const raw = localStorage.getItem(getStorageDailyKey(uid)) || (uid ? localStorage.getItem(STORAGE_KEY_DAILY) : null);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-function saveDailyState(state: DailyState): void {
+function saveDailyState(state: DailyState, uid?: string): void {
   try {
-    localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(state));
+    localStorage.setItem(getStorageDailyKey(uid), JSON.stringify(state));
   } catch {}
 }
 
@@ -199,7 +203,7 @@ export function generateDailyPool(profile: Profile, userId: string): {
   bossQuest: BossQuest | null;
 } {
   const today = getTodayString();
-  const existingState = loadDailyState();
+  const existingState = loadDailyState(userId);
 
   // If today's state already exists, return from cache
   if (existingState && existingState.date === today) {
@@ -348,56 +352,56 @@ export function generateDailyPool(profile: Profile, userId: string): {
     lastBossDate: bossQuest ? today : (existingState?.lastBossDate || null),
   };
 
-  saveDailyState(newState);
+  saveDailyState(newState, userId);
 
   return { dailyQuests, bonusQuest, dungeonBreak, bossQuest };
 }
 
 /** Load today's daily state from storage */
-export function loadTodayDailyState(): DailyState | null {
-  const state = loadDailyState();
+export function loadTodayDailyState(uid?: string): DailyState | null {
+  const state = loadDailyState(uid);
   if (!state || state.date !== getTodayString()) return null;
   return state;
 }
 
 /** Mark dungeon break as completed */
-export function completeDungeonBreak(): void {
-  const state = loadDailyState();
+export function completeDungeonBreak(uid?: string): void {
+  const state = loadDailyState(uid);
   if (!state?.dungeonBreak) return;
   state.dungeonBreak.completed = true;
-  saveDailyState(state);
+  saveDailyState(state, uid);
 }
 
 /** Dismiss dungeon break */
-export function dismissDungeonBreak(): void {
-  const state = loadDailyState();
+export function dismissDungeonBreak(uid?: string): void {
+  const state = loadDailyState(uid);
   if (!state?.dungeonBreak) return;
   state.dungeonBreak.dismissed = true;
-  saveDailyState(state);
+  saveDailyState(state, uid);
 }
 
 /** Update bonus quest as completed */
-export function completeBonusQuestInState(): void {
-  const state = loadDailyState();
+export function completeBonusQuestInState(uid?: string): void {
+  const state = loadDailyState(uid);
   if (!state?.bonusQuest) return;
   state.bonusQuest.completed = true;
-  saveDailyState(state);
+  saveDailyState(state, uid);
 }
 
 /** Mark boss quest as completed */
-export function completeBossQuestInState(): void {
-  const state = loadDailyState();
+export function completeBossQuestInState(uid?: string): void {
+  const state = loadDailyState(uid);
   if (!state?.bossQuest) return;
   state.bossQuest.completed = true;
-  saveDailyState(state);
+  saveDailyState(state, uid);
 }
 
 /** Dismiss boss quest */
-export function dismissBossQuestInState(): void {
-  const state = loadDailyState();
+export function dismissBossQuestInState(uid?: string): void {
+  const state = loadDailyState(uid);
   if (!state?.bossQuest) return;
   state.bossQuest.dismissed = true;
-  saveDailyState(state);
+  saveDailyState(state, uid);
 }
 
 // Helper: determine difficulty range allowed for a given rank

@@ -92,16 +92,18 @@ export const AccountSettingsPage: React.FC = () => {
     audioService.playClick();
     const quests = (() => {
       try {
-        return JSON.parse(localStorage.getItem('hunter_system_quests') || '[]');
+        const key = profile?.id ? `hunter_system_quests_${profile.id}` : 'hunter_system_quests';
+        return JSON.parse(localStorage.getItem(key) || localStorage.getItem('hunter_system_quests') || '[]');
       } catch {
         return [];
       }
     })();
     const achievements = (() => {
       try {
-        return JSON.parse(localStorage.getItem('hunter_system_achievements') || '[]');
+        const key = profile?.id ? `hunter_system_achievements_${profile.id}` : 'hunter_system_achievements';
+        return JSON.parse(localStorage.getItem(key) || localStorage.getItem('hunter_system_achievements') || '[]');
       } catch {
-        return [];
+        return profile?.badges || [];
       }
     })();
 
@@ -137,11 +139,15 @@ export const AccountSettingsPage: React.FC = () => {
         const raw = ev.target?.result as string;
         const data = JSON.parse(raw);
         if (!data.profile || !data.profile.id) throw new Error('Invalid backup format');
+        const uid = data.profile.id;
+        localStorage.setItem(`hunter_system_profile_${uid}`, JSON.stringify(data.profile));
         localStorage.setItem('hunter_system_profile', JSON.stringify(data.profile));
         if (Array.isArray(data.quests)) {
+          localStorage.setItem(`hunter_system_quests_${uid}`, JSON.stringify(data.quests));
           localStorage.setItem('hunter_system_quests', JSON.stringify(data.quests));
         }
         if (Array.isArray(data.achievements)) {
+          localStorage.setItem(`hunter_system_achievements_${uid}`, JSON.stringify(data.achievements));
           localStorage.setItem('hunter_system_achievements', JSON.stringify(data.achievements));
         }
         setImportStatus('success');

@@ -169,6 +169,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const primaryAffinity = profile?.affinity || null;
 
   const isSavingRef = useRef<boolean>(false);
+  const pendingSaveRef = useRef<{ prof: Profile; quests: Quest[] } | null>(null);
+  const completedQuestIdsRef = useRef<Set<string>>(new Set());
 
   // Connectivity Status Tracker
   const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -185,37 +187,52 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Account switching & storage isolation by UID
   useEffect(() => {
+    // 1. Immediately reset state on user change to prevent any old account data leakage
+    setProfile(null);
+    setQuests([]);
+    setUnlockedAchievements(['first_blood']);
+    setActiveBonus(null);
+    setActiveDungeon(null);
+    setActiveBossQuest(null);
+    setNeedsAwakening(false);
+    pendingSaveRef.current = null;
+    completedQuestIdsRef.current.clear();
+
     if (!user) {
-      setProfile(null);
-      setQuests([]);
-      setUnlockedAchievements(['first_blood']);
-      setActiveBonus(null);
-      setActiveDungeon(null);
-      setActiveBossQuest(null);
-      setNeedsAwakening(false);
       setIsLoading(false);
       return;
     }
 
-    // Load scoped cache for this specific user if not yet in state
+    setIsLoading(true);
+
+    // 2. Load and strictly validate scoped cache for this specific user
     try {
       const savedProf = localStorage.getItem(getStorageProfileKey(user.id));
       if (savedProf) {
         const parsed = JSON.parse(savedProf);
-        if (parsed && parsed.id === user.id) {
+        if (parsed && typeof parsed === 'object' && parsed.id === user.id) {
           setProfile(parsed);
         }
       }
       const savedQuests = localStorage.getItem(getStorageQuestsKey(user.id));
       if (savedQuests) {
-        setQuests(JSON.parse(savedQuests));
+        const parsedQuests = JSON.parse(savedQuests);
+        if (Array.isArray(parsedQuests)) {
+          const validQuests = parsedQuests.filter(
+            (q) => q && typeof q === 'object' && q.id && (!q.user_id || q.user_id === user.id)
+          );
+          setQuests(validQuests);
+        }
       }
       const savedAch = localStorage.getItem(getStorageAchievementsKey(user.id));
       if (savedAch) {
-        setUnlockedAchievements(JSON.parse(savedAch));
+        const parsedAch = JSON.parse(savedAch);
+        if (Array.isArray(parsedAch)) {
+          setUnlockedAchievements(parsedAch);
+        }
       }
     } catch {
-      // quiet fallback
+      // quiet fallback on corrupt cache
     }
   }, [user?.id]);
 
@@ -228,11 +245,10 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [profile, user?.id]);
 
   useEffect(() => {
-    if (!user?.id) return;
-    if (quests.length > 0) {
-      localStorage.setItem(getStorageQuestsKey(user.id), JSON.stringify(quests));
-    }
-  }, [quests, user?.id]);
+    if (!user?.id || isLoading) return;
+    // Persist quests cache including empty array to prevent resurrecting deleted quests
+    localStorage.setItem(getStorageQuestsKey(user.id), JSON.stringify(quests));
+  }, [quests, user?.id, isLoading]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -241,7 +257,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Load daily cycle state on mount
   useEffect(() => {
-    const dailyState = loadTodayDailyState();
+    if (!user?.id) return;
+    const dailyState = loadTodayDailyState(user.id);
     if (dailyState) {
       if (dailyState.bonusQuest && !dailyState.bonusQuest.completed) {
         setActiveBonus(dailyState.bonusQuest);
@@ -250,11 +267,11 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setActiveDungeon(dailyState.dungeonBreak);
       }
     } else if (profile) {
-      const { bonusQuest, dungeonBreak } = generateDailyPool(profile, profile.id);
+      const { bonusQuest, dungeonBreak } = generateDailyPool(profile, user.id);
       if (bonusQuest) setActiveBonus(bonusQuest);
       if (dungeonBreak) setActiveDungeon(dungeonBreak);
     }
-  }, [profile?.id]);
+  }, [profile?.id, user?.id]);
 
   // ============================================================
   // REAL-TIME FIRESTORE LISTENER (Cross-Platform Synchronization)
@@ -297,8 +314,8 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           // Update local profile state
           setProfile(remoteProfile);
 
-          // If activeQuests are present in the Firestore document, deserialize and sync
-          if (Array.isArray(rawData.activeQuests) && rawData.activeQuests.length > 0) {
+          // If activeQuests are present in the Firestore document, deserialize and sync (including empty array)
+          if (Array.isArray(rawData.activeQuests)) {
             const remoteQuests: Quest[] = rawData.activeQuests.map((q: Record<string, unknown>) =>
               deserializeQuestFromFirestore(q, user.id)
             );
@@ -328,9 +345,15 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [user?.id]);
 
-  // Synchronizes profile and quests to Cloud Firestore with merge
+  // Synchronizes profile and quests to Cloud Firestore with serialized queue & dirty tracking
   const syncToFirestore = async (profToSync: Profile, questsToSync: Quest[]) => {
-    if (!profToSync.id || isSavingRef.current) return;
+    if (!profToSync.id) return;
+
+    // If already saving, queue the latest state rather than silently dropping it
+    if (isSavingRef.current) {
+      pendingSaveRef.current = { prof: profToSync, quests: questsToSync };
+      return;
+    }
     isSavingRef.current = true;
 
     try {
@@ -354,6 +377,14 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('[Hunter Store] Firestore write notice (offline or permission):', err);
     } finally {
       isSavingRef.current = false;
+      // If new changes arrived during in-flight save, flush the latest snapshot
+      if (pendingSaveRef.current) {
+        const next = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        if (next.prof.id === profToSync.id) {
+          syncToFirestore(next.prof, next.quests);
+        }
+      }
     }
   };
 
@@ -368,15 +399,16 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const completingQuestsRef = useRef<Set<string>>(new Set());
 
   const completeQuest = (questId: string) => {
-    if (completingQuestsRef.current.has(questId)) return;
+    if (completingQuestsRef.current.has(questId) || completedQuestIdsRef.current.has(questId)) return;
     const quest = quests.find((q) => q.id === questId);
     if (!quest || quest.completed) return;
     if (!profile) return;
 
     completingQuestsRef.current.add(questId);
+    completedQuestIdsRef.current.add(questId);
     setTimeout(() => {
       completingQuestsRef.current.delete(questId);
-    }, 1500);
+    }, 2000);
 
     const baseXp = quest.xp_reward || (DIFFICULTY_XP[quest.difficulty] ?? 25);
     const statXpAmount = quest.stat_xp_reward || (DIFFICULTY_STAT_XP[quest.difficulty] ?? 10);
@@ -560,7 +592,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const completeDungeonBreak = () => {
     if (!activeDungeon || !profile) return;
-    markDungeonComplete();
+    markDungeonComplete(user?.id);
 
     const xpEarned = activeDungeon.xp_reward;
     const statBoost = 2; // +2 to all attributes
@@ -595,7 +627,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const dismissDungeonBreak = () => {
     if (activeDungeon) {
-      markDungeonDismissed();
+      markDungeonDismissed(user?.id);
       setActiveDungeon(null);
       audioService.playClick();
     }
@@ -603,7 +635,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const completeBonusQuest = () => {
     if (!activeBonus || !profile) return;
-    completeBonusQuestInState();
+    completeBonusQuestInState(user?.id);
 
     const xpEarned = activeBonus.xp_reward || 150;
     setActiveBonus(null);
@@ -616,7 +648,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const completeBossQuest = () => {
     if (!activeBossQuest || !profile) return;
-    completeBossQuestInState();
+    completeBossQuestInState(user?.id);
 
     const xpEarned = activeBossQuest.xp_reward || 350;
     const statBoost = 3;
@@ -651,7 +683,7 @@ export const HunterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const dismissBossQuest = () => {
     if (activeBossQuest) {
-      dismissBossQuestInState();
+      dismissBossQuestInState(user?.id);
       setActiveBossQuest(null);
       audioService.playClick();
     }
