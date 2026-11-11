@@ -30,8 +30,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
-  background: rgba(4, 7, 20, 0.92);
-  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(0, 0, 0, 0.95);
+  border-bottom: 1px solid rgba(255, 26, 64, 0.25);
   backdrop-filter: blur(16px);
   gap: 1rem;
 }
@@ -64,7 +64,7 @@
   font-weight: 700;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(255, 26, 64, 0.15);
   border: 1px solid var(--cyan-primary);
   color: var(--cyan-primary);
 }
@@ -97,15 +97,15 @@
 
 .header-tab-btn:hover {
   color: #ffffff;
-  border-color: rgba(0, 240, 255, 0.4);
-  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(255, 26, 64, 0.45);
+  background: rgba(255, 26, 64, 0.1);
 }
 
 .header-tab-btn.active {
   color: var(--cyan-primary);
   border-color: var(--cyan-primary);
-  background: rgba(0, 240, 255, 0.15);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+  background: rgba(255, 26, 64, 0.18);
+  box-shadow: 0 0 15px rgba(255, 26, 64, 0.3);
 }
 
 .app-header-right {
@@ -128,7 +128,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(255, 26, 64, 0.15);
   border: 1px solid var(--cyan-primary);
   display: flex;
   align-items: center;
@@ -181,13 +181,13 @@
 .btn-header-action:hover {
   border-color: var(--cyan-primary);
   color: var(--cyan-primary);
-  background: rgba(0, 240, 255, 0.1);
+  background: rgba(255, 26, 64, 0.12);
 }
 
 .btn-header-action.logout:hover {
   border-color: var(--rose-danger);
   color: var(--rose-danger);
-  background: rgba(244, 63, 94, 0.15);
+  background: rgba(255, 0, 51, 0.15);
 }
 
 /* ---------------------------------------------------------
@@ -198,11 +198,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #040714;
+  background: #000000;
 }
 
 .auth-loading-box {
-  background: rgba(10, 15, 36, 0.85);
+  background: rgba(10, 3, 5, 0.92);
   border: 1px solid var(--cyan-primary);
   box-shadow: 0 0 35px var(--cyan-glow);
   border-radius: 16px;
@@ -234,19 +234,19 @@
   justify-content: center;
   padding: 1.5rem;
   position: relative;
-  background: radial-gradient(circle at 50% 30%, #0d1538 0%, #040714 85%);
+  background: radial-gradient(circle at 50% 30%, #1a0408 0%, #000000 85%);
   overflow: hidden;
 }
 
 .auth-card {
   width: 100%;
   max-width: 520px;
-  background: rgba(10, 15, 36, 0.85);
+  background: rgba(10, 3, 5, 0.92);
   border: 1px solid var(--border-active);
   border-radius: 16px;
   padding: 2.5rem;
   backdrop-filter: blur(20px);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 240, 255, 0.15);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(255, 26, 64, 0.2);
   position: relative;
   z-index: 10;
   text-align: center;
@@ -261,8 +261,8 @@
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--cyan-primary);
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: rgba(255, 26, 64, 0.12);
+  border: 1px solid rgba(255, 26, 64, 0.35);
   padding: 0.35rem 0.85rem;
   border-radius: 4px;
   margin-bottom: 1.5rem;
@@ -274,7 +274,7 @@
   font-weight: 900;
   letter-spacing: 2.5px;
   color: #ffffff;
-  text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 20px rgba(255, 26, 64, 0.65);
   margin-bottom: 0.5rem;
 }
 
@@ -445,8 +445,8 @@
 }
 
 .global-stat-card:hover {
-  border-color: rgba(0, 240, 255, 0.4);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+  border-color: rgba(255, 26, 64, 0.45);
+  box-shadow: 0 0 15px rgba(255, 26, 64, 0.2);
   transform: translateY(-1px);
 }
 
@@ -592,10 +592,10 @@
 }
 
 .filter-tab-btn.active {
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(255, 26, 64, 0.18);
   border-color: var(--cyan-primary);
   color: var(--cyan-primary);
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 26, 64, 0.3);
 }
 
 .search-and-refresh {
@@ -730,8 +730,8 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: rgba(0, 240, 255, 0.1);
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  background: rgba(255, 26, 64, 0.12);
+  border: 1px solid rgba(255, 26, 64, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;

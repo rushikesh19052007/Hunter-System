@@ -55,7 +55,7 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
           maxWidth: '520px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
           border: '1.5px solid rgba(245, 158, 11, 0.4)',
           padding: '28px',
@@ -85,7 +85,7 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'rgba(15, 23, 42, 0.8)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.15)', marginBottom: '18px' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>{profile.display_name}</div>
-            <div style={{ fontSize: '11px', color: '#00e5ff', fontFamily: 'monospace' }}>{profile.hunter_id}</div>
+            <div style={{ fontSize: '11px', color: '#ff1a40', fontFamily: 'monospace' }}>{profile.hunter_id}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '13px', fontWeight: 900, color: '#ffb300' }}>{profile.current_rank}</div>
@@ -95,9 +95,9 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
 
         {/* 4 Metrics Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-          <div style={{ padding: '14px', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(0, 229, 255, 0.2)' }}>
+          <div style={{ padding: '14px', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(255, 26, 64, 0.2)' }}>
             <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 800 }}>WEEKLY XP ACQUIRED</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, color: '#00e5ff', marginTop: '2px' }}>+{weeklyXp || 250} XP</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, color: '#ff1a40', marginTop: '2px' }}>+{weeklyXp || 250} XP</div>
           </div>
 
           <div style={{ padding: '14px', backgroundColor: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
@@ -121,15 +121,15 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
           <div style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', letterSpacing: '1px', marginBottom: '4px' }}>
             PRIMARY ACCELERATION DOMAIN
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 900, color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 900, color: '#ff1a40', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Target style={{ width: '16px', height: '16px' }} />
             {leadingDomain}
           </div>
         </div>
 
         {/* System Guidance */}
-        <div style={{ padding: '14px', backgroundColor: 'rgba(0, 229, 255, 0.08)', borderRadius: '12px', borderLeft: '3px solid #00e5ff', marginBottom: '22px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, color: '#00e5ff', letterSpacing: '1px', marginBottom: '4px' }}>
+        <div style={{ padding: '14px', backgroundColor: 'rgba(255, 26, 64, 0.08)', borderRadius: '12px', borderLeft: '3px solid #ff1a40', marginBottom: '22px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#ff1a40', letterSpacing: '1px', marginBottom: '4px' }}>
             [SYSTEM TRANSMISSION GUIDANCE]
           </div>
           <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
@@ -145,7 +145,7 @@ export const WeeklyReportModal: React.FC<WeeklyReportModalProps> = ({ onClose })
             padding: '12px',
             borderRadius: '10px',
             backgroundColor: '#f59e0b',
-            color: '#060912',
+            color: '#000000',
             fontWeight: 900,
             fontSize: '13px',
             letterSpacing: '1.5px',

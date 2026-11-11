@@ -40,8 +40,8 @@ const AFFINITY_DETAILS: Record<string, AffinityConfig> = {
   AGI: {
     title: 'Shadow Step Assassin',
     desc: 'Sub-second reflexes, phantom speed & rapid strikes. (+5 AGI)',
-    color: '#00e5ff',
-    icon: <Zap size={18} color="#00e5ff" style={{ flexShrink: 0 }} />,
+    color: '#ff1a40',
+    icon: <Zap size={18} color="#ff1a40" style={{ flexShrink: 0 }} />,
     stat: 'AGI',
   },
   VIT: {
@@ -238,8 +238,8 @@ export const HunterAuthScreen: React.FC = () => {
     display: 'flex',
     alignItems: 'center',
     backgroundColor: '#050814',
-    border: focusedField === field ? '1.5px solid #00e5ff' : '1px solid #1c2742',
-    boxShadow: focusedField === field ? '0 0 14px rgba(0, 229, 255, 0.25)' : 'none',
+    border: focusedField === field ? '1.5px solid #ff1a40' : '1px solid #1c2742',
+    boxShadow: focusedField === field ? '0 0 14px rgba(255, 26, 64, 0.25)' : 'none',
     borderRadius: '10px',
     padding: '0 14px',
     height: '46px',
@@ -271,7 +271,7 @@ export const HunterAuthScreen: React.FC = () => {
           width: '320px',
           height: '320px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0, 229, 255, 0.16) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255, 26, 64, 0.16) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -294,9 +294,9 @@ export const HunterAuthScreen: React.FC = () => {
           <motion.div
             animate={{
               boxShadow: [
-                '0 0 10px rgba(0, 229, 255, 0.2)',
-                '0 0 22px rgba(0, 229, 255, 0.55)',
-                '0 0 10px rgba(0, 229, 255, 0.2)',
+                '0 0 10px rgba(255, 26, 64, 0.2)',
+                '0 0 22px rgba(255, 26, 64, 0.55)',
+                '0 0 10px rgba(255, 26, 64, 0.2)',
               ],
             }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -306,14 +306,14 @@ export const HunterAuthScreen: React.FC = () => {
               gap: '8px',
               padding: '6px 16px',
               borderRadius: '24px',
-              backgroundColor: 'rgba(0, 229, 255, 0.08)',
-              border: '1.5px solid rgba(0, 229, 255, 0.5)',
+              backgroundColor: 'rgba(255, 26, 64, 0.08)',
+              border: '1.5px solid rgba(255, 26, 64, 0.5)',
             }}
           >
-            <Sparkles size={14} color="#00e5ff" style={{ flexShrink: 0 }} />
+            <Sparkles size={14} color="#ff1a40" style={{ flexShrink: 0 }} />
             <span
               style={{
-                color: '#00e5ff',
+                color: '#ff1a40',
                 fontSize: '11px',
                 fontWeight: 800,
                 letterSpacing: '1.5px',
@@ -332,10 +332,10 @@ export const HunterAuthScreen: React.FC = () => {
               marginTop: '14px',
               marginBottom: '6px',
               fontFamily: "'Orbitron', 'Inter', sans-serif",
-              background: 'linear-gradient(135deg, #ffffff 40%, #00e5ff 100%)',
+              background: 'linear-gradient(135deg, #ffffff 40%, #ff1a40 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              textShadow: '0 0 25px rgba(0, 229, 255, 0.35)',
+              textShadow: '0 0 25px rgba(255, 26, 64, 0.35)',
             }}
           >
             HUNTR ASSOCIATION
@@ -370,8 +370,8 @@ export const HunterAuthScreen: React.FC = () => {
               padding: '9px 0',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: !isSignUp ? '#00e5ff' : 'transparent',
-              color: !isSignUp ? '#040714' : '#94a3b8',
+              backgroundColor: !isSignUp ? '#ff1a40' : 'transparent',
+              color: !isSignUp ? '#000000' : '#94a3b8',
               fontWeight: 800,
               fontSize: '12px',
               letterSpacing: '1px',
@@ -393,8 +393,8 @@ export const HunterAuthScreen: React.FC = () => {
               padding: '9px 0',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: isSignUp ? '#00e5ff' : 'transparent',
-              color: isSignUp ? '#040714' : '#94a3b8',
+              backgroundColor: isSignUp ? '#ff1a40' : 'transparent',
+              color: isSignUp ? '#000000' : '#94a3b8',
               fontWeight: 800,
               fontSize: '12px',
               letterSpacing: '1px',
@@ -457,9 +457,9 @@ export const HunterAuthScreen: React.FC = () => {
           style={{
             backgroundColor: '#0a0e20',
             borderRadius: '16px',
-            border: '1px solid rgba(0, 229, 255, 0.18)',
+            border: '1px solid rgba(255, 26, 64, 0.18)',
             padding: '22px',
-            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 229, 255, 0.05)',
+            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 26, 64, 0.05)',
           }}
         >
           {/* Sign Up: Hunter Designation Name */}
@@ -478,7 +478,7 @@ export const HunterAuthScreen: React.FC = () => {
                 UNIQUE USERNAME (LOWERCASE ONLY)
               </label>
               <div style={getInputContainerStyle('name')}>
-                <User size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
+                <User size={16} color="#ff1a40" style={{ flexShrink: 0, marginRight: '10px' }} />
                 <input
                   type="text"
                   placeholder="e.g. mahesh, hunter_x, kavya123"
@@ -517,7 +517,7 @@ export const HunterAuthScreen: React.FC = () => {
               HUNTER EMAIL IDENTIFIER
             </label>
             <div style={getInputContainerStyle('email')}>
-              <Mail size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
+              <Mail size={16} color="#ff1a40" style={{ flexShrink: 0, marginRight: '10px' }} />
               <input
                 type="email"
                 placeholder="hunter@guild.com"
@@ -552,7 +552,7 @@ export const HunterAuthScreen: React.FC = () => {
               SECURITY PASSCODE
             </label>
             <div style={getInputContainerStyle('password')}>
-              <Lock size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
+              <Lock size={16} color="#ff1a40" style={{ flexShrink: 0, marginRight: '10px' }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
@@ -603,7 +603,7 @@ export const HunterAuthScreen: React.FC = () => {
                 CONFIRM PASSCODE
               </label>
               <div style={getInputContainerStyle('confirmPassword')}>
-                <Lock size={16} color="#00e5ff" style={{ flexShrink: 0, marginRight: '10px' }} />
+                <Lock size={16} color="#ff1a40" style={{ flexShrink: 0, marginRight: '10px' }} />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="••••••••"
@@ -651,7 +651,7 @@ export const HunterAuthScreen: React.FC = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#00e5ff',
+                  color: '#ff1a40',
                   fontSize: '12px',
                   cursor: 'pointer',
                   textDecoration: 'underline',
@@ -694,7 +694,7 @@ export const HunterAuthScreen: React.FC = () => {
                         padding: '10px 4px',
                         borderRadius: '10px',
                         border: isSel ? `1.5px solid ${cfg.color}` : '1px solid #1a233a',
-                        backgroundColor: isSel ? 'rgba(0, 229, 255, 0.12)' : '#050814',
+                        backgroundColor: isSel ? 'rgba(255, 26, 64, 0.12)' : '#050814',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -744,8 +744,8 @@ export const HunterAuthScreen: React.FC = () => {
               padding: '0 16px',
               borderRadius: '10px',
               border: 'none',
-              backgroundColor: '#00e5ff',
-              color: '#040714',
+              backgroundColor: '#ff1a40',
+              color: '#000000',
               fontWeight: 900,
               fontSize: '13px',
               letterSpacing: '1.2px',
@@ -754,7 +754,7 @@ export const HunterAuthScreen: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+              boxShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
               transition: 'all 0.2s ease',
             }}
           >
@@ -764,7 +764,7 @@ export const HunterAuthScreen: React.FC = () => {
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
-                  border: '2.5px solid #040714',
+                  border: '2.5px solid #000000',
                   borderTopColor: 'transparent',
                   animation: 'spin 0.8s linear infinite',
                 }}
@@ -772,7 +772,7 @@ export const HunterAuthScreen: React.FC = () => {
             ) : (
               <>
                 <span>{isSignUp ? 'INITIALIZE HUNTER AWAKENING' : 'ACCESS HUNTER SYSTEM'}</span>
-                <ArrowRight size={16} color="#040714" style={{ flexShrink: 0 }} />
+                <ArrowRight size={16} color="#000000" style={{ flexShrink: 0 }} />
               </>
             )}
           </button>
@@ -821,7 +821,7 @@ export const HunterAuthScreen: React.FC = () => {
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.5)';
+            e.currentTarget.style.borderColor = 'rgba(255, 26, 64, 0.5)';
             e.currentTarget.style.backgroundColor = '#0e142c';
           }}
           onMouseLeave={(e) => {
@@ -872,9 +872,9 @@ export const HunterAuthScreen: React.FC = () => {
             height: '46px',
             padding: '0 16px',
             borderRadius: '12px',
-            border: '1px solid rgba(0, 229, 255, 0.3)',
-            backgroundColor: 'rgba(0, 229, 255, 0.05)',
-            color: '#00e5ff',
+            border: '1px solid rgba(255, 26, 64, 0.3)',
+            backgroundColor: 'rgba(255, 26, 64, 0.05)',
+            color: '#ff1a40',
             fontWeight: 700,
             fontSize: '13px',
             letterSpacing: '0.5px',
@@ -886,17 +886,17 @@ export const HunterAuthScreen: React.FC = () => {
             transition: 'all 0.18s ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#00e5ff';
-            e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.12)';
-            e.currentTarget.style.boxShadow = '0 0 16px rgba(0, 229, 255, 0.25)';
+            e.currentTarget.style.borderColor = '#ff1a40';
+            e.currentTarget.style.backgroundColor = 'rgba(255, 26, 64, 0.12)';
+            e.currentTarget.style.boxShadow = '0 0 16px rgba(255, 26, 64, 0.25)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)';
-            e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.05)';
+            e.currentTarget.style.borderColor = 'rgba(255, 26, 64, 0.3)';
+            e.currentTarget.style.backgroundColor = 'rgba(255, 26, 64, 0.05)';
             e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <Zap size={16} color="#00e5ff" style={{ flexShrink: 0 }} />
+          <Zap size={16} color="#ff1a40" style={{ flexShrink: 0 }} />
           <span>QUICK TRIAL / OFFLINE GUEST MODE</span>
         </button>
 
@@ -912,7 +912,7 @@ export const HunterAuthScreen: React.FC = () => {
                 padding: '16px',
                 backgroundColor: '#0a0e20',
                 borderRadius: '12px',
-                border: '1px solid rgba(0, 229, 255, 0.25)',
+                border: '1px solid rgba(255, 26, 64, 0.25)',
                 boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
               }}
             >
@@ -967,8 +967,8 @@ export const HunterAuthScreen: React.FC = () => {
                   disabled={isLoading}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#00e5ff',
-                    color: '#040714',
+                    backgroundColor: '#ff1a40',
+                    color: '#000000',
                     border: 'none',
                     borderRadius: '8px',
                     fontWeight: 800,

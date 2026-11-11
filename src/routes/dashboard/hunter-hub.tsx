@@ -122,7 +122,7 @@ const CustomQuestModal: React.FC<CustomQuestModalProps> = ({ onClose, rank }) =>
       >
         <div className="modal-header">
           <div className="modal-title-row">
-            <Plus className="w-5 h-5 text-cyan-400" />
+            <Plus className="w-5 h-5 text-rose-500" />
             <h3>CREATE CUSTOM QUEST</h3>
           </div>
           <button type="button" onClick={onClose} className="btn-modal-close"><X className="w-4 h-4" /></button>
@@ -381,7 +381,7 @@ const SystemLogPanel: React.FC = () => {
     <div className="system-log-panel">
       <div className="log-panel-header">
         <div className="flex items-center gap-1.5">
-          <Scroll className="w-4 h-4 text-cyan-400" />
+          <Scroll className="w-4 h-4 text-rose-500" />
           <span>SYSTEM LOG</span>
         </div>
         <button type="button" onClick={() => setExpanded(!expanded)} className="log-expand-btn">
@@ -636,7 +636,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 {streakBonusPct > 0 && <div className="streak-bonus-tag">+{streakBonusPct}% XP</div>}
               </div>
               <div className="metric-box">
-                <Target className="w-4 h-4 text-cyan-400" />
+                <Target className="w-4 h-4 text-rose-500" />
                 <div className="metric-val">{completedCount} / {(quests || []).length}</div>
                 <div className="metric-sub">CLEARED</div>
               </div>
@@ -694,7 +694,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
           <div className="training-library-banner">
             <div className="training-library-info">
               <div className="training-library-icon">
-                <BookOpen className="w-5 h-5 text-cyan-400" />
+                <BookOpen className="w-5 h-5 text-rose-500" />
               </div>
               <div>
                 <div className="training-library-title">TRAINING LIBRARY // HUNTER CODEX</div>
@@ -819,7 +819,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 className="btn-browse-codex"
                 title="Browse all 180+ exercises in the Training Library"
               >
-                <BookOpen className="w-4 h-4 mr-1 text-cyan-400" />
+                <BookOpen className="w-4 h-4 mr-1 text-rose-500" />
                 <span>TRAINING LIBRARY</span>
               </button>
 
@@ -857,7 +857,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-slate-900/95 border border-cyan-500/50 text-cyan-200 px-4 py-3 rounded-lg flex items-center justify-between shadow-xl mb-4"
+                className="bg-black/95 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-lg flex items-center justify-between shadow-xl mb-4"
               >
                 <div className="flex items-center gap-2.5 text-sm">
                   <Trash2 className="w-4 h-4 text-rose-400" />
@@ -866,7 +866,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 <button
                   type="button"
                   onClick={undoDeleteQuest}
-                  className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/60 rounded text-xs font-bold tracking-wider transition-colors"
+                  className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/60 rounded text-xs font-bold tracking-wider transition-colors"
                 >
                   RESTORE
                 </button>

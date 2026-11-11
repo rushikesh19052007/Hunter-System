@@ -63,7 +63,7 @@ export const QuestGuideModal: React.FC<QuestGuideModalProps> = ({ quest, onClose
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
               <p className="text-xs text-slate-400 mb-1">CATEGORY</p>
-              <p className="font-bold text-cyan-400">{getCategoryLabel(quest.category)}</p>
+              <p className="font-bold text-rose-500">{getCategoryLabel(quest.category)}</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
               <p className="text-xs text-slate-400 mb-1">REPEATABLE</p>
@@ -76,7 +76,7 @@ export const QuestGuideModal: React.FC<QuestGuideModalProps> = ({ quest, onClose
 
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Target className="w-4 h-4 text-cyan-500" />
+              <Target className="w-4 h-4 text-rose-500" />
               HOW TO COMPLETE
             </h3>
             <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">

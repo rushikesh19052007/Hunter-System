@@ -144,7 +144,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
 
   const statIcons: Record<HunterStat, React.ReactNode> = {
     STR: <Flame className="w-8 h-8 text-red-500" />,
-    AGI: <Zap className="w-8 h-8 text-cyan-400" />,
+    AGI: <Zap className="w-8 h-8 text-rose-500" />,
     VIT: <Shield className="w-8 h-8 text-emerald-400" />,
     INT: <Brain className="w-8 h-8 text-purple-400" />,
     PERC: <Eye className="w-8 h-8 text-amber-400" />,
@@ -163,7 +163,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
       {/* Top System HUD Bar */}
       <header className="awakening-hud-header">
         <div className="hud-tag">
-          <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+          <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
           <span>ARCHITECT ARCHIVE PROTOCOL // V2.0</span>
         </div>
 
@@ -199,7 +199,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
               className="awakening-card"
             >
               <div className="system-badge-alert">
-                <AlertTriangle className="w-5 h-5 text-cyan-400 animate-bounce" />
+                <AlertTriangle className="w-5 h-5 text-rose-500 animate-bounce" />
                 <span>[CRITICAL NOTICE: SOUL RESONANCE DETECTED]</span>
               </div>
 
@@ -214,7 +214,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                 <div className="portal-ring ring-outer" />
                 <div className="portal-ring ring-mid" />
                 <div className="portal-core">
-                  <Sparkles className="w-12 h-12 text-cyan-300 animate-pulse" />
+                  <Sparkles className="w-12 h-12 text-rose-400 animate-pulse" />
                 </div>
               </div>
 
@@ -278,7 +278,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                       maxLength={20}
                     />
                   </div>
-                  <p className="text-[11px] text-cyan-400/80 mt-1 font-mono">
+                  <p className="text-[11px] text-rose-500/80 mt-1 font-mono">
                     * Input is automatically converted to lowercase.
                   </p>
                   {nameError && <p className="error-message">{nameError}</p>}
@@ -289,7 +289,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                   <div className="preview-body">
                     <div>
                       <span className="text-muted">USERNAME: </span>
-                      <strong className="text-cyan-300 font-mono">
+                      <strong className="text-rose-400 font-mono">
                         {hunterName ? `@${hunterName}` : 'AWAITING INPUT...'}
                       </strong>
                     </div>
@@ -439,11 +439,11 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
 
                   <div className="quest-objectives-box">
                     <div className="obj-item">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+                      <CheckCircle2 className="w-4 h-4 text-rose-500" />
                       <span>Physical or Mental Calibration (Target: 10 units)</span>
                     </div>
                     <div className="obj-item">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+                      <CheckCircle2 className="w-4 h-4 text-rose-500" />
                       <span>Attribute Bonus: +1 {selectedStat} upon completion</span>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
 
                 <div className="license-center">
                   <div className="license-avatar">
-                    <Sparkles className="w-8 h-8 text-cyan-300" />
+                    <Sparkles className="w-8 h-8 text-rose-400" />
                   </div>
                   <div className="license-info">
                     <div className="license-name">{hunterName}</div>
@@ -542,7 +542,7 @@ export const SystemAwakening: React.FC<SystemAwakeningProps> = ({ onComplete }) 
                   <span>Awakening XP: +15 XP</span>
                 </div>
                 <div className="reward-pill">
-                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <Zap className="w-4 h-4 text-rose-500" />
                   <span>Initial Quests: 31 Unlocked</span>
                 </div>
                 <div className="reward-pill">

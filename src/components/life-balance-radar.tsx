@@ -23,7 +23,7 @@ export const LifeBalanceRadar: React.FC = () => {
   const axes = [
     { label: 'PHYSICAL', value: physicalScore, icon: <Activity className="w-3 h-3 text-emerald-400" /> },
     { label: 'LEARNING', value: learningScore, icon: <Brain className="w-3 h-3 text-purple-400" /> },
-    { label: 'CODING', value: codingScore, icon: <Code className="w-3 h-3 text-cyan-400" /> },
+    { label: 'CODING', value: codingScore, icon: <Code className="w-3 h-3 text-rose-500" /> },
     { label: 'DISCIPLINE', value: disciplineScore, icon: <Shield className="w-3 h-3 text-amber-400" /> },
     { label: 'WELLNESS', value: wellnessScore, icon: <Heart className="w-3 h-3 text-rose-400" /> },
     { label: 'SQUAD', value: socialScore, icon: <Users className="w-3 h-3 text-blue-400" /> },
@@ -62,7 +62,7 @@ export const LifeBalanceRadar: React.FC = () => {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-        <h4 style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '1.5px', color: '#00e5ff', fontFamily: "'Orbitron', sans-serif" }}>
+        <h4 style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '1.5px', color: '#ff1a40', fontFamily: "'Orbitron', sans-serif" }}>
           LIFE BALANCE RADAR
         </h4>
         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
@@ -115,10 +115,10 @@ export const LifeBalanceRadar: React.FC = () => {
           {/* Filled active polygon */}
           <polygon
             points={polygonPoints}
-            fill="rgba(0, 229, 255, 0.22)"
-            stroke="#00e5ff"
+            fill="rgba(255, 26, 64, 0.22)"
+            stroke="#ff1a40"
             strokeWidth="2"
-            style={{ filter: 'drop-shadow(0 0 6px rgba(0, 229, 255, 0.6))' }}
+            style={{ filter: 'drop-shadow(0 0 6px rgba(255, 26, 64, 0.6))' }}
           />
 
           {/* Data vertices */}
@@ -130,8 +130,8 @@ export const LifeBalanceRadar: React.FC = () => {
                 cx={x}
                 cy={y}
                 r="4"
-                fill="#00e5ff"
-                stroke="#040714"
+                fill="#ff1a40"
+                stroke="#000000"
                 strokeWidth="1.5"
               />
             );

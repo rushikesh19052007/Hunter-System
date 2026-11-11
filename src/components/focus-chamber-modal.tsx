@@ -184,11 +184,11 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
         style={{
           width: '100%',
           maxWidth: '480px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
-          border: '1.5px solid rgba(0, 229, 255, 0.4)',
+          border: '1.5px solid rgba(255, 26, 64, 0.4)',
           padding: '28px',
-          boxShadow: '0 0 40px rgba(0, 229, 255, 0.2)',
+          boxShadow: '0 0 40px rgba(255, 26, 64, 0.2)',
           color: '#fff',
           position: 'relative',
         }}
@@ -196,7 +196,7 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Clock style={{ width: '20px', height: '20px', color: '#00e5ff' }} />
+            <Clock style={{ width: '20px', height: '20px', color: '#ff1a40' }} />
             <h3 style={{ fontSize: '18px', fontWeight: 900, fontFamily: "'Orbitron', sans-serif", letterSpacing: '1px' }}>
               FOCUS CHAMBER
             </h3>
@@ -239,8 +239,8 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
               fontSize: '64px',
               fontWeight: 900,
               fontFamily: "'Orbitron', monospace",
-              color: isCompleted ? '#10b981' : '#00e5ff',
-              textShadow: isCompleted ? '0 0 20px rgba(16, 185, 129, 0.6)' : '0 0 20px rgba(0, 229, 255, 0.5)',
+              color: isCompleted ? '#10b981' : '#ff1a40',
+              textShadow: isCompleted ? '0 0 20px rgba(16, 185, 129, 0.6)' : '0 0 20px rgba(255, 26, 64, 0.5)',
               letterSpacing: '2px',
             }}
           >
@@ -265,8 +265,8 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
           <motion.div
             style={{
               height: '100%',
-              backgroundColor: isCompleted ? '#10b981' : '#00e5ff',
-              boxShadow: '0 0 8px #00e5ff',
+              backgroundColor: isCompleted ? '#10b981' : '#ff1a40',
+              boxShadow: '0 0 8px #ff1a40',
             }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}
@@ -284,9 +284,9 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
                 style={{
                   padding: '6px 14px',
                   borderRadius: '8px',
-                  backgroundColor: durationMinutes === mins ? 'rgba(0, 229, 255, 0.2)' : 'rgba(15, 23, 42, 0.6)',
-                  border: durationMinutes === mins ? '1px solid #00e5ff' : '1px solid rgba(56, 189, 248, 0.15)',
-                  color: durationMinutes === mins ? '#00e5ff' : '#94a3b8',
+                  backgroundColor: durationMinutes === mins ? 'rgba(255, 26, 64, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                  border: durationMinutes === mins ? '1px solid #ff1a40' : '1px solid rgba(56, 189, 248, 0.15)',
+                  color: durationMinutes === mins ? '#ff1a40' : '#94a3b8',
                   fontSize: '12px',
                   fontWeight: 800,
                   cursor: 'pointer',
@@ -307,13 +307,13 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
               style={{
                 padding: '12px 28px',
                 borderRadius: '12px',
-                backgroundColor: '#00e5ff',
-                color: '#060912',
+                backgroundColor: '#ff1a40',
+                color: '#000000',
                 fontWeight: 900,
                 fontSize: '14px',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+                boxShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -330,7 +330,7 @@ export const FocusChamberModal: React.FC<FocusChamberModalProps> = ({ onClose })
                 padding: '12px 28px',
                 borderRadius: '12px',
                 backgroundColor: '#f59e0b',
-                color: '#060912',
+                color: '#000000',
                 fontWeight: 900,
                 fontSize: '14px',
                 border: 'none',

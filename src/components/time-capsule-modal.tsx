@@ -73,7 +73,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(4, 7, 20, 0.92)',
+        backgroundColor: 'rgba(0, 0, 0, 0.96)',
         backdropFilter: 'blur(12px)',
         padding: '20px',
       }}
@@ -87,7 +87,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
         style={{
           width: '100%',
           maxWidth: '520px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
           border: '1.5px solid rgba(129, 140, 248, 0.4)',
           padding: '28px',
@@ -170,7 +170,7 @@ export const TimeCapsuleModal: React.FC<TimeCapsuleModalProps> = ({ onClose }) =
                 padding: '14px',
                 borderRadius: '12px',
                 backgroundColor: '#818cf8',
-                color: '#060912',
+                color: '#ffffff',
                 fontWeight: 900,
                 fontSize: '14px',
                 letterSpacing: '1.5px',

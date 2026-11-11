@@ -409,7 +409,7 @@ export const Leaderboard: React.FC = () => {
         {/* Global Registry Aggregate Stats Widget */}
         <div className="global-stats-bar">
           <div className="global-stat-card">
-            <div className="global-stat-icon-wrapper text-cyan-400">
+            <div className="global-stat-icon-wrapper text-rose-500">
               <Users className="w-4 h-4" />
             </div>
             <div className="global-stat-details">
@@ -463,13 +463,13 @@ export const Leaderboard: React.FC = () => {
             className="current-user-standing-card"
             style={{
               background: 'linear-gradient(135deg, #162544, #131c36)',
-              borderColor: 'rgba(0, 229, 255, 0.6)',
+              borderColor: 'rgba(255, 26, 64, 0.6)',
             }}
           >
             <div className="standing-left">
               <div
                 className="standing-rank-badge"
-                style={{ backgroundColor: '#00e5ff', color: '#000' }}
+                style={{ backgroundColor: '#ff1a40', color: '#000' }}
               >
                 #{currentUserRank || 1}
               </div>
@@ -487,7 +487,7 @@ export const Leaderboard: React.FC = () => {
 
             <div className="standing-stats">
               <div className="stat-pill">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <Sparkles className="w-3.5 h-3.5 text-rose-500" />
                 <span>LVL {profile.current_level}</span>
               </div>
               <div className="stat-pill">
@@ -518,9 +518,9 @@ export const Leaderboard: React.FC = () => {
                 setRankFilter(rf);
               }}
               style={{
-                backgroundColor: isSel ? '#00e5ff' : '#131828',
+                backgroundColor: isSel ? '#ff1a40' : '#131828',
                 color: isSel ? '#000' : '#fff',
-                borderColor: isSel ? '#00e5ff' : '#222c42',
+                borderColor: isSel ? '#ff1a40' : '#222c42',
                 borderRadius: '10px',
                 padding: '8px 16px',
                 fontWeight: 'bold',
@@ -559,7 +559,7 @@ export const Leaderboard: React.FC = () => {
             }}
             className={`filter-tab-btn ${filter === 'level' ? 'active' : ''}`}
           >
-            <Zap className="w-4 h-4 mr-1 text-cyan-400" />
+            <Zap className="w-4 h-4 mr-1 text-rose-500" />
             <span>SORT BY LEVEL</span>
           </button>
 
@@ -632,7 +632,7 @@ export const Leaderboard: React.FC = () => {
                 style={{ cursor: 'pointer' }}
                 className={`leaderboard-row ${rankStyle.bg} ${
                   isCurrentUser ? 'current-user-row' : ''
-                } hover:border-cyan-500/40 transition`}
+                } hover:border-rose-500/40 transition`}
               >
                 {/* Rank Column */}
                 <div className="col-rank">
@@ -645,7 +645,7 @@ export const Leaderboard: React.FC = () => {
                 {/* Hunter Identity Column */}
                 <div className="col-hunter">
                   <div className="hunter-avatar-mini">
-                    <User className="w-4 h-4 text-cyan-400" />
+                    <User className="w-4 h-4 text-rose-500" />
                   </div>
                   <div className="hunter-text-meta">
                     <div className="hunter-name-row">

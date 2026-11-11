@@ -47,7 +47,7 @@ export const LivingWorldModal: React.FC<LivingWorldModalProps> = ({ onClose }) =
       domain: 'Algorithmic Engineering & Codecraft',
       lore: 'High-density computational proving grounds where hunters construct software systems.',
       progress: Math.min(100, Math.round(10 + codeCount * 14)),
-      color: '#00e5ff',
+      color: '#ff1a40',
       icon: <Code className="w-5 h-5" />,
     },
     {
@@ -142,7 +142,7 @@ export const LivingWorldModal: React.FC<LivingWorldModalProps> = ({ onClose }) =
           maxWidth: '640px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '20px',
           border: '1.5px solid rgba(168, 85, 247, 0.4)',
           padding: '28px',
@@ -193,9 +193,9 @@ export const LivingWorldModal: React.FC<LivingWorldModalProps> = ({ onClose }) =
               flex: 1,
               padding: '10px',
               borderRadius: '8px',
-              backgroundColor: activeTab === 'hq' ? 'rgba(0, 229, 255, 0.25)' : 'transparent',
-              border: activeTab === 'hq' ? '1px solid #00e5ff' : '1px solid transparent',
-              color: activeTab === 'hq' ? '#00e5ff' : '#94a3b8',
+              backgroundColor: activeTab === 'hq' ? 'rgba(255, 26, 64, 0.25)' : 'transparent',
+              border: activeTab === 'hq' ? '1px solid #ff1a40' : '1px solid transparent',
+              color: activeTab === 'hq' ? '#ff1a40' : '#94a3b8',
               fontWeight: 800,
               fontSize: '13px',
               cursor: 'pointer',
@@ -263,7 +263,7 @@ export const LivingWorldModal: React.FC<LivingWorldModalProps> = ({ onClose }) =
                   padding: '16px',
                   backgroundColor: room.unlocked ? 'rgba(15, 23, 42, 0.75)' : 'rgba(10, 15, 30, 0.5)',
                   borderRadius: '12px',
-                  border: room.unlocked ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid rgba(56, 189, 248, 0.1)',
+                  border: room.unlocked ? '1px solid rgba(255, 26, 64, 0.3)' : '1px solid rgba(56, 189, 248, 0.1)',
                   opacity: room.unlocked ? 1 : 0.65,
                 }}
               >
@@ -274,7 +274,7 @@ export const LivingWorldModal: React.FC<LivingWorldModalProps> = ({ onClose }) =
                     ) : (
                       <Lock style={{ width: '18px', height: '18px', color: '#64748b' }} />
                     )}
-                    <span style={{ fontSize: '14px', fontWeight: 900, color: room.unlocked ? '#00e5ff' : '#94a3b8', fontFamily: "'Orbitron', sans-serif" }}>
+                    <span style={{ fontSize: '14px', fontWeight: 900, color: room.unlocked ? '#ff1a40' : '#94a3b8', fontFamily: "'Orbitron', sans-serif" }}>
                       {room.name}
                     </span>
                   </div>

@@ -89,7 +89,7 @@ export const QuestCodexModal: React.FC<QuestCodexModalProps> = ({ onClose }) => 
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-row">
-            <BookOpen className="w-5 h-5 text-cyan-400" />
+            <BookOpen className="w-5 h-5 text-rose-500" />
             <div>
               <h3>TRAINING LIBRARY — HUNTER CODEX</h3>
               <p className="modal-subtitle">

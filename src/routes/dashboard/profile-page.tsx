@@ -38,7 +38,7 @@ export const ProfilePage: React.FC = () => {
 
   const statIcons: Record<HunterStat, React.ReactNode> = {
     STR: <Flame className="w-4 h-4 text-red-500" />,
-    AGI: <Zap className="w-4 h-4 text-cyan-400" />,
+    AGI: <Zap className="w-4 h-4 text-rose-500" />,
     VIT: <Shield className="w-4 h-4 text-emerald-400" />,
     INT: <Brain className="w-4 h-4 text-purple-400" />,
     PERC: <Eye className="w-4 h-4 text-amber-400" />,
@@ -55,7 +55,7 @@ export const ProfilePage: React.FC = () => {
     strength: { label: 'Strength', desc: '+5% Physical Quest rewards', icon: <Dumbbell className="w-4 h-4 text-red-400" /> },
     intelligence: { label: 'Intelligence', desc: '+5% Mental Quest rewards', icon: <Brain className="w-4 h-4 text-purple-400" /> },
     endurance: { label: 'Endurance', desc: '+5% Streak bonuses', icon: <TrendingUp className="w-4 h-4 text-emerald-400" /> },
-    discipline: { label: 'Discipline', desc: '+5% Consistency bonuses', icon: <Shield className="w-4 h-4 text-cyan-400" /> },
+    discipline: { label: 'Discipline', desc: '+5% Consistency bonuses', icon: <Shield className="w-4 h-4 text-rose-500" /> },
     focus: { label: 'Focus', desc: '+5% Daily quest rewards', icon: <Target className="w-4 h-4 text-amber-400" /> },
     agility: { label: 'Agility', desc: '+5% Time-based quest bonuses', icon: <Zap className="w-4 h-4 text-sky-400" /> },
   };
@@ -77,7 +77,7 @@ export const ProfilePage: React.FC = () => {
       <div className="profile-hero-card">
         <div className={`profile-frame-wrapper ${profile.profile_frame || 'default'}`}>
           <div className="profile-avatar-large">
-            <User className="w-10 h-10 text-cyan-300" />
+            <User className="w-10 h-10 text-rose-400" />
             <div className="profile-rank-ring" style={{ borderColor: rankInfo.color }} />
           </div>
         </div>
@@ -94,7 +94,7 @@ export const ProfilePage: React.FC = () => {
 
           <div className="hero-stats-pills">
             <span className="hero-pill">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <Sparkles className="w-3.5 h-3.5 text-rose-500" />
               LVL {profile.current_level}
             </span>
             <span className="hero-pill" style={{ borderColor: 'rgba(236, 72, 153, 0.5)', color: '#ec4899' }}>
@@ -218,7 +218,7 @@ export const ProfilePage: React.FC = () => {
           { label: 'Longest Streak', val: profile.longest_streak, icon: <Star className="w-4 h-4 text-amber-400" />, color: '#f59e0b' },
           { label: 'Physical Streak', val: profile.physical_streak, icon: <Dumbbell className="w-4 h-4 text-red-400" />, color: '#ef4444' },
           { label: 'Mental Streak', val: profile.mental_streak, icon: <Brain className="w-4 h-4 text-purple-400" />, color: '#8b5cf6' },
-          { label: 'Coding Streak', val: profile.coding_streak, icon: <Code className="w-4 h-4 text-cyan-400" />, color: '#06b6d4' },
+          { label: 'Coding Streak', val: profile.coding_streak, icon: <Code className="w-4 h-4 text-rose-500" />, color: '#06b6d4' },
           { label: 'Perfect Days', val: profile.perfect_day_streak, icon: <Trophy className="w-4 h-4 text-amber-300" />, color: '#fbbf24' },
         ].map(({ label, val, icon, color }) => (
           <div key={label} className="streak-mini-card" style={{ borderColor: `${color}30` }}>
@@ -302,7 +302,7 @@ export const ProfilePage: React.FC = () => {
                 <div><BookOpen className="w-4 h-4 text-slate-400" /><span>Total Quests</span><strong>{profile.quests_completed}</strong></div>
                 <div><Dumbbell className="w-4 h-4 text-red-400" /><span>Physical</span><strong>{profile.physical_quests_completed}</strong></div>
                 <div><Brain className="w-4 h-4 text-purple-400" /><span>Mental</span><strong>{profile.mental_quests_completed}</strong></div>
-                <div><Code className="w-4 h-4 text-cyan-400" /><span>Coding</span><strong>{profile.coding_quests_completed}</strong></div>
+                <div><Code className="w-4 h-4 text-rose-500" /><span>Coding</span><strong>{profile.coding_quests_completed}</strong></div>
               </div>
             </div>
 

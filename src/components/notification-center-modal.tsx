@@ -50,7 +50,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     if (log.priority === 'urgent' || log.priority === 'high') {
       return <ShieldAlert className="w-4 h-4 text-rose-400 animate-pulse" />;
     }
-    return <Radio className="w-4 h-4 text-cyan-400" />;
+    return <Radio className="w-4 h-4 text-rose-500" />;
   };
 
   return (
@@ -65,7 +65,7 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
       >
         <div className="modal-header">
           <div className="modal-title-row">
-            <Bell className="w-5 h-5 text-cyan-400" />
+            <Bell className="w-5 h-5 text-rose-500" />
             <div>
               <h3>SYSTEM TRANSMISSION ARCHIVE</h3>
               <p className="modal-subtitle">Directives, milestones, and mana warnings recorded by the System.</p>

@@ -300,13 +300,13 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             {activeTab === 'briefing' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="raphael-info-card">
-                  <Sparkles className="w-5 h-5 text-cyan-400" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <Sparkles className="w-5 h-5 text-rose-500" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#cbd5e1' }}>
                     <p style={{ fontWeight: 700, color: '#fff', fontSize: '13px' }}>
                       Hunter Status: {profile?.display_name || 'Hunter'} // {profile?.current_rank || 'E-Rank'} (Level {profile?.current_level || 1})
                     </p>
                     <p style={{ marginTop: '4px' }}>
-                      Active trials on board: <strong style={{ color: '#00d9ff' }}>{activeQuests.length}</strong> &bull; Cleared today: <strong style={{ color: '#22d3a6' }}>{completedToday.length}</strong> &bull; Momentum streak: <strong style={{ color: '#f5b942' }}>{profile?.streak || 1} Days</strong>
+                      Active trials on board: <strong style={{ color: '#ff1a40' }}>{activeQuests.length}</strong> &bull; Cleared today: <strong style={{ color: '#22d3a6' }}>{completedToday.length}</strong> &bull; Momentum streak: <strong style={{ color: '#f5b942' }}>{profile?.streak || 1} Days</strong>
                     </p>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
                           className="raphael-priority-card"
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0, 217, 255, 0.15)', border: '1px solid rgba(0, 217, 255, 0.4)', color: '#00d9ff', fontSize: '11px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255, 26, 64, 0.15)', border: '1px solid rgba(255, 26, 64, 0.4)', color: '#ff1a40', fontSize: '11px', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {idx + 1}
                             </span>
                             <div>
@@ -340,7 +340,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
                             <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 185, 66, 0.12)', border: '1px solid rgba(245, 185, 66, 0.4)', color: '#f5b942' }}>
                               {q.difficulty}-Rank
                             </span>
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#00d9ff', fontFamily: 'monospace' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#ff1a40', fontFamily: 'monospace' }}>
                               +{q.xp_reward} XP
                             </span>
                           </div>
@@ -361,9 +361,9 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             {activeTab === 'calculator' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(255, 26, 64, 0.2)' }}>
                     <span style={{ fontSize: '10px', fontWeight: 800, color: '#8899aa', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Next Level Gate</span>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#00d9ff', marginTop: '4px', fontFamily: "'Orbitron', sans-serif" }}>Level {(profile?.current_level || 1) + 1}</div>
+                    <div style={{ fontSize: '20px', fontWeight: 900, color: '#ff1a40', marginTop: '4px', fontFamily: "'Orbitron', sans-serif" }}>Level {(profile?.current_level || 1) + 1}</div>
                     <div style={{ fontSize: '11px', color: '#8899aa', marginTop: '4px', fontFamily: 'monospace' }}>Need {remainingXpForLevel} XP more</div>
                   </div>
                   <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(245, 185, 66, 0.2)' }}>
@@ -384,7 +384,7 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
                       return (
                         <div key={grade} style={{ padding: '10px 4px', borderRadius: '8px', background: 'rgba(11, 19, 40, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                           <span style={{ fontWeight: 800, fontSize: '11px', color: '#fff' }}>{grade}</span>
-                          <div style={{ color: '#00d9ff', fontFamily: 'monospace', fontWeight: 900, fontSize: '16px', margin: '2px 0' }}>{needed}</div>
+                          <div style={{ color: '#ff1a40', fontFamily: 'monospace', fontWeight: 900, fontSize: '16px', margin: '2px 0' }}>{needed}</div>
                           <span style={{ fontSize: '9px', color: '#64748b' }}>{xp} XP</span>
                         </div>
                       );
@@ -392,9 +392,9 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
                   </div>
                 </div>
 
-                <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)', fontSize: '12px', lineHeight: 1.5 }}>
+                <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(255, 26, 64, 0.2)', fontSize: '12px', lineHeight: 1.5 }}>
                   <div style={{ fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                    <Calculator className="w-3.5 h-3.5 text-cyan-400" />
+                    <Calculator className="w-3.5 h-3.5 text-rose-500" />
                     Stat Points Rewards Matrix
                   </div>
                   <p style={{ color: '#8899aa', margin: 0 }}>
@@ -479,13 +479,13 @@ export const RaphaelAssistantModal: React.FC<RaphaelAssistantModalProps> = ({ is
             {/* SYSTEM CODEX */}
             {activeTab === 'manual' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12px', color: '#cbd5e1', lineHeight: 1.6 }}>
-                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(255, 26, 64, 0.2)' }}>
                   <h4 style={{ fontWeight: 800, color: '#fff', fontSize: '13px', margin: '0 0 6px' }}>Autonomous Productivity Architecture</h4>
                   <p style={{ margin: 0 }}>
                     HUNTR converts genuine daily discipline into quantifiable RPG progression. Every directive completed advances your level, awards stat points, and increases momentum.
                   </p>
                 </div>
-                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                <div style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(11, 19, 40, 0.85)', border: '1px solid rgba(255, 26, 64, 0.2)' }}>
                   <h4 style={{ fontWeight: 800, color: '#fff', fontSize: '13px', margin: '0 0 6px' }}>Transparency & Security Policy</h4>
                   <p style={{ margin: 0 }}>
                     RAPHAEL operates strictly in-browser via deterministic rule engines. No user prompts, personal habits, or private quest names are transmitted to third-party language model endpoints.

@@ -22,7 +22,7 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
       particleCount: 120,
       spread: 90,
       origin: { y: 0.5 },
-      colors: ['#00e5ff', '#a855f7', '#ffb300', '#ec4899', '#10b981'],
+      colors: ['#ff1a40', '#a855f7', '#ffb300', '#ec4899', '#10b981'],
     });
 
     const timer = setTimeout(() => {
@@ -31,7 +31,7 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
         angle: 60,
         spread: 60,
         origin: { x: 0 },
-        colors: ['#00e5ff', '#ffb300'],
+        colors: ['#ff1a40', '#ffb300'],
       });
       confetti({
         particleCount: 70,
@@ -72,7 +72,7 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
         style={{
           width: '100%',
           maxWidth: '500px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '24px',
           border: `2px solid ${newBadge.color}`,
           padding: '32px 28px',
@@ -129,9 +129,9 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
         {/* Rewards Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '24px 0', textAlign: 'left' }}>
           {celebration.statPointsGranted > 0 && (
-            <div style={{ padding: '12px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '12px', border: '1px solid rgba(0, 229, 255, 0.2)' }}>
+            <div style={{ padding: '12px', backgroundColor: 'rgba(15, 23, 42, 0.75)', borderRadius: '12px', border: '1px solid rgba(255, 26, 64, 0.2)' }}>
               <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>BONUS STAT POINTS</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#00e5ff' }}>+{celebration.statPointsGranted} PTS</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#ff1a40' }}>+{celebration.statPointsGranted} PTS</div>
             </div>
           )}
 
@@ -196,7 +196,7 @@ export const PromotionCelebrationModal: React.FC<PromotionCelebrationModalProps>
             padding: '14px',
             borderRadius: '12px',
             backgroundColor: newBadge.color,
-            color: '#060912',
+            color: '#000000',
             fontWeight: 900,
             fontSize: '14px',
             letterSpacing: '2px',

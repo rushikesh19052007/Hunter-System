@@ -35,15 +35,15 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onSelectT
         left: 0,
         right: 0,
         height: '66px',
-        backgroundColor: 'rgba(6, 10, 22, 0.96)',
+        backgroundColor: 'rgba(0, 0, 0, 0.98)',
         backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(0, 217, 255, 0.25)',
+        borderTop: '1px solid rgba(255, 26, 64, 0.35)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,
         paddingBottom: 'env(safe-area-inset-bottom)',
-        boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.75)',
+        boxShadow: '0 -8px 30px rgba(0, 0, 0, 0.95)',
       }}
     >
       <div
@@ -72,7 +72,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onSelectT
                 justifyContent: 'center',
                 background: 'none',
                 border: 'none',
-                color: isActive ? '#00e5ff' : '#64748b',
+                color: isActive ? '#ff1a40' : '#64748b',
                 cursor: 'pointer',
                 padding: '6px 12px',
                 minWidth: '56px',
@@ -100,8 +100,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onSelectT
                     top: '-6px',
                     width: '28px',
                     height: '3px',
-                    backgroundColor: '#00e5ff',
-                    boxShadow: '0 0 10px #00e5ff',
+                    backgroundColor: '#ff1a40',
+                    boxShadow: '0 0 10px #ff1a40',
                     borderRadius: '3px',
                   }}
                 />

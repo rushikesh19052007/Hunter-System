@@ -74,7 +74,7 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
         <div
           style={{
             minHeight: '100vh',
-            backgroundColor: '#040714',
+            backgroundColor: '#000000',
             color: '#fff',
             display: 'flex',
             flexDirection: 'column',
@@ -90,7 +90,7 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
               maxWidth: '480px',
               width: '100%',
               padding: '32px 24px',
-              backgroundColor: '#0a0e20',
+              backgroundColor: '#050203',
               borderRadius: '16px',
               border: '1.5px solid rgba(239, 68, 68, 0.4)',
               boxShadow: '0 0 30px rgba(239, 68, 68, 0.2)',
@@ -117,10 +117,10 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
                   fontSize: '11px',
                   display: 'inline-block',
                   marginTop: '8px',
-                  backgroundColor: '#050814',
+                  backgroundColor: '#000000',
                   padding: '6px 12px',
                   borderRadius: '6px',
-                  border: '1px solid #1f293d',
+                  border: '1px solid rgba(255, 26, 64, 0.25)',
                 }}
               >
                 {this.state.error?.message || 'Unknown runtime error'}
@@ -136,8 +136,8 @@ class SystemErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
               }}
               style={{
                 padding: '12px 24px',
-                backgroundColor: '#00e5ff',
-                color: '#040714',
+                backgroundColor: '#ff1a40',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 800,
@@ -197,7 +197,7 @@ const SystemNotificationOverlay: React.FC = () => {
                 ) : isUrgent ? (
                   <ShieldAlert className="w-5 h-5 text-amber-400 animate-pulse" />
                 ) : (
-                  <Bell className="w-5 h-5 text-cyan-400" />
+                  <Bell className="w-5 h-5 text-rose-500" />
                 )}
               </div>
 
@@ -318,12 +318,12 @@ const HunterAppContent: React.FC = () => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#040714',
+          backgroundColor: '#000000',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#00e5ff',
+          color: '#ff1a40',
           fontFamily: "'Orbitron', 'Inter', sans-serif",
           gap: '16px',
         }}
@@ -333,8 +333,8 @@ const HunterAppContent: React.FC = () => {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            border: '3px solid rgba(0, 229, 255, 0.2)',
-            borderTopColor: '#00e5ff',
+            border: '3px solid rgba(255, 26, 64, 0.2)',
+            borderTopColor: '#ff1a40',
             animation: 'spin 1s linear infinite',
           }}
         />
@@ -363,7 +363,7 @@ const HunterAppContent: React.FC = () => {
         <header className="app-main-header">
           <div className="app-header-left">
             <div className="app-brand">
-              <Sparkles className="w-5 h-5 text-cyan-400 animate-spin-slow" />
+              <Sparkles className="w-5 h-5 text-rose-500 animate-spin-slow" />
               <span className="brand-text">HUNTER SYSTEM</span>
               {profile?.current_rank && (
                 <span className="header-rank-tag">{profile.current_rank}</span>
@@ -382,7 +382,7 @@ const HunterAppContent: React.FC = () => {
               title="RAPHAEL System Advisor"
               aria-label="RAPHAEL"
             >
-              <Brain className="w-4 h-4 text-cyan-400" />
+              <Brain className="w-4 h-4 text-rose-500" />
               <span className="hidden-mobile">RAPHAEL</span>
             </button>
 
@@ -395,7 +395,7 @@ const HunterAppContent: React.FC = () => {
               title="System Transmissions Archive"
               aria-label="Transmissions"
             >
-              <Bell className="w-4 h-4 text-cyan-400" />
+              <Bell className="w-4 h-4 text-rose-500" />
               <span className="hidden-mobile">LOGS</span>
             </button>
 
@@ -424,7 +424,7 @@ const HunterAppContent: React.FC = () => {
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <Moon className="w-4 h-4 text-cyan-500" />
+                <Moon className="w-4 h-4 text-rose-500" />
               )}
               <span className="hidden-mobile">{theme === 'dark' ? 'LIGHT' : 'DARK'}</span>
             </button>
@@ -636,12 +636,12 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#040714',
+          backgroundColor: '#000000',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#00e5ff',
+          color: '#ff1a40',
           fontFamily: "'Orbitron', 'Inter', sans-serif",
           gap: '16px',
         }}
@@ -651,8 +651,8 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             width: '48px',
             height: '48px',
             borderRadius: '50%',
-            border: '3px solid rgba(0, 229, 255, 0.2)',
-            borderTopColor: '#00e5ff',
+            border: '3px solid rgba(255, 26, 64, 0.2)',
+            borderTopColor: '#ff1a40',
             animation: 'spin 1s linear infinite',
           }}
         />

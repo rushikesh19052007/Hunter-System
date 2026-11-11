@@ -23,7 +23,7 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
       particleCount: 80,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#00e5ff', '#a855f7', '#ffb300', '#ec4899', '#10b981'],
+      colors: ['#ff1a40', '#a855f7', '#ffb300', '#ec4899', '#10b981'],
     });
 
     const timer = setTimeout(() => {
@@ -32,7 +32,7 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#00e5ff', '#ffb300'],
+        colors: ['#ff1a40', '#ffb300'],
       });
       confetti({
         particleCount: 50,
@@ -74,10 +74,10 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
           maxWidth: '440px',
           backgroundColor: '#0c101d',
           borderRadius: '20px',
-          border: '2px solid #00e5ff',
+          border: '2px solid #ff1a40',
           padding: '28px',
           textAlign: 'center',
-          boxShadow: '0 0 40px rgba(0, 229, 255, 0.4)',
+          boxShadow: '0 0 40px rgba(255, 26, 64, 0.4)',
           position: 'relative',
         }}
       >
@@ -86,10 +86,10 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
           style={{
             display: 'inline-block',
             padding: '6px 14px',
-            backgroundColor: 'rgba(0, 229, 255, 0.15)',
-            border: '1px solid rgba(0, 229, 255, 0.5)',
+            backgroundColor: 'rgba(255, 26, 64, 0.15)',
+            border: '1px solid rgba(255, 26, 64, 0.5)',
             borderRadius: '8px',
-            color: '#00e5ff',
+            color: '#ff1a40',
             fontSize: '11px',
             fontWeight: 800,
             letterSpacing: '2px',
@@ -107,7 +107,7 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
             color: '#fff',
             letterSpacing: '3px',
             margin: '0 0 8px 0',
-            textShadow: '0 0 25px rgba(0, 229, 255, 0.7)',
+            textShadow: '0 0 25px rgba(255, 26, 64, 0.7)',
           }}
         >
           LEVEL UP!
@@ -197,13 +197,13 @@ export const LevelUpDialog: React.FC<LevelUpDialogProps> = ({
             padding: '14px',
             borderRadius: '10px',
             border: 'none',
-            backgroundColor: '#00e5ff',
+            backgroundColor: '#ff1a40',
             color: '#000',
             fontWeight: 900,
             fontSize: '14px',
             letterSpacing: '1.5px',
             cursor: 'pointer',
-            boxShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+            boxShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
             transition: 'all 0.15s ease',
           }}
         >

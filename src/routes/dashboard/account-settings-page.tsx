@@ -218,11 +218,11 @@ export const AccountSettingsPage: React.FC = () => {
           alignItems: 'center',
           gap: '12px',
           paddingBottom: '20px',
-          borderBottom: '1px solid rgba(0, 229, 255, 0.2)',
+          borderBottom: '1px solid rgba(255, 26, 64, 0.2)',
           marginBottom: '28px',
         }}
       >
-        <Sparkles className="w-7 h-7 text-cyan-400" />
+        <Sparkles className="w-7 h-7 text-rose-500" />
         <div>
           <h1
             style={{
@@ -231,7 +231,7 @@ export const AccountSettingsPage: React.FC = () => {
               letterSpacing: '2px',
               margin: 0,
               textTransform: 'uppercase',
-              textShadow: '0 0 20px rgba(0, 229, 255, 0.4)',
+              textShadow: '0 0 20px rgba(255, 26, 64, 0.4)',
             }}
           >
             ACCOUNT & SYSTEM SETTINGS
@@ -271,7 +271,7 @@ export const AccountSettingsPage: React.FC = () => {
               borderBottom: '1px solid #1a233a',
             }}
           >
-            <User className="w-5 h-5 text-cyan-400" />
+            <User className="w-5 h-5 text-rose-500" />
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, letterSpacing: '1px' }}>
               HUNTER IDENTITY
             </h2>
@@ -293,7 +293,7 @@ export const AccountSettingsPage: React.FC = () => {
                   style={{
                     fontFamily: 'monospace',
                     fontWeight: 700,
-                    color: '#00e5ff',
+                    color: '#ff1a40',
                     fontSize: '13px',
                   }}
                 >
@@ -305,10 +305,10 @@ export const AccountSettingsPage: React.FC = () => {
                   title="Copy Hunter ID"
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    border: '1px solid rgba(255, 26, 64, 0.3)',
                     borderRadius: '6px',
                     padding: '4px 6px',
-                    color: copiedId ? '#10b981' : '#00e5ff',
+                    color: copiedId ? '#10b981' : '#ff1a40',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -391,7 +391,7 @@ export const AccountSettingsPage: React.FC = () => {
                   fontSize: '13px',
                 }}
               >
-                <Calendar className="w-3.5 h-3.5 text-cyan-400" /> {daysActive} Days Active
+                <Calendar className="w-3.5 h-3.5 text-rose-500" /> {daysActive} Days Active
               </span>
             </div>
           </div>
@@ -479,8 +479,8 @@ export const AccountSettingsPage: React.FC = () => {
                   minWidth: '140px',
                   padding: '11px 14px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(0, 229, 255, 0.4)',
-                  backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                  border: '1px solid rgba(255, 26, 64, 0.4)',
+                  backgroundColor: 'rgba(255, 26, 64, 0.1)',
                   color: '#67e8f9',
                   fontWeight: 800,
                   fontSize: '12px',
@@ -493,7 +493,7 @@ export const AccountSettingsPage: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Download className="w-4 h-4 text-cyan-400" />
+                <Download className="w-4 h-4 text-rose-500" />
                 <span>EXPORT BACKUP</span>
               </button>
 
@@ -634,7 +634,7 @@ export const AccountSettingsPage: React.FC = () => {
               }}
             >
               <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Monitor className="w-4 h-4 text-cyan-400" /> Display
+                <Monitor className="w-4 h-4 text-rose-500" /> Display
               </span>
               <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#cbd5e1' }}>
                 {screenRes} ({viewportSize})
@@ -697,7 +697,7 @@ export const AccountSettingsPage: React.FC = () => {
               }}
             >
               <span style={{ color: '#94a3b8', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
+                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-rose-500" />}
                 Audio Feedback
               </span>
               <button
@@ -706,9 +706,9 @@ export const AccountSettingsPage: React.FC = () => {
                 style={{
                   padding: '6px 14px',
                   borderRadius: '8px',
-                  border: isMuted ? '1px solid #334155' : '1px solid #00e5ff',
-                  backgroundColor: isMuted ? 'transparent' : 'rgba(0, 229, 255, 0.1)',
-                  color: isMuted ? '#64748b' : '#00e5ff',
+                  border: isMuted ? '1px solid #334155' : '1px solid #ff1a40',
+                  backgroundColor: isMuted ? 'transparent' : 'rgba(255, 26, 64, 0.1)',
+                  color: isMuted ? '#64748b' : '#ff1a40',
                   fontWeight: 800,
                   fontSize: '12px',
                   cursor: 'pointer',

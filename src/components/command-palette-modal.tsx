@@ -64,7 +64,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       id: 'nav-dashboard',
       title: 'Go to Hunter Hub (Dashboard)',
       category: 'Navigation',
-      icon: <LayoutDashboard className="w-4 h-4 text-cyan-400" />,
+      icon: <LayoutDashboard className="w-4 h-4 text-rose-500" />,
       action: () => { onSelectTab('dashboard'); onClose(); },
     },
     {
@@ -78,7 +78,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       id: 'nav-friends',
       title: 'Go to Hunter Squad (Friends)',
       category: 'Navigation',
-      icon: <Users className="w-4 h-4 text-cyan-400" />,
+      icon: <Users className="w-4 h-4 text-rose-500" />,
       action: () => { onSelectTab('friends'); onClose(); },
     },
     {
@@ -120,21 +120,21 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       id: 'act-goal-builder',
       title: 'Smart Goal-to-Mission Breakdown Builder',
       category: 'Directives',
-      icon: <Target className="w-4 h-4 text-cyan-400" />,
+      icon: <Target className="w-4 h-4 text-rose-500" />,
       action: () => { onOpenGoalBuilder(); onClose(); },
     },
     {
       id: 'act-raphael',
       title: 'Open RAPHAEL System Advisor (Tactical Briefing & Calculator)',
       category: 'Productivity',
-      icon: <Brain className="w-4 h-4 text-cyan-400" />,
+      icon: <Brain className="w-4 h-4 text-rose-500" />,
       action: () => { if (onOpenRaphael) onOpenRaphael(); onClose(); },
     },
     {
       id: 'act-focus',
       title: 'Enter Focus Chamber (Pomodoro Session)',
       category: 'Productivity',
-      icon: <Clock className="w-4 h-4 text-cyan-400" />,
+      icon: <Clock className="w-4 h-4 text-rose-500" />,
       action: () => { onOpenFocusChamber(); onClose(); },
     },
     {
@@ -162,7 +162,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       id: 'act-theme',
       title: `Toggle Theme (Currently ${currentTheme.toUpperCase()})`,
       category: 'System',
-      icon: currentTheme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cyan-400" />,
+      icon: currentTheme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-rose-500" />,
       action: () => { toggleTheme(); onClose(); },
     },
   ];
@@ -225,10 +225,10 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         style={{
           width: '100%',
           maxWidth: '560px',
-          backgroundColor: '#090d1f',
+          backgroundColor: '#000000',
           borderRadius: '16px',
-          border: '1.5px solid rgba(0, 229, 255, 0.35)',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 229, 255, 0.15)',
+          border: '1.5px solid rgba(255, 26, 64, 0.35)',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 26, 64, 0.15)',
           overflow: 'hidden',
         }}
       >
@@ -242,7 +242,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
             gap: '12px',
           }}
         >
-          <Search style={{ width: '18px', height: '18px', color: '#00e5ff' }} />
+          <Search style={{ width: '18px', height: '18px', color: '#ff1a40' }} />
           <input
             type="text"
             autoFocus
@@ -294,8 +294,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                     justifyContent: 'space-between',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    backgroundColor: isSelected ? 'rgba(0, 229, 255, 0.12)' : 'transparent',
-                    border: isSelected ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid transparent',
+                    backgroundColor: isSelected ? 'rgba(255, 26, 64, 0.12)' : 'transparent',
+                    border: isSelected ? '1px solid rgba(255, 26, 64, 0.3)' : '1px solid transparent',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -304,7 +304,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
                     <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'rgba(15, 23, 42, 0.6)' }}>
                       {item.icon}
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: isSelected ? 800 : 600, color: isSelected ? '#00e5ff' : '#e2e8f0' }}>
+                    <span style={{ fontSize: '13px', fontWeight: isSelected ? 800 : 600, color: isSelected ? '#ff1a40' : '#e2e8f0' }}>
                       {item.title}
                     </span>
                   </div>
