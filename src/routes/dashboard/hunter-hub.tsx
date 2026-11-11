@@ -6,7 +6,7 @@ import {
   Sliders, Heart, Droplets, Star, Plus, X, BookOpen,
   Dumbbell, Code, GraduationCap, Lightbulb, Activity, Skull,
   Gift, Trophy, ChevronDown, ChevronUp, Scroll, Search, Trash2,
-  Timer, Globe, FileText, Lock,
+  Timer, Globe, FileText, Lock, Compass,
 } from 'lucide-react';
 import { useHunter } from '@/lib/hunter-store';
 import {
@@ -458,6 +458,7 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
   const [showWeeklyReport, setShowWeeklyReport] = useState(false);
   const [showTimeCapsule, setShowTimeCapsule] = useState(false);
   const [showComebackModal, setShowComebackModal] = useState(false);
+  const [showMobileModules, setShowMobileModules] = useState(false);
 
   // Check for comeback challenge (if inactive > 3 days)
   useEffect(() => {
@@ -696,21 +697,56 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
               </div>
             )}
 
-            {/* System Log */}
-            <SystemLogPanel />
-
-            <HiddenQuestsWidget />
-
-            <div style={{ marginTop: '16px' }}>
-              <LifeBalanceRadar />
+            {/* Mobile collapsible toggle for deep telemetry modules */}
+            <div className="mobile-modules-toggle-wrapper">
+              <button
+                type="button"
+                onClick={() => setShowMobileModules(!showMobileModules)}
+                className="btn-system-secondary mobile-modules-toggle"
+              >
+                <span>{showMobileModules ? '▲ HIDE SYSTEM TELEMETRY' : '▼ VIEW SYSTEM LOG, TRIALS & RADAR'}</span>
+              </button>
             </div>
 
+            <div className={`deep-modules-container ${showMobileModules ? 'expanded-mobile' : ''}`}>
+              {/* System Log */}
+              <SystemLogPanel />
+
+              <HiddenQuestsWidget />
+
+              <div style={{ marginTop: '16px' }}>
+                <LifeBalanceRadar />
+              </div>
+            </div>
 
           </div>
         </aside>
 
         {/* ==================== RIGHT PANEL: QUEST BOARD ==================== */}
         <section className="hub-quest-panel">
+          {/* Training Library Discovery Banner */}
+          <div className="training-library-banner">
+            <div className="training-library-info">
+              <div className="training-library-icon">
+                <BookOpen className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <div className="training-library-title">TRAINING LIBRARY // HUNTER CODEX</div>
+                <div className="training-library-subtitle">
+                  Browse the complete Training Library to discover more exercises, challenges & directives.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCodex(true)}
+              className="btn-hologram-cyan btn-explore-exercises"
+            >
+              <Compass className="w-4 h-4 mr-1.5" />
+              <span>EXPLORE ALL EXERCISES</span>
+            </button>
+          </div>
+
           {/* Bonus Quest */}
           <AnimatePresence>
             {activeBonus && !activeBonus.completed && (
@@ -837,10 +873,10 @@ export const HunterHub: React.FC<HunterHubProps> = ({ onReplayAwakening }) => {
                 type="button"
                 onClick={() => setShowCodex(true)}
                 className="btn-browse-codex"
-                title="Browse all 135+ quests in the Quest Codex"
+                title="Browse all 180+ exercises in the Training Library"
               >
                 <BookOpen className="w-4 h-4 mr-1 text-cyan-400" />
-                <span>CODEX</span>
+                <span>TRAINING LIBRARY</span>
               </button>
 
               <button

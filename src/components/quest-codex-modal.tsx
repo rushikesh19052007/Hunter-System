@@ -91,9 +91,9 @@ export const QuestCodexModal: React.FC<QuestCodexModalProps> = ({ onClose }) => 
           <div className="modal-title-row">
             <BookOpen className="w-5 h-5 text-cyan-400" />
             <div>
-              <h3>ARCHITECT'S QUEST CODEX</h3>
+              <h3>TRAINING LIBRARY — HUNTER CODEX</h3>
               <p className="modal-subtitle">
-                Inspect and accept system directives into your active quest registry.
+                Explore every available exercise, challenge and training quest.
               </p>
             </div>
           </div>
@@ -101,8 +101,8 @@ export const QuestCodexModal: React.FC<QuestCodexModalProps> = ({ onClose }) => 
             type="button"
             onClick={onClose}
             className="btn-modal-close"
-            title="Close Codex"
-            aria-label="Close Codex"
+            title="Close Training Library"
+            aria-label="Close Training Library"
           >
             <X className="w-4 h-4" />
           </button>
@@ -219,7 +219,7 @@ export const QuestCodexModal: React.FC<QuestCodexModalProps> = ({ onClose }) => 
                       {isActive ? (
                         <div className="inscribed-badge">
                           <Check className="w-3.5 h-3.5 mr-1" />
-                          <span>ACTIVE</span>
+                          <span>ACTIVE ON BOARD</span>
                         </div>
                       ) : (
                         <button
@@ -228,7 +228,7 @@ export const QuestCodexModal: React.FC<QuestCodexModalProps> = ({ onClose }) => 
                           className="btn-accept-codex"
                         >
                           <Plus className="w-3.5 h-3.5 mr-1" />
-                          <span>ACCEPT</span>
+                          <span>ADD TO BOARD</span>
                         </button>
                       )}
                     </div>
