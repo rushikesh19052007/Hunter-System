@@ -18,6 +18,15 @@
   --emerald-restored: #10b981;
   --rose-danger: #f43f5e;
 
+  /* Crimson Red / Blood Red Accents (Solo Leveling Monarch Aesthetic) */
+  --crimson-blood: #dc2626;
+  --crimson-pure: #e11d48;
+  --crimson-dark: #991b1b;
+  --crimson-glow: rgba(220, 38, 38, 0.45);
+  --crimson-border: rgba(239, 68, 68, 0.45);
+  --crimson-surface: rgba(153, 27, 27, 0.15);
+  --crimson-accent: #ff1a40;
+
   --text-main: #e2e8f0;
   --text-muted: #64748b;
   --text-highlight: #ffffff;
@@ -47,6 +56,15 @@ body.light-mode {
   --amber-quest: #d97706;
   --emerald-restored: #059669;
   --rose-danger: #e11d48;
+
+  /* Crimson Red / Blood Red Accents (Light Mode) */
+  --crimson-blood: #b91c1c;
+  --crimson-pure: #dc2626;
+  --crimson-dark: #7f1d1d;
+  --crimson-glow: rgba(185, 28, 28, 0.25);
+  --crimson-border: rgba(220, 38, 38, 0.4);
+  --crimson-surface: rgba(220, 38, 38, 0.08);
+  --crimson-accent: #e11d48;
 
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -96,6 +114,67 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* =========================================================
+   GLOBAL CONTROLS RESET (Eliminates Browser-Default Grey Buttons)
+   ========================================================= */
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  box-sizing: border-box;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+input,
+select,
+textarea {
+  background: rgba(10, 16, 36, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 0.5rem 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 12px var(--cyan-glow);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
 }
 
 /* Base App Wrapper */
@@ -746,59 +825,207 @@ html, body {
   color: #e2e8f0;
 }
 
-/* System Buttons */
-.btn-system-primary {
+/* =========================================================
+   HUNTR UNIFIED BUTTON & INTERACTIVE CONTROLS SYSTEM
+   Variants: Primary (Cyan), Purple (Monarch), Secondary (Navy),
+   Ghost (Subtle), Danger (Crimson Blood Red)
+   ========================================================= */
+
+.btn-system-primary,
+.btn-hologram-cyan {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0284c7 0%, #00f0ff 100%);
-  color: #040714;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.28) 0%, rgba(0, 240, 255, 0.2) 100%);
+  border: 1.5px solid var(--cyan-primary);
+  color: #eaf6ff;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: 1.5px;
-  padding: 0.9rem 1.8rem;
-  border: none;
+  letter-spacing: 1px;
+  padding: 0.65rem 1.35rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+  white-space: nowrap;
 }
 
-.btn-system-primary:hover:not(:disabled) {
+.btn-system-primary:hover:not(:disabled),
+.btn-hologram-cyan:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 0 35px rgba(0, 240, 255, 0.7);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.45) 0%, rgba(0, 240, 255, 0.35) 100%);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+  color: #ffffff;
 }
 
-.btn-system-primary:disabled {
-  opacity: 0.6;
+.btn-system-primary:disabled,
+.btn-hologram-cyan:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-.btn-system-primary.large {
-  padding: 1.1rem 2.2rem;
-  font-size: 1.1rem;
+.btn-system-primary.large,
+.btn-hologram-cyan.large {
+  padding: 0.95rem 2rem;
+  font-size: 1.05rem;
 }
 
+/* Monarch Purple Button (Guilds & Special Progression Actions) */
+.btn-system-purple,
+.btn-hologram-purple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.28) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border: 1.5px solid #a855f7;
+  color: #f3e8ff;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.65rem 1.35rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.25);
+  text-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+  white-space: nowrap;
+}
+
+.btn-system-purple:hover:not(:disabled),
+.btn-hologram-purple:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.45) 0%, rgba(168, 85, 247, 0.35) 100%);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.6);
+  color: #ffffff;
+}
+
+/* Secondary Button (Dark Navy Surface) */
 .btn-system-secondary {
   display: inline-flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  color: #94a3b8;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  letter-spacing: 1px;
-  padding: 0.85rem 1.5rem;
+  justify-content: center;
+  gap: 0.45rem;
+  background: rgba(14, 23, 43, 0.85);
+  color: #eaf6ff;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  padding: 0.6rem 1.25rem;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-system-secondary:hover:not(:disabled) {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--cyan-primary);
+  background: rgba(20, 32, 60, 0.95);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
+}
+
+/* Ghost Button (Transparent, Subtle Border) */
+.btn-system-ghost,
+.btn-hologram-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-tech);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-system-ghost:hover:not(:disabled),
+.btn-hologram-ghost:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+/* Crimson Blood Red Danger Button (Destructive Actions) */
+.btn-system-danger,
+.btn-hologram-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.22) 0%, rgba(220, 38, 38, 0.15) 100%);
+  border: 1.5px solid var(--crimson-border);
+  color: #fecdd3;
+  font-family: var(--font-tech);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px var(--crimson-surface);
+  white-space: nowrap;
+}
+
+.btn-system-danger:hover:not(:disabled),
+.btn-hologram-danger:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: var(--crimson-pure);
+  background: linear-gradient(135deg, rgba(185, 28, 28, 0.42) 0%, rgba(220, 38, 38, 0.28) 100%);
+  box-shadow: 0 0 18px var(--crimson-glow);
+  transform: translateY(-1px);
+}
+
+/* Size Modifiers */
+.btn-sm {
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 6px !important;
+  min-height: 34px;
+}
+
+.btn-lg {
+  padding: 0.9rem 1.8rem !important;
+  font-size: 1.05rem !important;
+  border-radius: 10px !important;
+}
+
+/* Modal Close Icon Buttons */
+.modal-close-btn,
+.btn-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover,
+.btn-modal-close:hover {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: var(--crimson-border);
+  color: #ffffff;
 }
 
 .btn-row {
@@ -825,6 +1052,7 @@ html, body {
   inset: 0;
   background-image: 
     radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 5%, rgba(220, 38, 38, 0.06) 0%, transparent 45%),
     radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.08) 0%, transparent 40%);
   pointer-events: none;
 }
@@ -1049,8 +1277,8 @@ html, body {
 .vital-fill.hp-fill {
   width: 100%;
   height: 100%;
-  background: var(--rose-danger);
-  box-shadow: 0 0 8px var(--rose-danger);
+  background: linear-gradient(90deg, #991b1b 0%, #dc2626 50%, #f43f5e 100%);
+  box-shadow: 0 0 10px var(--crimson-glow);
 }
 
 .vital-fill.mp-fill {
@@ -4047,6 +4275,433 @@ html, body {
   border: 1px solid rgba(124, 58, 237, 0.3);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
+}
+
+/* ============================================================
+   SOCIAL SYNDICATE & GUILD OPERATIONS SUITE
+   Aesthetic: Holographic Hunter Syndicate Network
+   ============================================================ */
+
+.social-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.social-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  flex-wrap: wrap;
+}
+
+.social-header.purple-border {
+  border-bottom-color: rgba(168, 85, 247, 0.3);
+}
+
+.social-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.social-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-tech);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--cyan-primary);
+  text-transform: uppercase;
+}
+
+.social-badge-label.purple {
+  color: #c084fc;
+}
+
+.social-main-title {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+}
+
+.social-main-title.purple {
+  text-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+}
+
+.social-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 680px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Nav Tabs */
+.social-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.social-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.social-nav-tab:hover {
+  color: #ffffff;
+  border-color: rgba(0, 240, 255, 0.35);
+  background: rgba(0, 240, 255, 0.06);
+}
+
+.social-nav-tab.active {
+  color: var(--cyan-primary);
+  border-color: var(--cyan-primary);
+  background: rgba(0, 240, 255, 0.12);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+}
+
+.tab-counter {
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--cyan-primary);
+}
+
+/* Search Bar */
+.social-search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(10, 16, 36, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.social-search-bar:focus-within {
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+}
+
+.social-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.social-search-input {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem 0.25rem !important;
+  color: #ffffff !important;
+  font-family: var(--font-tech);
+  font-size: 0.92rem;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Filter Buttons */
+.social-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-family: var(--font-tech);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.social-filter-btn:hover {
+  color: #ffffff;
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+.social-filter-btn.active-purple {
+  color: #f3e8ff;
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
+}
+
+/* Social Grid & Cards */
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.social-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.social-card:hover {
+  border-color: var(--border-active);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(0, 240, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.social-card.purple-accent:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(168, 85, 247, 0.25);
+}
+
+.social-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Presence Indicators */
+.presence-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.presence-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+}
+
+.presence-dot.offline {
+  background: #64748b;
+}
+
+.presence-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-tech);
+  font-size: 0.75rem;
+}
+
+/* Hero Banner for Active Guild */
+.guild-hero-banner {
+  background: linear-gradient(135deg, rgba(13, 20, 48, 0.95) 0%, rgba(20, 15, 38, 0.95) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 25px rgba(168, 85, 247, 0.15);
+  backdrop-filter: blur(16px);
+}
+
+.guild-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tag-pill-leader {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  color: #fbbf24;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-family: var(--font-tech);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tag-pill-open {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #34d399;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-family: var(--font-tech);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tag-pill-request {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid #a855f7;
+  color: #d8b4fe;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-family: var(--font-tech);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Empty State Box */
+.empty-state-box {
+  background: rgba(10, 16, 36, 0.6);
+  border: 1.5px dashed rgba(0, 240, 255, 0.2);
+  border-radius: 16px;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.empty-state-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1.5px solid rgba(0, 240, 255, 0.3);
+  color: var(--cyan-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+/* Training Library Banner on Quest Board */
+.training-library-banner {
+  background: linear-gradient(135deg, rgba(13, 20, 48, 0.9) 0%, rgba(20, 31, 72, 0.8) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 15px rgba(0, 240, 255, 0.1);
+  flex-wrap: wrap;
+}
+
+.training-library-info {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.training-library-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1.5px solid var(--cyan-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+}
+
+.training-library-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.training-library-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.btn-explore-exercises {
+  font-size: 0.82rem !important;
+  padding: 0.6rem 1.15rem !important;
+  white-space: nowrap;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .social-container {
+    padding: 1rem 0.75rem 6rem;
+  }
+  .social-grid {
+    grid-template-columns: 1fr;
+  }
+  .social-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .guild-hero-banner {
+    padding: 1.25rem;
+  }
+  .training-library-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-explore-exercises {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 

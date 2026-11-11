@@ -14,7 +14,6 @@ import {
   Sparkles,
   Flame,
   Zap,
-  Sword,
   LogOut,
   AlertCircle,
 } from 'lucide-react';
@@ -22,10 +21,8 @@ import {
   type Guild,
   type GuildMember,
   type GuildJoinRequest,
-  GUILD_ICONS,
   createGuild,
   searchGuilds,
-  getGuild,
   joinOpenGuild,
   requestToJoinGuild,
   cancelGuildJoinRequest,
@@ -71,7 +68,7 @@ export const GuildsPage: React.FC = () => {
   const [createName, setCreateName] = useState<string>('');
   const [createTag, setCreateTag] = useState<string>('');
   const [createDesc, setCreateDesc] = useState<string>('');
-  const [createIcon, setCreateIcon] = useState<string>('monarch');
+  const [createIcon] = useState<string>('monarch');
   const [createJoinType, setCreateJoinType] = useState<'open' | 'request'>('open');
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [createError, setCreateError] = useState<string | null>(null);
